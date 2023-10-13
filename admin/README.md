@@ -13,12 +13,32 @@ Until we submit our changes to be integrated into the official HOOMD-blue releas
 
 It is important to do this periodically, so that we stay up-to-date
 
-To do this, follow these steps:
+To do this:
 
-1. Clone the latest stable release of HOOMD-blue.\n
-**IMPORTANT**: this clone is linked to the original HOOMD-blue github repo and cannot be reuploaded to github as is.
+1. Go to GitHub in your web browser and create a new repository for your version (for example "hoomd4.2.1-mod") using the procf/general-template
 
-2. Create a new directory called "unlinked-hoomd" and copy the hoomd-blue files into that directory as a new folder called "hoomd-v4.2.1" (this will allow you to always know which version you are using)
+2. On your local computer, create a new folder for your version of the software: "hoomd4.2.1-mod" and then cd into it and clone the git repo you just made.<br>
+(you will now have a filepath `hoomd4.2.1-mod/hoomd4.2.1-mod/` but this is useful for keeping the virtual environment out of the github rep)
+
+3. Copy all the administrative documents from the previous version into this new git repo and push the changes
+
+4. Now download the latest version of HOOMD-blue from the tarball link provided on the [HOOMD-blue website](https://hoomd-blue.readthedocs.io/en/v4.2.1/building.html#obtain-the-source) <br>
+**IMPORTANT**: If you clone the GitHub repo instead, then the new copy of HOOMD-blue will be linked to the original HOOMD-blue github repo and cannot be reuploaded to GitHub as a separate set of files.
+
+```bash
+# replace hoomd-v4.2.1 with the version you are installing
+curl -Lo hoomd-v4.2.1.tar.gz https://github.com/glotzerlab/hoomd-blue/releases/download/v4.2.1/hoomd-4.2.1.tar.gz
+tar -xvf hoomd-v4.2.1.tar.gz   
+```
+
+5. Rename this file to add the "-props" extension so it will never be ignored by the .gitignore file AND you always know what version you last updated (e.g. hoomd-v4.2.1 -> hoomd-v4.2.1-props)
+
+5. You can now copy our changes into the new version, make any additional modifications needed to keep them working, and update all the install/update and template scripts accordingly!
+<br>
+<br>
+If for some reason you want to clone the git repo, or the tarball is still linked to the original github, you can break the link by removing the .git folder:
+
+4. Create a new directory called "unlinked-hoomd" and copy the hoomd-blue files into that directory as a new folder called "hoomd-v4.2.1" (this will allow you to always know which version you are using)
 
 ```bash
 mkdir unlinked-hoomd
@@ -32,25 +52,12 @@ grep hoomd-v4.2.1 .git/*
 rm -r [path-to-.git/].git/
 ```
 
-3. Now go back to GitHub in your web browser and create a new repository caklled "hoomd4.2.1-mod" using the procf/general-template
+5. Copy the "hoomd-v4.2.1" folder from the "unlinked-hoomd" directory into your new git repo direcotry, and rename it "hoomd-v4.2.1-props" (if the folder name ends in 4.2.1 it will be ignored by git)
 
-4. Clone this new repo into local "hoomd4.2.1-mod" folder (you will now have a filepath `hoomd4.2.1-mod/hoomd4.2.1-mod/` but this is useful for keeping the virtual environment out of the github repo). Then cd into this repo and copy the "hoomd-v4.2.1" folder into it form the "unlinked-hoomd" directory called "hoomd-v4.2.1-props" (if the folder name ends in 4.2.1 it will be ignored by git)
 
-```bash
-mkdir hoomd4.2.1-mod
-cd hoomd4.2.1-mod
-git clone git@github.com:procf/hoomd4.2.1-mod.git
-cd hoomd4.2.1-mod
-cp [path-to-hoomd-v4.2.1] hoomd-v4.2.1-props
-```
+6. Push the new files to the Github. You should have normal folders containing all the hoomd-blue files for the version you want to modify! If any of the folders have a white arrow on them and cannot be openned... then you are still linked to the original hoomd-blue github and need to remove more .git files to delink it... sorry.
 
-5. Push the new files to the Github. You should have normal folders containing all the hoomd-blue files for the version you want to modify! If any of the folders have a white arrow on them and cannot be openned... then you are still linked to the original hoomd-blue github and need to remove more .git files to delink it... sorry.
-
-6. Now copy all your changes file-by-file from the old version to the latest version, paying attention to any larger level syntax changes that may have been implemented by the HOOMD-blue team.
-
-7. In the new repo's main directory, update the README and add template scripts and other files.  
-
-8. Test that the new version of hoomd-blue still runs colloidal sims correclty. You have now finally upgraded to the latest version!!
+7. Now copy all your changes file-by-file from the old version to the latest version, paying attention to any larger level syntax changes that may have been implemented by the HOOMD-blue team.
 <br>
 <br>
 ## How to Make Changes
