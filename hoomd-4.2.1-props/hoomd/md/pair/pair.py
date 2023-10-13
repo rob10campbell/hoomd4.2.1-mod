@@ -1964,7 +1964,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         param_dict = ParameterDict(kT=hoomd.variant.Variant)
         param_dict["kT"] = kT
         self._param_dict.update(param_dict)
-     def _add(self, simulation):
+    def _add(self, simulation):
         """Add the operation to a simulation.
         
         DPDMorse uses RNGs. Warn the user if they did not set the seed.
