@@ -7,10 +7,24 @@
 For any questions, or to help with the upgrade, contact Rob.
 
 To-Do:
-- [ ] test install script
-- [ ] fix linker command failure error in "hoomd/md/test/test_fire_energy_minimizer"
+- [ ] copy in core mods 
+- [ ] test compile
 - [ ] update sim template scripts
-- [ ] test sim templates
+- [ ] test initialization, equilibrium, and gelation with DPDMorse
+- [ ] test initialization, equilibrium, and gelation with BD/Langevin
+- [ ] copy in Lifetime.h
+- [ ] test compile
+- [ ] test gelation sim with bond lifetime tracking
+- [ ] add bond tracking to BD/Langevin sims?
+- [ ] copy in shear mods
+- [ ] test compile
+- [ ] test shear sim with DPDMorse
+- [ ] test shear sim with BD/Langevin
+- [ ] copy in wall mods
+- [ ] test compile
+- [ ] test DPD initialization, equilibrium, and gelation w/ and w/out walls
+- [ ] test BD/Langevin sims with and without walls
+- [ ] remove AO from README or add AO mods
 - [ ] update sim analysis scripts
 - [ ] test sim analysis
 - [ ] update colloids-setup repo to use hoomd4.2 (!)
