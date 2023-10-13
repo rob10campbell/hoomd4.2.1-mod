@@ -1,0 +1,21 @@
+#!/bin/bash
+
+IFS=$'\n' read -d '' -r -a basic < find_changes/basicfiles.txt
+IFS=$'\n' read -d '' -r -a mod < find_changes/modfiles.txt
+
+echo "Creating list of the number of changes in each file (numchanges.txt)"
+for i in "${!basic[@]}"; do
+	basictmp="${basic[i]}" 
+	modtmp="${mod[i]}"
+	if [[ $(basename $basictmp) == $(basename $modtmp) ]]; then
+		# get changes	
+		diff $modtmp $basictmp > changes.txt
+		changecount="$(grep -c "^[0-9]" changes.txt)"
+		echo $(basename $basictmp) ":" $changecount  >> numchanges.txt
+		rm changes.txt
+		#diff --side-by-side $modtmp $basictmp
+	fi
+	if [[ $(basename $basictmp) != $(basename $modtmp) ]]; then
+		echo "ERROR: Compared files have different names" >> numchanges.txt
+	fi
+done

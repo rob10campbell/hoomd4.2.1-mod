@@ -1,0 +1,62 @@
+#!/bin/bash
+
+IFS=$'\n' read -d '' -r -a basic < find_changes/basicfiles.txt
+IFS=$'\n' read -d '' -r -a mod < find_changes/modfiles.txt
+
+## View changes in each file
+linecount="$(cat find_changes/basicfiles.txt | wc -l)"
+echo "There are" $linecount "files to check"
+
+echo "Which file number do you want to start with? (1, 2, 3...)"
+read index
+((internal_index=$index-1))
+basictmp="${basic[$internal_index]}" 
+modtmp="${mod[$internal_index]}"
+IFS=$'\n' read -d '' -r -a changes < numchanges.txt
+echo "${changes[$internal_index]}" | grep -Eo ': *[0-9]+' | grep -o '[0-9]*' | ( read changecount; echo "Starting with file #"$index":" "$(basename ${basic[$internal_index]})" "("$changecount "changes)" )
+set -- $(locale LC_MESSAGES)
+yesexpr="$1"; noexpr="$2"; yesword="$3"; noword="$4"
+
+while [ $index != $linecount ]; do
+    read -p "View detailed changes? (${yesword} / ${noword})? " yn
+    if [[ "$yn" =~ $yesexpr ]]
+	then 
+		if [[ $(basename $basictmp) == $(basename $modtmp) ]]; then
+			echo "-------- " $(basename $basictmp) " --------"	
+			diff --side-by-side $modtmp $basictmp
+			((index=$index+1))
+			((internal_index=$internal_index+1))
+			basictmp="${basic[$internal_index]}"
+			modtmp="${mod[$internal_index]}"
+			echo "${changes[$internal_index]}" | grep -Eo ': *[0-9]+' | grep -o '[0-9]*' | ( read changecount; echo "Now ready to check file #"$index":" "$(basename ${basic[$internal_index]})" "("$changecount "changes)" )	
+		fi
+		if [[ $(basename $basictmp) != $(basename $modtmp) ]]; then
+			echo "ERROR: Compared files have different names"
+		fi
+    fi
+    if [[ "$yn" =~ $noexpr ]]; then 
+	echo "${changes[$internal_index]}" | grep -Eo ': *[0-9]+' | grep -o '[0-9]*' | ( read changecount; echo "Exited on file #"$index":" "$(basename ${basic[$internal_index]})" "("$changecount "changes)" )	
+	exit; fi
+    echo "(Answer ${yesword} to continue / ${noword} to exit)" 
+done
+
+if [ $index == $linecount ]; then
+    echo "(This is the last file)"
+    read -p "View detailed changes? (${yesword} / ${noword})? " yn
+    if [[ "$yn" =~ $yesexpr ]]
+	then 
+		if [[ $(basename $basictmp) == $(basename $modtmp) ]]; then
+			echo "-------- " $(basename $basictmp) " --------"	
+			diff --side-by-side $modtmp $basictmp
+		fi
+		if [[ $(basename $basictmp) != $(basename $modtmp) ]]; then
+			echo "ERROR: Compared files have different names"
+		fi
+    fi
+    if [[ "$yn" =~ $noexpr ]]; then 
+	echo "${changes[$internal_index]}" | grep -Eo ': *[0-9]+' | grep -o '[0-9]*' | ( read changecount; echo "Exited on file #"$index":" "$(basename ${basic[$internal_index]})" "("$changecount "changes)" )		
+	exit; fi
+    echo "(That was the last file. Rerun 4_check_diffs if you need to check other files)" 
+fi
+
+

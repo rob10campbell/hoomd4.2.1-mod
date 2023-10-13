@@ -1,0 +1,30 @@
+#!/bin/bash
+
+### options for running on Discovery
+##SBATCH -J diffchk
+##SBATCH -n 1 -N 1
+##SBATCH -t 1:00:00
+##SBATCH -o %A-diffchk.out
+##SBATCH -e %A-diffchk.err
+
+### set directories
+mod_dir=/work/props/Rob/software/hoomd3.1-mod/hoomd3.1-mod/hoomd-v3.1.0/hoomd
+basic_dir=/work/props/Rob/software/hoomd3.1-basic/hoomd-v3.1.0/hoomd
+
+echo "Comparing two directories:"
+echo $basic_dir
+echo $mod_dir
+
+### create a list of files that are not the same
+diff --brief -r $mod_dir $basic_dir > file_diffs.log
+
+echo "List of differing files created (file_diffs.log)"
+
+### parse the list into "unique files" and "changed files"
+module purge
+module load python/3.8.1
+python3 1_parse-checks.py
+
+### create comparable filelists of the matching "basic" and "modified" files
+python3 2_parse-mods.py
+
