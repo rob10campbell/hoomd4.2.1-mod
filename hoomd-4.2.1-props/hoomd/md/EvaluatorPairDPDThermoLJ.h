@@ -229,7 +229,7 @@ class EvaluatorPairDPDThermoLJ
                                       Scalar& rand_divr,
                                       Scalar& sq_divr,
                                       Scalar& cont_divr,
-				      //~
+                                      //~
                                       Scalar& pair_eng,
                                       bool energy_shift)
         {

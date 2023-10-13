@@ -134,12 +134,12 @@ class PYBIND11_EXPORT ForceCompute : public Compute
     //! Easy access to the virial on a single particle
     Scalar getVirial(unsigned int tag, unsigned int component);
 
-    //! Easy access to the energy on a single particle
-    Scalar getEnergy(unsigned int tag);
-
     //~! Easy access to the virial on a single particle [PROCF2023]
     Scalar getVirialInd(unsigned int tag, unsigned int component);
     //~
+
+    //! Easy access to the energy on a single particle
+    Scalar getEnergy(unsigned int tag);
 
     //! Get the array of computed forces
     const GlobalArray<Scalar4>& getForceArray() const

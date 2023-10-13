@@ -43,7 +43,7 @@ ForceCompute::ForceCompute(std::shared_ptr<SystemDefinition> sysdef)
     TAG_ALLOCATION(m_force);
     m_virial.swap(virial);
     TAG_ALLOCATION(m_virial);
-    m_virial.swap(virial_ind); //~ add virial_ind [PROCF2023]
+    m_virial_ind.swap(virial_ind); //~ add virial_ind [PROCF2023]
     TAG_ALLOCATION(m_virial_ind); //~ add virial_ind [PROCF2023]
     m_torque.swap(torque);
     TAG_ALLOCATION(m_torque);

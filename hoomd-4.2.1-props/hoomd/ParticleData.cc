@@ -3260,6 +3260,8 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
                                                access_mode::readwrite);
 
         unsigned int net_virial_pitch = (unsigned int)m_net_virial.getPitch();
+        unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch(); //~ add virial_ind [PROCF2023]
+
         // add new particles at the end
         unsigned int n = old_nparticles;
         for (std::vector<detail::pdata_element>::const_iterator it = in.begin(); it != in.end();

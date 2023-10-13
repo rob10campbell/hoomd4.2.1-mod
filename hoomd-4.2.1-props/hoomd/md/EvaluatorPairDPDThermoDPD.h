@@ -230,13 +230,13 @@ class EvaluatorPairDPDThermoDPD
     */
     DEVICE bool evalForceEnergyThermo(Scalar& force_divr,
                                       Scalar& force_divr_cons,
-				      //~ add virial_ind terms [PROCF2023]
-				      Scalar& cons_divr,
+                                      //~ add virial_ind terms [PROCF2023]
+                                      Scalar& cons_divr,
                                       Scalar& disp_divr,
                                       Scalar& rand_divr,
                                       Scalar& sq_divr,
                                       Scalar& cont_divr,
-				      //~
+                                      //~
                                       Scalar& pair_eng,
                                       bool energy_shift)
         {
