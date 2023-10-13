@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_DPDLJ_H__
 #define __PAIR_EVALUATOR_DPDLJ_H__
 
@@ -203,7 +205,13 @@ class EvaluatorPairDPDThermoLJ
     //! Evaluate the force and energy using the thermostat
     /*! \param force_divr Output parameter to write the computed total force divided by r.
         \param force_divr_cons Output parameter to write the computed conservative force divided by
-       r. \param pair_eng Output parameter to write the computed pair energy \param energy_shift If
+       r. 
+       \param cons_divr Output parameter to write the computed conserivative force component of the virial tensor [PROCF2023]
+       \param disp_divr Output parameter to write the computed dissipative force component of the virial tensor [PROCF2023]
+       \param rand_divr Output parameter to write the computed random force component of the virial tensor [PROCF2023]
+       \param sq_divr Output parameter to write the computed short-range lubrication (squeezing) force component of the virial tensor [PROCF2023]
+       \param cont_divr Output parameter to write the computed contact force component of the virial tensor [PROCF2023]
+       \param pair_eng Output parameter to write the computed pair energy \param energy_shift If
        true, the potential must be shifted so that V(r) is continuous at the cutoff \note There is
        no need to check if rsq < rcutsq in this method. Cutoff tests are performed in PotentialPair.
 
@@ -215,6 +223,13 @@ class EvaluatorPairDPDThermoLJ
 
     DEVICE bool evalForceEnergyThermo(Scalar& force_divr,
                                       Scalar& force_divr_cons,
+                                      //~ add virial_ind terms [PROCF2023]
+                                      Scalar& cons_divr,
+                                      Scalar& disp_divr,
+                                      Scalar& rand_divr,
+                                      Scalar& sq_divr,
+                                      Scalar& cont_divr,
+				      //~
                                       Scalar& pair_eng,
                                       bool energy_shift)
         {

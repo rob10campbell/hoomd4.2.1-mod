@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #include "Integrator.h"
 
 #ifdef ENABLE_HIP
@@ -177,8 +179,10 @@ void Integrator::computeNetForce(uint64_t timestep)
         const GlobalArray<Scalar4>& net_force = m_pdata->getNetForce();
         const GlobalArray<Scalar>& net_virial = m_pdata->getNetVirial();
         const GlobalArray<Scalar4>& net_torque = m_pdata->getNetTorqueArray();
+        const GlobalArray<Scalar>& net_virial_ind = m_pdata->getNetVirialInd(); //~ add virial_ind [PROCF2023]
         ArrayHandle<Scalar4> h_net_force(net_force, access_location::host, access_mode::overwrite);
         ArrayHandle<Scalar> h_net_virial(net_virial, access_location::host, access_mode::overwrite);
+        ArrayHandle<Scalar> h_net_virial_ind(net_virial_ind, access_location::host, access_mode::overwrite); //~ add virial_ind [PROCF2023]
         ArrayHandle<Scalar4> h_net_torque(net_torque,
                                           access_location::host,
                                           access_mode::overwrite);
@@ -186,6 +190,7 @@ void Integrator::computeNetForce(uint64_t timestep)
         // start by zeroing the net force and virial arrays
         memset((void*)h_net_force.data, 0, sizeof(Scalar4) * net_force.getNumElements());
         memset((void*)h_net_virial.data, 0, sizeof(Scalar) * net_virial.getNumElements());
+        memset((void*)h_net_virial_ind.data, 0, sizeof(Scalar) * net_virial_ind.getNumElements()); //~ add virial_ind [PROCF2023]
         memset((void*)h_net_torque.data, 0, sizeof(Scalar4) * net_torque.getNumElements());
 
         for (unsigned int i = 0; i < 6; ++i)
@@ -197,26 +202,32 @@ void Integrator::computeNetForce(uint64_t timestep)
         // also sum up forces for ghosts, in case they are needed by the communicator
         unsigned int nparticles = m_pdata->getN() + m_pdata->getNGhosts();
         size_t net_virial_pitch = net_virial.getPitch();
+        size_t net_virial_ind_pitch = net_virial_ind.getPitch(); //~ add virial_ind [PROCF2023]
 
         assert(nparticles <= net_force.getNumElements());
         assert(6 * nparticles <= net_virial.getNumElements());
+        assert(5 * nparticles <= net_virial_ind.getNumElements()); //~ add virial_ind [PROCF2023]
         assert(nparticles <= net_torque.getNumElements());
 
         for (const auto& force : m_forces)
             {
             const GlobalArray<Scalar4>& h_force_array = force->getForceArray();
             const GlobalArray<Scalar>& h_virial_array = force->getVirialArray();
+            const GlobalArray<Scalar>& h_virial_ind_array = force->getVirialIndArray(); //~ add virial_ind [PROCF2023]
             const GlobalArray<Scalar4>& h_torque_array = force->getTorqueArray();
 
             assert(nparticles <= h_force_array.getNumElements());
             assert(6 * nparticles <= h_virial_array.getNumElements());
+            assert(5 * nparticles <= h_virial_ind_array.getNumElements()); //~ add virial_ind [PROCF2023]
             assert(nparticles <= h_torque_array.getNumElements());
 
             ArrayHandle<Scalar4> h_force(h_force_array, access_location::host, access_mode::read);
             ArrayHandle<Scalar> h_virial(h_virial_array, access_location::host, access_mode::read);
+            ArrayHandle<Scalar> h_virial_ind(h_virial_ind_array, access_location::host, access_mode::read); //~ add virial_ind [PROCF2023]
             ArrayHandle<Scalar4> h_torque(h_torque_array, access_location::host, access_mode::read);
 
             size_t virial_pitch = h_virial_array.getPitch();
+            size_t virial_ind_pitch = h_virial_ind_array.getPitch(); //~ add virial_ind [PROCF2023]
             for (unsigned int j = 0; j < nparticles; j++)
                 {
                 h_net_force.data[j].x += h_force.data[j].x;
@@ -234,6 +245,15 @@ void Integrator::computeNetForce(uint64_t timestep)
                     h_net_virial.data[k * net_virial_pitch + j]
                         += h_virial.data[k * virial_pitch + j];
                     }
+
+                //~ add virial_ind [PROCF2023]
+                for (unsigned int k = 0; k < 5; k++)
+                    {
+                    h_net_virial_ind.data[k * net_virial_ind_pitch + j]
+                        += h_virial_ind.data[k * virial_ind_pitch + j];
+                    }
+		//~
+
                 }
 
             for (unsigned int k = 0; k < 6; k++)

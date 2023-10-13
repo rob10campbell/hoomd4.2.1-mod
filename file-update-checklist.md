@@ -43,7 +43,9 @@
 * [ ] `hoomd/`
 	* [ ] `md/`
 		* [ ] CMakeLists.txt : **set new file (Lifetime.h)**
-		* [ ] **[ADD NEW FILE]** Lifetime.h	
+		* [ ] **[ADD NEW FILE]** Lifetime.h		
+		* [ ] `pair`
+			* [ ] pair.py : **call DPDMorse**
 		* [ ] PotentialPairDPDThermo.h : **Lifetime, bond_calc, get particle diameter**
 
 ## Asakura-Oosawa Potential (might be incorrect calc?)
@@ -58,25 +60,25 @@
 
 ## "core" mods (Contact force, Lubrication Force, track virial components)
 * [ ] `hoomd/`
-	* [ ] Communicator.cc : **virial_ind**
-	* [ ] Communicator.h : **virial_ind**
-	* [ ] ForceCompute.cc : **virial_ind**
-	* [ ] ForceCompute.h : **virial_ind** 
+	* [x] Communicator.cc : **virial_ind**
+	* [x] Communicator.h : **virial_ind**
+	* [x] ForceCompute.cc : **virial_ind**
+	* [x] ForceCompute.h : **virial_ind** 
 	* [ ] HOOMDMPI.h : ? **shear rate (SR)** (add uint4)
-	* [ ] Integrator.cc : **virial_ind**	
-	* [ ] `md/`
-		* [ ] CMakeLists.txt : **set new file (EvaluatorPairDPDThermoDPDMorse.h)**
-		* [ ] compute.py : **virial_ind**
-		* [ ] ComputeThermo.cc : **virial_ind**
-		* [ ] ComputeThermo.h : **virial_ind**
-		* [ ] ComputeThermoTypes.h : **virial_ind**
-		* [ ] EvaluatorPairDPDThermoDPD.h : **virial_ind (redefine forces to include all virial_ind terms)**
-		* [ ] **[ADD NEW FILE]** EvaluatorPairDPDThermoDPDMorse.h
-		* [ ] EvaluatorPairDPDThermoLJ.h : **virial_ind**
-		* [ ] module-md.cc : **add void/export for DPDMorse()**	
-		* [ ] `pair`
-			* [ ] \_\_init\_\_.py **call DPDMorse**
-			* [ ] pair.py : **call DPDMorse**
-		* [ ] PotentialPairDPDThermo.h : **get particle diameter, virial_ind**
-	* [ ] ParticleData.cc : **virial_ind**
-	* [ ] ParticleData.h : **virial_ind**
+	* [x] Integrator.cc : **virial_ind**	
+	* [x] `md/`
+		* [x] CMakeLists.txt : **set new file (EvaluatorPairDPDThermoDPDMorse.h)**
+		* [x] compute.py : **virial_ind**
+		* [x] ComputeThermo.cc : **virial_ind**
+		* [x] ComputeThermo.h : **virial_ind**
+		* [x] ComputeThermoTypes.h : **virial_ind**
+		* [x] EvaluatorPairDPDThermoDPD.h : **virial_ind (redefine forces to include all virial_ind terms)**
+		* [x] **[ADD NEW FILE]** EvaluatorPairDPDThermoDPDMorse.h
+		* [x] EvaluatorPairDPDThermoLJ.h : **virial_ind**
+		* [x] module-md.cc : **add void/export for DPDMorse()**	
+		* [x] `pair`
+			* [x] \_\_init\_\_.py **call DPDMorse**
+			* [x] pair.py : **define DPDMorse Python interface**
+		* [x] PotentialPairDPDThermo.h : **virial_ind**
+	* [x] ParticleData.cc : **virial_ind**
+	* [x] ParticleData.h : **virial_ind**

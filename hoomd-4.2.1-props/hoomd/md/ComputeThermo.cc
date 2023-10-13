@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 /*! \file ComputeThermo.cc
     \brief Contains code for the ComputeThermo class
 */
@@ -93,8 +95,10 @@ void ComputeThermo::computeProperties()
     // access the net force, pe, and virial
     const GlobalArray<Scalar4>& net_force = m_pdata->getNetForce();
     const GlobalArray<Scalar>& net_virial = m_pdata->getNetVirial();
+    const GlobalArray<Scalar>& net_virial_ind = m_pdata->getNetVirialInd(); //~ add virial_ind [PROCF2023]
     ArrayHandle<Scalar4> h_net_force(net_force, access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_net_virial(net_virial, access_location::host, access_mode::read);
+    ArrayHandle<Scalar> h_net_virial_ind(net_virial_ind, access_location::host, access_mode::read); //~ add virial_ind [PROCF2023]
 
     // total kinetic energy
     double ke_trans_total = 0.0;
@@ -242,6 +246,31 @@ void ComputeThermo::computeProperties()
         W = Scalar(1. / 3.) * (virial_xx + virial_yy + virial_zz);
         }
 
+    //~ add virial_ind [PROCF2023] 
+    double virial_ind[5];
+    for (unsigned int l = 0; l < 5; l++)
+	virial_ind[l] = 0.0;
+
+    if (flags[pdata_flag::virial_ind_tensor])
+        {
+        // Calculate upper triangular virial tensor components
+        size_t virial_ind_pitch = net_virial_ind.getPitch();
+        for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
+            {
+            unsigned int j = m_group->getMemberIndex(group_idx);
+            // ignore rigid body constituent particles in the sum
+            if (h_body.data[j] >= MIN_FLOPPY || h_body.data[j] == h_tag.data[j])
+                {
+                virial_ind[0] += (double)h_net_virial_ind.data[j + 0 * virial_ind_pitch];
+                virial_ind[1] += (double)h_net_virial_ind.data[j + 1 * virial_ind_pitch];
+                virial_ind[2] += (double)h_net_virial_ind.data[j + 2 * virial_ind_pitch];
+                virial_ind[3] += (double)h_net_virial_ind.data[j + 3 * virial_ind_pitch];
+                virial_ind[4] += (double)h_net_virial_ind.data[j + 4 * virial_ind_pitch];
+                }
+            }
+        }
+    //~
+
     // compute the pressure
     // volume/area & other 2D stuff needed
     BoxDim global_box = m_pdata->getGlobalBox();
@@ -285,6 +314,21 @@ void ComputeThermo::computeProperties()
     h_properties.data[thermo_index::pressure_yz] = pressure_yz;
     h_properties.data[thermo_index::pressure_zz] = pressure_zz;
 
+    //~ virial_ind = individual forces that make up the virial component [PROCF2023] 
+    virial_ind[0] /= volume;
+    virial_ind[1] /= volume;
+    virial_ind[2] /= volume;
+    virial_ind[3] /= volume;
+    virial_ind[4] /= volume;
+
+    // fill out the GlobalArray
+    h_properties.data[thermo_index::virial_ind_xx] = virial_ind[0];
+    h_properties.data[thermo_index::virial_ind_xy] = virial_ind[1];
+    h_properties.data[thermo_index::virial_ind_xz] = virial_ind[2];
+    h_properties.data[thermo_index::virial_ind_yy] = virial_ind[3];
+    h_properties.data[thermo_index::virial_ind_yz] = virial_ind[4];
+    //~
+
 #ifdef ENABLE_MPI
     // in MPI, reduce extensive quantities only when they're needed
     m_properties_reduced = !m_pdata->getDomainDecomposition();
@@ -319,6 +363,7 @@ void export_ComputeThermo(pybind11::module& m)
         .def_property_readonly("kinetic_temperature", &ComputeThermo::getTemperature)
         .def_property_readonly("pressure", &ComputeThermo::getPressure)
         .def_property_readonly("pressure_tensor", &ComputeThermo::getPressureTensorPython)
+        .def_property_readonly("virial_ind_tensor", &ComputeThermo::getVirialTensorPython) //~ add virial_ind [PROCF2023]
         .def_property_readonly("degrees_of_freedom", &ComputeThermo::getNDOF)
         .def_property_readonly("translational_degrees_of_freedom",
                                &ComputeThermo::getTranslationalDOF)

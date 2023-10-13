@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 /*! \file Communicator.h
     \brief Defines the Communicator class
 */
@@ -71,7 +73,8 @@ struct comm_flag
         net_force,         //! Communicate net force
         reverse_net_force, //! Communicate net force on ghost particles. Added by Vyas
         net_torque,        //! Communicate net torque
-        net_virial         //! Communicate net virial
+        net_virial,         //! Communicate net virial
+        net_virial_ind     //~! Communicate net virial components [PROCF2023]
         };
     };
 
@@ -501,6 +504,8 @@ class PYBIND11_EXPORT Communicator
     GlobalVector<Scalar4> m_nettorque_copybuf;   //!< Buffer for net torque
     GlobalVector<Scalar> m_netvirial_copybuf;    //!< Buffer for net virial
     GlobalVector<Scalar> m_netvirial_recvbuf;    //!< Buffer for net virial (receive)
+    GlobalVector<Scalar> m_netvirial_ind_copybuf;//~!< Buffer for net virial_ind [PROCF2023] 
+    GlobalVector<Scalar> m_netvirial_ind_recvbuf;//~!< Buffer for net virial_ind (receive) [PROCF2023] 
 
     GlobalVector<unsigned int>
         m_copy_ghosts[6]; //!< Per-direction list of indices of particles to send as ghosts

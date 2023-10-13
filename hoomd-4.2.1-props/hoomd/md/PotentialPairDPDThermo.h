@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __POTENTIAL_PAIR_DPDTHERMO_H__
 #define __POTENTIAL_PAIR_DPDTHERMO_H__
 
@@ -132,6 +134,9 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     // force arrays
     ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(this->m_virial, access_location::host, access_mode::overwrite);
+    //~ add virial_ind [PROCF2023]
+    ArrayHandle<Scalar> h_virial_ind(this->m_virial_ind, access_location::host, access_mode::overwrite);
+    //~
 
     const BoxDim box = this->m_pdata->getBox();
     ArrayHandle<Scalar> h_ronsq(this->m_ronsq, access_location::host, access_mode::read);
@@ -140,6 +145,9 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     // need to start from a zero force, energy and virial
     memset((void*)h_force.data, 0, sizeof(Scalar4) * this->m_force.getNumElements());
     memset((void*)h_virial.data, 0, sizeof(Scalar) * this->m_virial.getNumElements());
+    //~ add virial_ind [PROCF2023] 
+    memset((void*)h_virial_ind.data, 0, sizeof(Scalar) * this->m_virial_ind.getNumElements());
+    //~
 
     uint16_t seed = this->m_sysdef->getSeed();
 
@@ -162,6 +170,11 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         Scalar viriali[6];
         for (unsigned int l = 0; l < 6; l++)
             viriali[l] = 0.0;
+        //~ initialize the current virial_ind to zero [PROCF2023]
+        Scalar viriali_ind[5];
+        for (unsigned int l = 0; l < 5; l++)
+            viriali_ind[l] = 0.0;
+        //~
 
         // loop over all of the neighbors of this particle
         const unsigned int size = (unsigned int)h_n_neigh.data[i];
@@ -206,6 +219,13 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar force_divr_cons = Scalar(0.0);
+            //~ add virial_ind terms [PROCF2023] 
+            Scalar cons_divr = Scalar(0.0);
+            Scalar disp_divr = Scalar(0.0);
+            Scalar rand_divr = Scalar(0.0);
+            Scalar sq_divr = Scalar(0.0);
+            Scalar cont_divr = Scalar(0.0);
+	    //~
             Scalar pair_eng = Scalar(0.0);
             evaluator eval(rsq, rcutsq, param);
 
@@ -221,7 +241,11 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             eval.setT(currentTemp);
 
             bool evaluated
-                = eval.evalForceEnergyThermo(force_divr, force_divr_cons, pair_eng, energy_shift);
+                = eval.evalForceEnergyThermo(force_divr, force_divr_cons, 
+                  //~ add virial_ind terms [PROCF2023]
+                  cons_divr, disp_divr, rand_divr, sq_divr, cont_divr, 
+                  //~
+                  pair_eng, energy_shift);
 
             if (evaluated)
                 {
@@ -234,12 +258,26 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                 pair_virial[4] = Scalar(0.5) * dx.y * dx.z * force_divr_cons;
                 pair_virial[5] = Scalar(0.5) * dx.z * dx.z * force_divr_cons;
 
+                //~ compute the virial_ind [PROCF2023]
+		Scalar virial_ind_prefix = Scalar(0.5) * dx.x * dx.y;
+		Scalar pair_virial_ind[5];
+		pair_virial_ind[0] = virial_ind_prefix * cons_divr;
+                pair_virial_ind[1] = virial_ind_prefix * disp_divr;
+                pair_virial_ind[2] = virial_ind_prefix * rand_divr;
+                pair_virial_ind[3] = virial_ind_prefix * sq_divr;
+                pair_virial_ind[4] = virial_ind_prefix * cont_divr;
+                //~
+
                 // add the force, potential energy and virial to the particle i
                 // (FLOPS: 8)
                 fi += dx * force_divr;
                 pei += pair_eng * Scalar(0.5);
                 for (unsigned int l = 0; l < 6; l++)
                     viriali[l] += pair_virial[l];
+                //~ add virial_ind [PROCF2023]
+                for (unsigned int l = 0; l < 5; l++)
+                    viriali_ind[l] += pair_virial_ind[l];
+		//~
 
                 // add the force to particle j if we are using the third law (MEM TRANSFER: 10
                 // scalars / FLOPS: 8)
@@ -252,6 +290,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                     h_force.data[mem_idx].w += pair_eng * Scalar(0.5);
                     for (unsigned int l = 0; l < 6; l++)
                         h_virial.data[l * this->m_virial_pitch + mem_idx] += pair_virial[l];
+                    //~ add virial_ind [PROCF2023] 
+                    for (unsigned int l = 0; l < 5; l++)
+                        h_virial_ind.data[l * this->m_virial_ind_pitch + mem_idx] += pair_virial_ind[l];
+		    //~
                     }
                 }
             }
@@ -264,6 +306,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         h_force.data[mem_idx].w += pei;
         for (unsigned int l = 0; l < 6; l++)
             h_virial.data[l * this->m_virial_pitch + mem_idx] += viriali[l];
+        //~ add virial_ind [PROCF2023] 
+        for (unsigned int l = 0; l < 5; l++)
+            h_virial_ind.data[l * this->m_virial_ind_pitch + mem_idx] += viriali_ind[l];
+	//~
         }
     }
 

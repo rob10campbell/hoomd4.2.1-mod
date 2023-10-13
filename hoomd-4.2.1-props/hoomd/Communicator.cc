@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 /*! \file Communicator.cc
     \brief Implements the Communicator class
 */
@@ -1185,7 +1187,11 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
       m_velocity_copybuf(m_exec_conf), m_orientation_copybuf(m_exec_conf),
       m_plan_copybuf(m_exec_conf), m_tag_copybuf(m_exec_conf), m_netforce_copybuf(m_exec_conf),
       m_nettorque_copybuf(m_exec_conf), m_netvirial_copybuf(m_exec_conf),
-      m_netvirial_recvbuf(m_exec_conf), m_plan(m_exec_conf), m_plan_reverse(m_exec_conf),
+      m_netvirial_recvbuf(m_exec_conf), 
+      //~ add virial_ind [PROCF2023]
+      m_netvirial_ind_copybuf(m_exec_conf), m_netvirial_ind_recvbuf(m_exec_conf),
+      //~
+      m_plan(m_exec_conf), m_plan_reverse(m_exec_conf),
       m_tag_reverse(m_exec_conf), m_netforce_reverse_copybuf(m_exec_conf),
       m_netforce_reverse_recvbuf(m_exec_conf), m_r_ghost_max(Scalar(0.0)), m_ghosts_added(0),
       m_has_ghost_particles(false), m_last_flags(0), m_comm_pending(false),
@@ -1330,6 +1336,7 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
     offsets[11] = offsetof(detail::pdata_element, net_force);
     offsets[12] = offsetof(detail::pdata_element, net_torque);
     offsets[13] = offsetof(detail::pdata_element, net_virial);
+    offsets[14] = offsetof(detail::pdata_element, net_virial_ind); //~ add virial_ind [PROCF2023]
 
     MPI_Datatype tmp;
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, &tmp);
@@ -2880,6 +2887,12 @@ void Communicator::updateNetForce(uint64_t timestep)
         {
         oss << "virial";
         }
+    //~ add virial_ind [PROCF2023]
+    if (flags[comm_flag::net_virial_ind])
+        {
+        oss << "virial_ind";
+        }
+    //~
 
     m_exec_conf->msg->notice(7) << oss.str() << std::endl;
 
@@ -2906,6 +2919,13 @@ void Communicator::updateNetForce(uint64_t timestep)
         {
         m_netvirial_copybuf.clear();
         }
+
+    //~ add virial_ind [PROCF2023]
+    if (flags[comm_flag::net_virial_ind])
+        {
+        m_netvirial_ind_copybuf.clear();
+        }
+    //~
 
     // update data in these arrays
 
@@ -2940,6 +2960,14 @@ void Communicator::updateNetForce(uint64_t timestep)
             old_size = (unsigned int)m_netvirial_copybuf.size();
             m_netvirial_copybuf.resize(old_size + 6 * m_num_copy_ghosts[dir]);
             }
+
+	//~ add virial_ind [PROCF2023]
+        if (flags[comm_flag::net_virial_ind])
+            {
+            old_size = (unsigned int)m_netvirial_ind_copybuf.size();
+            m_netvirial_ind_copybuf.resize(old_size + 5 * m_num_copy_ghosts[dir]);
+            }
+	//~
 
         // Copy data into send buffers
         if (flags[comm_flag::net_force])
@@ -3071,6 +3099,41 @@ void Communicator::updateNetForce(uint64_t timestep)
                 h_netvirial_copybuf.data[6 * ghost_idx + 5] = h_netvirial.data[5 * pitch + idx];
                 }
             }
+
+	//~ add virial_ind [PROCF2023]
+        if (flags[comm_flag::net_virial_ind])
+            {
+            ArrayHandle<Scalar> h_netvirial_ind(m_pdata->getNetVirialInd(),
+                                            access_location::host,
+                                            access_mode::read);
+            ArrayHandle<Scalar> h_netvirial_ind_copybuf(m_netvirial_ind_copybuf,
+                                                    access_location::host,
+                                                    access_mode::overwrite);
+            ArrayHandle<unsigned int> h_copy_ghosts(m_copy_ghosts[dir],
+                                                    access_location::host,
+                                                    access_mode::read);
+            ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(),
+                                             access_location::host,
+                                             access_mode::read);
+
+            unsigned int pitch = (unsigned int)m_pdata->getNetVirialInd().getPitch();
+
+            // copy net torques of ghost particles
+            for (unsigned int ghost_idx = 0; ghost_idx < m_num_copy_ghosts[dir]; ghost_idx++)
+                {
+                unsigned int idx = h_rtag.data[h_copy_ghosts.data[ghost_idx]];
+
+                assert(idx < m_pdata->getN() + m_pdata->getNGhosts());
+
+                // copy net force into send buffer, transposing
+                h_netvirial_ind_copybuf.data[5 * ghost_idx + 0] = h_netvirial_ind.data[0 * pitch + idx];
+                h_netvirial_ind_copybuf.data[5 * ghost_idx + 1] = h_netvirial_ind.data[1 * pitch + idx];
+                h_netvirial_ind_copybuf.data[5 * ghost_idx + 2] = h_netvirial_ind.data[2 * pitch + idx];
+                h_netvirial_ind_copybuf.data[5 * ghost_idx + 3] = h_netvirial_ind.data[3 * pitch + idx];
+                h_netvirial_ind_copybuf.data[5 * ghost_idx + 4] = h_netvirial_ind.data[4 * pitch + idx];
+                }
+            }
+	//~
 
         unsigned int send_neighbor = m_decomposition->getNeighborRank(dir);
 
@@ -3277,6 +3340,61 @@ void Communicator::updateNetForce(uint64_t timestep)
                 h_netvirial.data[5 * pitch + start_idx + i] = h_netvirial_recvbuf.data[6 * i + 5];
                 }
             }
+
+	//~ add virial_ind [PROCF2023]
+        if (flags[comm_flag::net_virial_ind])
+            {
+            m_netvirial_ind_recvbuf.resize(5 * m_num_recv_ghosts[dir]);
+            m_reqs.resize(2);
+            m_stats.resize(2);
+
+            ArrayHandle<Scalar> h_netvirial_ind_recvbuf(m_netvirial_ind_recvbuf,
+                                                    access_location::host,
+                                                    access_mode::overwrite);
+            ArrayHandle<Scalar> h_netvirial_ind_copybuf(m_netvirial_ind_copybuf,
+                                                    access_location::host,
+                                                    access_mode::read);
+
+            MPI_Isend(h_netvirial_ind_copybuf.data,
+                      (unsigned int)(5 * m_num_copy_ghosts[dir] * sizeof(Scalar)),
+                      MPI_BYTE,
+                      send_neighbor,
+                      3,
+                      m_mpi_comm,
+                      &m_reqs[0]);
+            MPI_Irecv(h_netvirial_ind_recvbuf.data,
+                      (unsigned int)(5 * m_num_recv_ghosts[dir] * sizeof(Scalar)),
+                      MPI_BYTE,
+                      recv_neighbor,
+                      3,
+                      m_mpi_comm,
+                      &m_reqs[1]);
+            MPI_Waitall(2, &m_reqs.front(), &m_stats.front());
+            }
+
+        if (flags[comm_flag::net_virial_ind])
+            {
+            unsigned int pitch = (unsigned int)(m_pdata->getNetVirialInd().getPitch());
+
+            // unpack virial_ind (virial components)
+            ArrayHandle<Scalar> h_netvirial_ind_recvbuf(m_netvirial_ind_recvbuf,
+                                                    access_location::host,
+                                                    access_mode::read);
+            ArrayHandle<Scalar> h_netvirial_ind(m_pdata->getNetVirialInd(),
+                                            access_location::host,
+                                            access_mode::read);
+
+            for (unsigned int i = 0; i < m_num_recv_ghosts[dir]; ++i)
+                {
+                h_netvirial_ind.data[0 * pitch + start_idx + i] = h_netvirial_ind_recvbuf.data[5 * i + 0];
+                h_netvirial_ind.data[1 * pitch + start_idx + i] = h_netvirial_ind_recvbuf.data[5 * i + 1];
+                h_netvirial_ind.data[2 * pitch + start_idx + i] = h_netvirial_ind_recvbuf.data[5 * i + 2];
+                h_netvirial_ind.data[3 * pitch + start_idx + i] = h_netvirial_ind_recvbuf.data[5 * i + 3];
+                h_netvirial_ind.data[4 * pitch + start_idx + i] = h_netvirial_ind_recvbuf.data[5 * i + 4];
+                }
+            }
+	//~
+
         } // end dir loop
     }
 

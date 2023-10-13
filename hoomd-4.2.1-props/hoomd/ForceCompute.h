@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #include "Compute.h"
 #include "GlobalArray.h"
 #include "Index1D.h"
@@ -87,6 +89,10 @@ class PYBIND11_EXPORT ForceCompute : public Compute
     //! Sum all virial terms for a group
     std::vector<Scalar> calcVirialGroup(std::shared_ptr<ParticleGroup> group);
 
+    //~ Sum all virial_ind terms for a group [PROCF2023]
+    std::vector<Scalar> calcVirialIndGroup(std::shared_ptr<ParticleGroup> group);
+    //~
+
     /** Get per particle energies
 
         @returns a Numpy array with per particle energies in increasing tag order.
@@ -111,6 +117,14 @@ class PYBIND11_EXPORT ForceCompute : public Compute
     */
     pybind11::object getVirialsPython();
 
+    //~ add virial_ind [PROCF2023] 
+    /** Get per particle virial_inds
+
+        @returns a Numpy array with per particle virial_inds in increasing tag order.
+    */
+    pybind11::object getVirialsIndPython();
+    //~
+
     //! Easy access to the torque on a single particle
     Scalar4 getTorque(unsigned int tag);
 
@@ -123,6 +137,10 @@ class PYBIND11_EXPORT ForceCompute : public Compute
     //! Easy access to the energy on a single particle
     Scalar getEnergy(unsigned int tag);
 
+    //~! Easy access to the virial on a single particle [PROCF2023]
+    Scalar getVirialInd(unsigned int tag, unsigned int component);
+    //~
+
     //! Get the array of computed forces
     const GlobalArray<Scalar4>& getForceArray() const
         {
@@ -134,6 +152,13 @@ class PYBIND11_EXPORT ForceCompute : public Compute
         {
         return m_virial;
         }
+
+    //~! Get the array of computed virial_inds [PROCF2023] 
+    const GlobalArray<Scalar>& getVirialIndArray() const
+        {
+        return m_virial_ind;
+        }
+    //~
 
     //! Get the array of computed torques
     const GlobalArray<Scalar4>& getTorqueArray() const
@@ -211,6 +236,8 @@ class PYBIND11_EXPORT ForceCompute : public Compute
      */
     GlobalArray<Scalar> m_virial;
     size_t m_virial_pitch;         //!< The pitch of the 2D virial array
+    GlobalArray<Scalar> m_virial_ind; //~ add virial_ind [PROCF2023]
+    size_t m_virial_ind_pitch; //~!< The pitch of the 2D virial_ind array [PROCF2023]
     GlobalArray<Scalar4> m_torque; //!< per-particle torque
 
     Scalar m_external_virial[6]; //!< Stores external contribution to virial
@@ -244,6 +271,8 @@ class PYBIND11_EXPORT LocalForceComputeData : public GhostLocalDataAccess<Output
                                                      pdata.getNGlobal()),
           m_force_handle(), m_torque_handle(), m_virial_handle(),
           m_virial_pitch(data.getVirialArray().getPitch()),
+          m_virial_ind_handle(), //~ add virial_ind [PROCF2023]
+          m_virial_ind_pitch(data.getVirialIndArray().getPitch()), //~ add virial_ind [PROCF2023]
           m_buffers_writeable(data.getLocalBuffersWriteable())
         {
         }
@@ -294,12 +323,31 @@ class PYBIND11_EXPORT LocalForceComputeData : public GhostLocalDataAccess<Output
                 {sizeof(Scalar), static_cast<size_t>(m_virial_pitch * sizeof(Scalar))}));
         }
 
+    //~ add virial_ind [PROCF2023] 
+    Output getVirialInd(GhostDataFlag flag)
+        {
+        // we order the strides as (1, m_virial_ind_pitch) because we need to expose
+        // the array as having shape (N, 5) even though the underlying data has
+        // shape (5, m_virial_ind_pitch)
+        return this->template getLocalBuffer<Scalar, Scalar>(
+            m_virial_ind_handle,
+            &ForceCompute::getVirialIndArray,
+            flag,
+            m_buffers_writeable,
+            5,
+            0,
+            std::vector<size_t>(
+                {sizeof(Scalar), static_cast<size_t>(m_virial_ind_pitch * sizeof(Scalar))}));
+        }
+    //~
+
     protected:
     void clear()
         {
         m_force_handle.reset(nullptr);
         m_torque_handle.reset(nullptr);
         m_virial_handle.reset(nullptr);
+        m_virial_ind_handle.reset(nullptr); //~ add virial_ind [PROCF2023]
         m_rtag_handle.reset(nullptr);
         }
 
@@ -307,8 +355,10 @@ class PYBIND11_EXPORT LocalForceComputeData : public GhostLocalDataAccess<Output
     std::unique_ptr<ArrayHandle<Scalar4>> m_force_handle;
     std::unique_ptr<ArrayHandle<Scalar4>> m_torque_handle;
     std::unique_ptr<ArrayHandle<Scalar>> m_virial_handle;
+    std::unique_ptr<ArrayHandle<Scalar>> m_virial_ind_handle; //~ add virial_ind [PROCF2023]
     std::unique_ptr<ArrayHandle<unsigned int>> m_rtag_handle;
     size_t m_virial_pitch;
+    size_t m_virial_ind_pitch; //~ add virial_ind [PROCF2023]
     bool m_buffers_writeable;
     };
 
@@ -329,6 +379,7 @@ template<class Output> void export_LocalForceComputeData(pybind11::module& m, st
         .def("getPotentialEnergy", &LocalForceComputeData<Output>::getPotentialEnergy)
         .def("getTorque", &LocalForceComputeData<Output>::getTorque)
         .def("getVirial", &LocalForceComputeData<Output>::getVirial)
+        .def("getVirialInd", &LocalForceComputeData<Output>::getVirialInd) //~ add virial_ind [PROCF2023]
         .def("enter", &LocalForceComputeData<Output>::enter)
         .def("exit", &LocalForceComputeData<Output>::exit);
     };

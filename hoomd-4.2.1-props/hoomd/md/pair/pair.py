@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+###### Modified by PRO-CF ##~ [PROCF2023] ######
+
 """Pair forces."""
 
 import copy
@@ -1870,3 +1872,106 @@ class LJGauss(Pair):
             'params', 'particle_types',
             TypeParameterDict(epsilon=float, sigma=float, r0=float, len_keys=2))
         self._add_typeparam(params)
+
+##~ add DPDMorse() [PROCF2023] 
+class DPDMorse(Pair):
+    r"""DPD Morse pair force. Added by PRO-CF research group for simulating attractive colloidal particles.
+
+    Args:
+        kT (float): System kinetic temperature.
+        nlist (`hoomd.md.nlist.NeighborList`): Neighbor list.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
+        mode (str): Energy shifting/smoothing mode.
+        bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
+
+    `DPDMorse` computes the Morse pair force, semi-hard potential contact force, and short-range lubrication (squeezing) force approximation  on every particle in the simulation
+    state:
+
+    .. math::
+        Morse Potential
+        U(r_ij) = D_0 \left[ \exp \left(-2\alpha\left(
+            r_ij - \left( a_i + a_j \right) - r_0 \right)\right) -2\exp \left(-\alpha\left(r_ij -\left( a_i + a_j \right) - r_0 \right)
+            \right) \right]
+
+        Hydrodynamic Force
+        (Short Range Squeezing Lubrucation Force Approximation)
+        F_H(r_ij) = - mu_ij \left( v_ij \dot e_ij \right) e_ij
+        mu_ij = \left 3 pi eta_0 \right / \left( 2 h_ij \right) * \left( \left( a_i + a_j \right) / 2 \right) ^ 2
+        h_ij = r_ij - (a_i + a_j)
+
+        Contact Force
+        F_COM(r_ij) = f_contact (1 + h_ij)
+
+    Example::
+        nl = nlist.Tree()
+        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True)
+         morse.params[('A','A')] = dict(A0=25.0, gamma=45, D0=0, alpha=3.0, r0=0, eta=1.1, f_contact=0.0, a1=0.0, a2=0.0, rcut=1.0)
+        morse.r_cut[('A', 'B')] = 1.0
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``A0`` (`float`, **required**) - conservative force scaling parameter
+        * ``gamma`` (`float` or `int`, **required**) - viscous dissipation (the dissipative force scaling parameter)  
+        * ``D0`` (`float`, **required**) - depth of the potential at its
+          minimum :math:`D_0` :math:`[\mathrm{energy}]`
+        * ``alpha`` (`float`, **required**) - the width of the potential well
+          :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
+        * ``r0`` (`float`, **required**) - position of the minimum
+          :math:`r_0` :math:`[\mathrm{length}]`
+        * ``eta`` (`float` **required**) - the background viscosity (viscosity of the background fluid)
+          :math:`eta` :math:`[\mathrm{viscosity}]`
+        * ``f_contact`` (`float`, **required**) - the contact force scaling parameter
+        * ``a1`` (`float`, **required**) - the radius of particle i
+          :math:`a1` :math:`[\mathrm{length}]`
+        * ``a2`` (`float`, **required**) - the radius of particle j
+          :math:`a2` :math:`[\mathrm{length}]`
+        * ``rcut`` (`float`, **required**) - the surface-surface cut-off radius
+          :math:`rcut` :math:`[\mathrm{length}]`
+
+Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``, ``"shift"``, or ``"xplor"``.
+
+        Type: `str`
+    """
+    _cpp_class_name = "PotentialPairDPDThermoDPDMorse"
+    _accepted_modes = ("none",)
+
+    def __init__(self, nlist, kT, default_r_cut=None):
+        super().__init__(nlist=nlist,
+                         default_r_cut=default_r_cut,
+                         default_r_on=0,
+                         mode='none')
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(A0=float,
+                              gamma=float,
+                              D0=float,
+                              alpha=float,
+                              r0=float,
+                              eta=float,
+                              f_contact=float,
+                              a1=float,
+                              a2=float,
+                              rcut=float,
+                              len_keys=2))
+        self._add_typeparam(params)
+        param_dict = ParameterDict(kT=hoomd.variant.Variant)
+        param_dict["kT"] = kT
+        self._param_dict.update(param_dict)
+     def _add(self, simulation):
+        """Add the operation to a simulation.
+        
+        DPDMorse uses RNGs. Warn the user if they did not set the seed.
+        """
+        if isinstance(simulation, hoomd.Simulation):
+            simulation._warn_if_seed_unset()
+
+        super()._add(simulation)
+##~
+

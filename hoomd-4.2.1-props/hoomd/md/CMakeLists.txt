@@ -1,3 +1,4 @@
+### Modified by PRO-CF #[PROCF2023] ###
 
 
 set(_md_sources module-md.cc
@@ -94,6 +95,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairDLVO.h
                 EvaluatorPairDPDThermoLJ.h
                 EvaluatorPairDPDThermoDPD.h
+                EvaluatorPairDPDThermoDPDMorse.h #[PROCF2023]
                 EvaluatorPairEwald.h
                 EvaluatorPairForceShiftedLJ.h
                 EvaluatorPairGauss.h
@@ -472,7 +474,7 @@ foreach(_evaluator ${_wall_evaluators})
     endif()
 endforeach()
 
-set(_dpdthermo_evaluators DPD LJ)
+set(_dpdthermo_evaluators DPD LJ DPDMorse) # add DPDMorse [PROCF2023]
 
 foreach(_evaluator ${_dpdthermo_evaluators})
     configure_file(export_PotentialPairDPDThermo.cc.inc

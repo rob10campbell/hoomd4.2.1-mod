@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// #### Modified by PRO-CF //~ [PROCF2023] #####
+
 #include <pybind11/pybind11.h>
 
 namespace hoomd
@@ -98,6 +100,9 @@ void export_PotentialExternalWallMorse(pybind11::module& m);
 
 void export_PotentialPairDPDThermoDPD(pybind11::module& m);
 void export_PotentialPairDPDThermoLJ(pybind11::module& m);
+//~ add DPDMorse [PROCF2023] 
+void export_PotentialPairDPDThermoDPDMorse(pybind11::module& m);
+//~
 
 void export_IntegratorTwoStep(pybind11::module& m);
 void export_IntegrationMethodTwoStep(pybind11::module& m);
@@ -344,6 +349,9 @@ PYBIND11_MODULE(_md, m)
 
     export_PotentialPairDPDThermoDPD(m);
     export_PotentialPairDPDThermoLJ(m);
+    //~ add DPDMorse [PROCF2023] 
+    export_PotentialPairDPDThermoDPDMorse(m);
+    //~
 
     export_PotentialBondHarmonic(m);
     export_PotentialBondFENE(m);

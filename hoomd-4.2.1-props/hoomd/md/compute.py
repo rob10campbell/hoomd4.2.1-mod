@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+########## Modified by PRO-CF ##~ [PROCF2023] ##########
+
 """Compute properties of molecular dynamics simulations.
 
 The MD compute classes compute instantaneous properties of the simulation state
@@ -122,6 +124,26 @@ class ThermodynamicQuantities(Compute):
         """
         self._cpp_obj.compute(self._simulation.timestep)
         return self._cpp_obj.pressure_tensor
+
+    ##~ add access to virial_ind [PROCF2023]
+    @log(category='sequence', requires_run=True)
+    def virial_ind_tensor(self):
+        """Instantaneous "independent virial" (virial_ind) components of the 
+	virial component pressure tensor of the subset \
+        :math:`[\\mathrm{pressure}]`.
+
+        The 5 virial_ind components of the virial of the pressure tensor are given in the order:
+        (:math:`F^{conservative}`, :math:`F^{dissipative}`, :math:`P^{random}`, :math:`P^{squeezing_hydro}`,
+        :math:`P^{contact}`):
+
+        as defined in EvaluatorPairDPDThermoDPDMorse.h
+
+        where the net virial_ind terms are computed by `hoomd.md.Integrator` over
+        all of the forces in `hoomd.md.Integrator.forces`
+        """
+        self._cpp_obj.compute(self._simulation.timestep)
+        return self._cpp_obj.virial_ind_tensor
+    ##~
 
     @log(requires_run=True)
     def kinetic_energy(self):

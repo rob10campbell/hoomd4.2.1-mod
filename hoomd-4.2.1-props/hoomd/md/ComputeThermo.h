@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #include "ComputeThermoTypes.h"
 #include "hoomd/Compute.h"
 #include "hoomd/GlobalArray.h"
@@ -273,6 +275,44 @@ class PYBIND11_EXPORT ComputeThermo : public Compute
         return p;
         }
 
+    //~ add virial_ind [PROCF2023] 
+    //! Returns the upper triangular tensor of virial_ind components last computed by compute()
+    /*! \returns Instantaneous virial_ind tensor, or virial_ind tensor containing NaN entries if it is
+        not available
+    */
+    VirialTensor getVirialTensor()
+        {
+        // return tensor of NaN's if flags are not valid
+        VirialTensor p;
+        if (m_computed_flags[pdata_flag::virial_ind_tensor])
+            {
+#ifdef ENABLE_MPI
+            if (!m_properties_reduced)
+                reduceProperties();
+#endif
+            
+            ArrayHandle<Scalar> h_properties(m_properties,
+                                             access_location::host,
+                                             access_mode::read);
+            
+            p.xx = h_properties.data[thermo_index::virial_ind_xx];
+            p.xy = h_properties.data[thermo_index::virial_ind_xy];
+            p.xz = h_properties.data[thermo_index::virial_ind_xz];
+            p.yy = h_properties.data[thermo_index::virial_ind_yy];
+            p.yz = h_properties.data[thermo_index::virial_ind_yz];
+            }
+        else
+            {
+            p.xx = std::numeric_limits<Scalar>::quiet_NaN();
+            p.xy = std::numeric_limits<Scalar>::quiet_NaN();
+            p.xz = std::numeric_limits<Scalar>::quiet_NaN();
+            p.yy = std::numeric_limits<Scalar>::quiet_NaN();
+            p.yz = std::numeric_limits<Scalar>::quiet_NaN();
+            }
+        return p;
+        }
+    //~
+
     //! Returns the pressure tensor as a python list to be used for logging
     /*! \returns the pressure tensor as a python list
      */
@@ -288,6 +328,24 @@ class PYBIND11_EXPORT ComputeThermo : public Compute
         toReturn.append(p.zz);
         return toReturn;
         }
+
+    //~ add virial_ind [PROCF2023]
+    //! Returns the virial_ind tensor as a python list to be used for logging
+    /*! \returns the virial_ind tensor as a python list
+     */
+    pybind11::list getVirialTensorPython()
+        {
+        pybind11::list toReturn;
+        VirialTensor p = getVirialTensor();
+        toReturn.append(p.xx);
+        toReturn.append(p.xy);
+        toReturn.append(p.xz);
+        toReturn.append(p.yy);
+        toReturn.append(p.yz);
+        return toReturn;
+        }
+    //~	
+
 
     // <--------------- Degree of Freedom Data
 
