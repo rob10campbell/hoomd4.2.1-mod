@@ -7,8 +7,9 @@
 For any questions, or to help with the upgrade, contact Rob.
 
 To-Do:
-- [ ] copy in core mods 
-- [ ] test compile
+- [x] copy in core mods 
+- [x] test compile
+- [ ] resolve segmentation fault in DPDMorse or Integrator
 - [ ] update sim template scripts
 - [ ] test initialization, equilibrium, and gelation with DPDMorse
 - [ ] test initialization, equilibrium, and gelation with BD/Langevin
