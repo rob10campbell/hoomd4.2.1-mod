@@ -64,7 +64,6 @@
 	* [x] Communicator.h : **virial_ind**
 	* [x] ForceCompute.cc : **virial_ind**
 	* [x] ForceCompute.h : **virial_ind** 
-	* [ ] HOOMDMPI.h : ? **shear rate (SR)** (add uint4)
 	* [x] Integrator.cc : **virial_ind**	
 	* [x] `md/`
 		* [x] CMakeLists.txt : **set new file (EvaluatorPairDPDThermoDPDMorse.h)**
@@ -80,5 +79,7 @@
 			* [x] \_\_init\_\_.py **call DPDMorse**
 			* [x] pair.py : **define DPDMorse Python interface**
 		* [x] PotentialPairDPDThermo.h : **virial_ind**
+		* [ ] TwoStepBD.cc **contact force**
+		* [ ] TwoStepLangevin.cc **contact force**
 	* [x] ParticleData.cc : **virial_ind**
 	* [x] ParticleData.h : **virial_ind**
