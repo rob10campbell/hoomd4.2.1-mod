@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_MORSE_H__
 #define __PAIR_EVALUATOR_MORSE_H__
 
@@ -126,8 +128,22 @@ class EvaluatorPairMorse
             Scalar r = fast::sqrt(rsq);
             Scalar Exp_factor = fast::exp(-alpha * (r - r0));
 
+            //~ add contact force [procf2023]
+            //~ if particles overlap (r < r0) apply contact force
+            if(r < r0)force_divr = scalar(100.0) * (scalar(1.0) - (r-r0)) * pow((scalar(0.50)*r0),3) / r;
+
+            else{
+                //~ calculate force as normal
+                force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
+
+                //~ but still include contact force within 0.001 dist of colloid-colloid contact 
+                Scalar Del_max = Scalar(0.001);
+                if(r<(r0+Del_max))force_divr += Scalar(100.0) * pow((Scalar(1.0) - (r-r0)/Del_max), 3) * pow((Scalar(0.50)*r0),3) / r;
+                } 
+            //~ 
+
             pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
-            force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
+            //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [PROCF2023]
 
             if (energy_shift)
                 {

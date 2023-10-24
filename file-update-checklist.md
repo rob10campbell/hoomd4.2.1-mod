@@ -74,12 +74,11 @@
 		* [x] EvaluatorPairDPDThermoDPD.h : **virial_ind (redefine forces to include all virial_ind terms)**
 		* [x] **[ADD NEW FILE]** EvaluatorPairDPDThermoDPDMorse.h
 		* [x] EvaluatorPairDPDThermoLJ.h : **virial_ind**
+		* [x] EvaluatorPairMorse.h : **contact force**
 		* [x] module-md.cc : **add void/export for DPDMorse()**	
 		* [x] `pair`
 			* [x] \_\_init\_\_.py **call DPDMorse**
 			* [x] pair.py : **define DPDMorse Python interface**
 		* [x] PotentialPairDPDThermo.h : **virial_ind**
-		* [ ] TwoStepBD.cc **contact force**
-		* [ ] TwoStepLangevin.cc **contact force**
 	* [x] ParticleData.cc : **virial_ind**
 	* [x] ParticleData.h : **virial_ind**
