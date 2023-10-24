@@ -59,7 +59,7 @@
 
 
 ## "core" mods (Contact force, Lubrication Force, track virial components)
-* [ ] `hoomd/`
+* [x] `hoomd/`
 	* [x] Communicator.cc : **virial_ind**
 	* [x] Communicator.h : **virial_ind**
 	* [x] ForceCompute.cc : **virial_ind**
