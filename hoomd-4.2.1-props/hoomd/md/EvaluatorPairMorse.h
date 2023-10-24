@@ -130,7 +130,7 @@ class EvaluatorPairMorse
 
             //~ add contact force [procf2023]
             //~ if particles overlap (r < r0) apply contact force
-            if(r < r0)force_divr = scalar(100.0) * (scalar(1.0) - (r-r0)) * pow((scalar(0.50)*r0),3) / r;
+            if(r < r0)force_divr = Scalar(100.0) * (Scalar(1.0) - (r-r0)) * pow((Scalar(0.50)*r0),3) / r;
 
             else{
                 //~ calculate force as normal
