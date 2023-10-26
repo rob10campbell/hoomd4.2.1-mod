@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 // this include is necessary to get MPI included before anything else to support intel MPI
 #include "hoomd/ExecutionConfiguration.h"
 
@@ -81,7 +83,7 @@ class DummyIntegrator : public Integrator
     public:
     //! Constructs a named analyzer
     DummyIntegrator(std::shared_ptr<SystemDefinition> sysdef, const string& name)
-        : Integrator(sysdef, 0), m_name(name)
+        : Integrator(sysdef, 0, 0), m_name(name) //~ add dummy value 0 for SR [PROCF2023]
         {
         }
 

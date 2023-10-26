@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #include "IntegrationMethodTwoStep.h"
 #include "hoomd/Integrator.h"
 
@@ -39,7 +41,7 @@ class PYBIND11_EXPORT IntegratorTwoStep : public Integrator
     {
     public:
     /// Constructor
-    IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT);
+    IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add shear rate [PROCF2023]
 
     /// Destructor
     virtual ~IntegratorTwoStep();
@@ -49,6 +51,10 @@ class PYBIND11_EXPORT IntegratorTwoStep : public Integrator
 
     /// Change the timestep
     virtual void setDeltaT(Scalar deltaT);
+
+    ///~ Change the shear rate [PROCF2023]
+    virtual void setSR(Scalar shear_rate);
+    //~
 
     /// Get the list of integration methods
     std::vector<std::shared_ptr<IntegrationMethodTwoStep>>& getIntegrationMethods()

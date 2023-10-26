@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+########## Modified by PRO-CF ##~ [PROCF2023] ##########
+
 """Implement BoxResize."""
 
 import hoomd
@@ -103,16 +105,18 @@ class BoxResize(Updater):
             update.
     """
 
-    def __init__(self, trigger, box1, box2, variant, filter=All()):
+    def __init__(self, trigger, box1, box2, variant, filter=All(), SR=0.0): ##~ add default SR [PROCF2023]
         params = ParameterDict(box1=Box,
                                box2=Box,
                                variant=Variant,
-                               filter=ParticleFilter)
+                               filter=ParticleFilter,
+                               SR=float(SR)) ##~ add shear rate [PROCF2023]
         params['box1'] = box1
         params['box2'] = box2
         params['variant'] = variant
         params['trigger'] = trigger
         params['filter'] = filter
+        params['SR'] = SR ##~ add shear rate [PROCF2023]
         self._param_dict.update(params)
         super().__init__(trigger)
 
@@ -121,11 +125,11 @@ class BoxResize(Updater):
         if isinstance(self._simulation.device, hoomd.device.CPU):
             self._cpp_obj = _hoomd.BoxResizeUpdater(
                 self._simulation.state._cpp_sys_def, self.trigger,
-                self.box1._cpp_obj, self.box2._cpp_obj, self.variant, group)
+                self.box1._cpp_obj, self.box2._cpp_obj, self.variant, group, self.SR) ##~ add SR [PROCF2023]
         else:
             self._cpp_obj = _hoomd.BoxResizeUpdaterGPU(
                 self._simulation.state._cpp_sys_def, self.trigger,
-                self.box1._cpp_obj, self.box2._cpp_obj, self.variant, group)
+                self.box1._cpp_obj, self.box2._cpp_obj, self.variant, group, self.SR) ##~ add SR [PROCF2023]
 
     def get_box(self, timestep):
         """Get the box for a given timestep.

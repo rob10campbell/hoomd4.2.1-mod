@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+########## Modified by PRO-CF ##~ [PROCF2023] ##########
+
 """Implement MD Integrator."""
 
 import itertools
@@ -280,6 +282,7 @@ class Integrator(_DynamicIntegrator):
 
     def __init__(self,
                  dt,
+                 SR=0, ##~ add SR and default to 0 [PROCF2023]
                  integrate_rotational_dof=False,
                  forces=None,
                  constraints=None,
@@ -292,6 +295,7 @@ class Integrator(_DynamicIntegrator):
         self._param_dict.update(
             ParameterDict(
                 dt=float(dt),
+                SR=float(SR), ##~ add SR [PROCF2023]
                 integrate_rotational_dof=bool(integrate_rotational_dof),
                 half_step_hook=OnlyTypes(hoomd.md.HalfStepHook,
                                          allow_none=True)))
@@ -301,7 +305,7 @@ class Integrator(_DynamicIntegrator):
     def _attach_hook(self):
         # initialize the reflected c++ class
         self._cpp_obj = _md.IntegratorTwoStep(
-            self._simulation.state._cpp_sys_def, self.dt)
+            self._simulation.state._cpp_sys_def, self.dt, self.SR) ##~ add SR [PROCF2023]
         # Call attach from DynamicIntegrator which attaches forces,
         # constraint_forces, and methods, and calls super()._attach() itself.
         super()._attach_hook()

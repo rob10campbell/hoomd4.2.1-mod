@@ -24,8 +24,8 @@ namespace hoomd
 /** @param sysdef System to update
     @param deltaT Time step to use
 */
-Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT)
-    : Updater(sysdef, std::make_shared<PeriodicTrigger>(1)), m_deltaT(deltaT)
+Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate) //~ add shear rate [PROCF2023]
+    : Updater(sysdef, std::make_shared<PeriodicTrigger>(1)), m_deltaT(deltaT), m_SR(shear_rate) //~ add SR for shear rate [PROCF2023]
     {
 #ifdef ENABLE_MPI
     if (m_sysdef->isDomainDecomposed())
@@ -86,6 +86,24 @@ Scalar Integrator::getDeltaT()
     {
     return m_deltaT;
     }
+
+//~ [PROCF2023] 
+/** \return the shear rate SR
+ */
+void Integrator::setSR(Scalar shear_rate)
+    {
+    for (auto& force : m_forces)
+        {
+        force->setSR(shear_rate);
+        }
+    m_SR = shear_rate;
+    }
+
+Scalar Integrator::getSR()
+    {
+    return m_SR;
+    }
+//~
 
 /** Loops over all constraint forces in the Integrator and sums up the number of DOF removed
     @param query The group over which to compute the removed degrees of freedom
@@ -914,9 +932,10 @@ void export_Integrator(pybind11::module& m)
     pybind11::bind_vector<std::vector<std::shared_ptr<ForceCompute>>>(m, "ForceComputeList");
     pybind11::bind_vector<std::vector<std::shared_ptr<ForceConstraint>>>(m, "ForceConstraintList");
     pybind11::class_<Integrator, Updater, std::shared_ptr<Integrator>>(m, "Integrator")
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, Scalar>()) //~ add Scalar for SR [PROCF2023]
         .def("updateGroupDOF", &Integrator::updateGroupDOF)
         .def_property("dt", &Integrator::getDeltaT, &Integrator::setDeltaT)
+	.def_property("SR", &Integrator::getSR, &Integrator::setSR) //~ add SR [PROCF2023]
         .def_property_readonly("forces", &Integrator::getForces)
         .def_property_readonly("constraints", &Integrator::getConstraintForces)
         .def("computeLinearMomentum", &Integrator::computeLinearMomentum);

@@ -1319,8 +1319,9 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
                               MPI_UNSIGNED,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
+                              MPI_HOOMD_SCALAR, //~ add scalar for SR [PROCF2023]
                               MPI_HOOMD_SCALAR};
-    MPI_Aint offsets[14];
+    MPI_Aint offsets[15]; //~ increase 14->15 [PROCF2023]
 
     offsets[0] = offsetof(detail::pdata_element, pos);
     offsets[1] = offsetof(detail::pdata_element, vel);
@@ -1721,6 +1722,7 @@ void Communicator::migrateParticles()
         MPI_Waitall(2, &m_reqs.front(), &m_stats.front());
 
         // wrap received particles across a global boundary back into global box
+        //~ [PROCF2023] and use SR to update velocity for particles wrapped across y-boundaries
         const BoxDim shifted_box = getShiftedBox();
         for (unsigned int idx = 0; idx < n_recv_ptls; idx++)
             {
@@ -1728,7 +1730,10 @@ void Communicator::migrateParticles()
             Scalar4& postype = p.pos;
             int3& image = p.image;
 
+            int img0 = image.y; //~ get old y-velocity [PROCF2023]
             shifted_box.wrap(postype, image);
+            img0 -= image.y; //~ subtract new y-velocity [PROCF2023]
+            p.vel.x += (img0 * m_SR); //~ add shear rate [PROCF2023]
             }
 
         // remove particles that were sent and fill particle data with received particles
@@ -2332,6 +2337,12 @@ void Communicator::exchangeGhosts()
             ArrayHandle<int3> h_image(m_pdata->getImages(),
                                       access_location::host,
                                       access_mode::readwrite);
+            //~ scale velocity when particles cross the y-boundary [PROCF2023]
+            ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
+                                       access_location::host,
+                                       access_mode::readwrite);
+	    //~
+
 
             const BoxDim shifted_box = getShiftedBox();
 
@@ -2340,8 +2351,12 @@ void Communicator::exchangeGhosts()
                 Scalar4& pos = h_pos.data[idx];
 
                 // wrap particles received across a global boundary
+                //~ [PROCF2023] and update velocity of particles that cross the y-boundary
                 int3& img = h_image.data[idx];
+                int img0 = img.y; //~ get old y-velocity [PROCF2023]
                 shifted_box.wrap(pos, img);
+                img0 -= img.y; //~ subtract new y-velocity [PROCF2023]
+                h_vel.data[idx].x += (img0 * m_SR); //~ add shear rate [PROCF2023]
                 }
             }
 
@@ -2845,6 +2860,11 @@ void Communicator::beginUpdateGhosts(uint64_t timestep)
             ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
                                        access_location::host,
                                        access_mode::readwrite);
+	    //~ scale velocity when particles cross the y-boundary [PROCF2023]
+            ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
+                                       access_location::host,
+                                       access_mode::readwrite);
+	    //~
 
             const BoxDim shifted_box = getShiftedBox();
             for (unsigned int idx = start_idx; idx < start_idx + m_num_recv_ghosts[dir]; idx++)
@@ -2852,8 +2872,11 @@ void Communicator::beginUpdateGhosts(uint64_t timestep)
                 Scalar4& pos = h_pos.data[idx];
 
                 // wrap particles received across a global boundary
+                //~ [PROCF2023] and update velocity of particles crossing the y-boundary
                 int3 img = make_int3(0, 0, 0);
                 shifted_box.wrap(pos, img);
+                int img0 = img.y; //~ get new y-velocity [PROCF2023]
+                h_vel.data[idx].x -= (img0 * m_SR); //~ add shear rate (what was previously 2 steps is 1 here) [PROCF2023]
                 }
             }
 

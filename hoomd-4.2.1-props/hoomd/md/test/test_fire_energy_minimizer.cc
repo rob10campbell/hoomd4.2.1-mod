@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 // this include is necessary to get MPI included before anything else to support intel MPI
 #include "hoomd/ExecutionConfiguration.h"
 
@@ -39,7 +41,7 @@ HOOMD_UP_MAIN();
 
 //! Typedef'd FIREEnergyMinimizer class factory
 typedef std::function<std::shared_ptr<FIREEnergyMinimizer>(std::shared_ptr<SystemDefinition> sysdef,
-                                                           Scalar dT)>
+                                                           Scalar dT, Scalar shear_rate)> //~ add shear_rate [PROCF2023]
     fire_creator;
 typedef std::function<std::shared_ptr<TwoStepConstantVolume>(
     std::shared_ptr<SystemDefinition> sysdef,
@@ -48,9 +50,9 @@ typedef std::function<std::shared_ptr<TwoStepConstantVolume>(
 
 //! FIREEnergyMinimizer creator
 std::shared_ptr<FIREEnergyMinimizer>
-base_class_fire_creator(std::shared_ptr<SystemDefinition> sysdef, Scalar dt)
+base_class_fire_creator(std::shared_ptr<SystemDefinition> sysdef, Scalar dt, Scalar shear_rate) //~ add shear rate [PROCF2023]
     {
-    return std::shared_ptr<FIREEnergyMinimizer>(new FIREEnergyMinimizer(sysdef, dt));
+    return std::shared_ptr<FIREEnergyMinimizer>(new FIREEnergyMinimizer(sysdef, dt, shear_rate)); //~ add shear_rate [PROCF2023]
     }
 
 //! TwoStepNVE factory for the unit tests
@@ -296,7 +298,7 @@ void fire_smallsystem_test(fire_creator fire_creator1,
     fc->setShiftMode(PotentialPairLJ::shift);
 
     std::shared_ptr<TwoStepConstantVolume> nve = nve_creator1(sysdef, group_all);
-    std::shared_ptr<FIREEnergyMinimizer> fire = fire_creator1(sysdef, Scalar(0.05));
+    std::shared_ptr<FIREEnergyMinimizer> fire = fire_creator1(sysdef, Scalar(0.05), Scalar(0.0)); //~ add dummy value 0.0 for SR [PROCF2023]
     fire->getIntegrationMethods().push_back(nve);
     fire->setFtol(5.0);
     fire->getForces().push_back(fc);
@@ -373,7 +375,7 @@ void fire_twoparticle_test(fire_creator fire_creator1,
     fc->setShiftMode(PotentialPairLJ::shift);
 
     std::shared_ptr<TwoStepConstantVolume> nve = nve_creator1(sysdef, group_one);
-    std::shared_ptr<FIREEnergyMinimizer> fire = fire_creator1(sysdef, Scalar(0.05));
+    std::shared_ptr<FIREEnergyMinimizer> fire = fire_creator1(sysdef, Scalar(0.05), Scalar(0.0)); //~ add dummy value of 0.0 for SR [PROCF2023]
     fire->getIntegrationMethods().push_back(nve);
 
     fire->getForces().push_back(fc);

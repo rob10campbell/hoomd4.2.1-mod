@@ -8,36 +8,43 @@
 		* [ ] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity, wall amp freq and bounceback**
 		* [ ] TwoStepConstantVolume.h **wall amp and freq**
 
+## get particle diameter (why?)
+* [ ] `hoomd/`
+	* [ ] `md/`
+		* [ ] PotentialPairDPDThermo.h : **get diameter**
 
 ## adding shear rate for regular particles (does not include rigid bodies)
-* [ ] `hoomd/`
-	* [ ] BoxResizeUpdater.cc : **shear rate (SR)**
-	* [ ] BoxResizeUpdater.h : **shear rate (SR), y-boundary velocity**
-	* [ ] Communicator.cc : **shear rate (SR), y-boundary velocity**
-	* [ ] Communicator.h : **shear rate (SR)**
-	* [ ] ForceCompute.h : **shear rate (SR), virial_ind** 
-	* [ ] HOOMDMPI.h : **shear rate (SR)** (add uint4)
-	* [ ] Integrator.cc : **shear rate (SR)**
-	* [ ] Integrator.h : **shear rate (SR)**
-	* [ ] `md/`
-		* [ ] EvaluatorPairMorse.h : **shear rate (SR)**
-		* [ ] FIREEnergyMinimizer.cc : **shear rate (SR)**
-		* [ ] FIREEnergyMinimizer.h : **shear rate (SR)**
-		* [ ] integrate.py : **shear rate (SR), shear rate = 0 as default**
-		* [ ] IntegrationMethodTwoStep.cc : **shear rate (SR)**
-		* [ ] IntegrationMethodTwoStep.h : **shear rate (SR)**
-		* [ ] IntegratorTwoStep.cc : **shear rate (SR)**
-		* [ ] IntegratorTwoStep.h : **shear rate (SR)**
-		* [ ] NeighborListTree.cc : **modifications for using our boundaries with MPI**
-		* [ ] PotentialPairDPDThermo.h : **get box size/periodic, shear rate (SR)**
-		* [ ] TwoStepBD.cc **shear rate (SR)**
-		* [ ] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity**
-		* [ ] TwoStepLangevin.cc **shear rate (SR)**
-	* [ ] `mpcd/`
-		* [ ] Inegrator.cc : **shear rate (SR)**
-		* [ ] Integrator.h : **shear rate (SR)**
-	* [ ] `update/`
-		* [ ] box_resize.py : **shear rate (SR)**
+* [x] `hoomd/`
+	* [x] BoxResizeUpdater.cc : **shear rate (SR)**
+	* [x] BoxResizeUpdater.h : **shear rate (SR), y-boundary velocity**
+	* [x] Communicator.cc : **shear rate (SR), y-boundary velocity**
+	* [x] Communicator.h : **shear rate (SR)**
+	* [x] ForceCompute.h : **shear rate (SR), virial_ind** 
+	* [x] HOOMDMPI.h : **shear rate (SR)** (add uint4)
+	* [x] Integrator.cc : **shear rate (SR)**
+	* [x] Integrator.h : **shear rate (SR)**
+	* [x] `md/`
+		* [x] FIREEnergyMinimizer.cc : **shear rate (SR)**
+		* [x] FIREEnergyMinimizer.h : **shear rate (SR)**
+		* [x] integrate.py : **shear rate (SR), shear rate = 0 as default**
+		* [x] IntegrationMethodTwoStep.cc : **shear rate (SR)**
+		* [x] IntegrationMethodTwoStep.h : **shear rate (SR)**
+		* [x] IntegratorTwoStep.cc : **shear rate (SR)**
+		* [x] IntegratorTwoStep.h : **shear rate (SR)**
+		* [x] NeighborListTree.cc : **modifications for using our boundaries with MPI**
+		* [x] PotentialPairDPDThermo.h : **get box size/periodic, shear rate (SR)**
+  		* [x] `test/`
+    			* [x] test_fire_energy_minimizer.cc **shear rate (SR)** 
+		* [x] TwoStepBD.cc **shear rate (SR)**
+		* [x] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity**
+		* [x] TwoStepLangevin.cc **shear rate (SR)**
+	* [x] `mpcd/`
+		* [x] Integrator.cc : **shear rate (SR)**
+		* [x] Integrator.h : **shear rate (SR)**
+  	* [x] `test/`
+        	* [x] test_system.cc **shear rate (SR)** 
+	* [x] `update/`
+		* [x] box_resize.py : **shear rate (SR)**
 		
 ## tracking bond formation and breaking
 * [ ] `hoomd/`

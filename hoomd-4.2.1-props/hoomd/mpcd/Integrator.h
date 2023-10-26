@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 /*!
  * \file mpcd::Integrator.h
  * \brief Declares mpcd::Integrator, which performs two-step integration on
@@ -34,7 +36,7 @@ class PYBIND11_EXPORT Integrator : public hoomd::md::IntegratorTwoStep
     {
     public:
     //! Constructor
-    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT);
+    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add Scalar for shear rate [PROCF2023]
 
     //! Destructor
     virtual ~Integrator();

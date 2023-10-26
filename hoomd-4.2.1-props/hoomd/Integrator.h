@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
@@ -61,7 +63,7 @@ class PYBIND11_EXPORT Integrator : public Updater
     {
     public:
     /// Constructor
-    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT);
+    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add shear rate [PROCF2023]
 
     /// Destructor
     virtual ~Integrator();
@@ -98,6 +100,11 @@ class PYBIND11_EXPORT Integrator : public Updater
 
     /// Return the timestep
     Scalar getDeltaT();
+
+    //~ Return the shear rate [PROCF2023]
+    virtual void setSR(Scalar);
+    Scalar getSR();
+    //~
 
     /// Update the number of degrees of freedom for a group
     /** @param group Group to set the degrees of freedom for.
@@ -179,6 +186,10 @@ class PYBIND11_EXPORT Integrator : public Updater
     protected:
     /// The step size
     Scalar m_deltaT;
+
+    ///~ the flow velocity vinf AKA SR from the shear rate [PROCF2023]
+    Scalar m_SR;
+    ///~
 
     /// List of all the force computes
     std::vector<std::shared_ptr<ForceCompute>> m_forces;
