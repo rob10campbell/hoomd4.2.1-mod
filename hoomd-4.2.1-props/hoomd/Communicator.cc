@@ -1304,9 +1304,10 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
     initializeNeighborArrays();
 
     /* create a type for pdata_element */
-    const int nitems = 14;
-    int blocklengths[14] = {4, 4, 3, 1, 1, 3, 1, 4, 4, 3, 1, 4, 4, 6};
-    MPI_Datatype types[14] = {MPI_HOOMD_SCALAR,
+    //~ increase 14->15 in this block [PROCF2023]
+    const int nitems = 15;
+    int blocklengths[15] = {4, 4, 3, 1, 1, 3, 1, 4, 4, 3, 1, 4, 4, 6};
+    MPI_Datatype types[15] = {MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
@@ -1321,7 +1322,8 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR, //~ add scalar for SR [PROCF2023]
                               MPI_HOOMD_SCALAR};
-    MPI_Aint offsets[15]; //~ increase 14->15 [PROCF2023]
+    MPI_Aint offsets[15]; 
+   //~
 
     offsets[0] = offsetof(detail::pdata_element, pos);
     offsets[1] = offsetof(detail::pdata_element, vel);
