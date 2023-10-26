@@ -8,6 +8,7 @@
 
 #include "PotentialPair.h"
 #include "hoomd/Variant.h"
+#include "Lifetime.h" //~ add Lifetime.h [PROCF2023]
 
 /*! \file PotentialPairDPDThermo.h
     \brief Defines the template class for a dpd thermostat and LJ pair potential
@@ -61,6 +62,24 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     //! Get the temperature
     virtual std::shared_ptr<Variant> getT();
 
+    //! Get the temperature
+    virtual std::shared_ptr<Variant> getT();
+
+    //~! Check the bond_calc flag [PROCF2023]
+    void setBondCalcEnabled(bool bond_calc)
+	{
+	m_bond_calc = bond_calc;
+	}
+    bool getBondCalcEnabled()
+	{
+	return m_bond_calc;
+	}
+    //~
+
+    //~ add Lifetime [PROCF2023] 
+    std::shared_ptr<Lifetime> LTIME;
+    //~
+
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
     virtual CommFlags getRequestedCommFlags(uint64_t timestep);
@@ -68,6 +87,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 
     protected:
     std::shared_ptr<Variant> m_T; //!< Temperature for the DPD thermostat
+
+    bool m_bond_calc = true;      //~!< bond_calc flag (default true) [PROCF2023]
 
     //! Actually compute the forces (overwrites PotentialPair::computeForces())
     virtual void computeForces(uint64_t timestep);
@@ -81,6 +102,12 @@ PotentialPairDPDThermo<evaluator>::PotentialPairDPDThermo(std::shared_ptr<System
                                                           std::shared_ptr<NeighborList> nlist)
     : PotentialPair<evaluator>(sysdef, nlist)
     {
+    //~ add bond_calc flag [PROCF2023]
+    if(m_bond_calc)
+	{
+        LTIME = std::shared_ptr<Lifetime>(new Lifetime(sysdef));
+	}
+    //~
     }
 
 /*! \param T the temperature the system is thermostated on this time step.
@@ -130,6 +157,11 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     ArrayHandle<unsigned int> h_tag(this->m_pdata->getTags(),
                                     access_location::host,
                                     access_mode::read);
+     //~ access particle diameter [PROCF2023] 
+    ArrayHandle<Scalar> h_diameter(this->m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
+    //~
 
     // force arrays
     ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::overwrite);
@@ -240,6 +272,35 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             eval.setRDotV(rdotv);
             eval.setT(currentTemp);
 
+	    //~ add bond_calc [PROCF2023]
+	    if(m_bond_calc)
+		{
+           	if(typei && typej)
+               	    {
+   	       	    Scalar rsq_root = fast::sqrt(rsq) - Scalar(0.5)*(h_diameter.data[i]+h_diameter.data[j]);
+   	            if(rsq_root < Scalar(0.10))
+   	                {
+   	                unsigned int var1 = tagi - this->LTIME->num_solvent;
+   	                unsigned int var2 = tagj - this->LTIME->num_solvent;
+   	                if(var1 > var2)
+   	                    {
+   	                    var1 = tagj - this->LTIME->num_solvent;
+   	                    var2 = tagi - this->LTIME->num_solvent;
+   	                    }
+   	                unsigned int bond_index = (this->LTIME->num_colloid * var1) - (var1 * (var1+1) / 2) + var2 - var1 - 1;
+   	                if(rsq_root < Scalar(0.08))
+			    {
+   	                    this->LTIME->Bond_check[bond_index] = 2;
+			    }
+   	                else
+			    {
+   	                    this->LTIME->Bond_check[bond_index] = 1;
+			    }
+   	                }
+		    }
+		}
+	    //~
+
             bool evaluated
                 = eval.evalForceEnergyThermo(force_divr, force_divr_cons, 
                   //~ add virial_ind terms [PROCF2023]
@@ -311,6 +372,18 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             h_virial_ind.data[l * this->m_virial_ind_pitch + mem_idx] += viriali_ind[l];
 	//~
         }
+
+    //~ add bond_calc [PROCF2023] 
+    if(m_bond_calc)
+	{
+    	this->LTIME->updatebondtime(timestep);
+    	if(timestep%10000 == 0)
+	    {
+            this->LTIME->writeBondtime();
+	    }
+	}
+    //~
+
     }
 
 #ifdef ENABLE_MPI
@@ -321,10 +394,14 @@ CommFlags PotentialPairDPDThermo<evaluator>::getRequestedCommFlags(uint64_t time
     {
     CommFlags flags = CommFlags(0);
 
-    // DPD needs ghost particle velocity
+    
+// DPD needs ghost particle velocity
     flags[comm_flag::velocity] = 1;
     // DPD needs tags for RNG
     flags[comm_flag::tag] = 1;
+    //~ add particle diameter [PROCF2023]
+    flags[comm_flag::diameter]=1; 
+    //~
 
     flags |= PotentialPair<evaluator>::getRequestedCommFlags(timestep);
 
@@ -344,6 +421,8 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
         .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def_property("bond_calc",
+		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled) //~ add bond_calc [PROCF2023]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
     }
 

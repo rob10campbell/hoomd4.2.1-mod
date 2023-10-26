@@ -132,6 +132,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 HarmonicImproperForceCompute.h
                 IntegrationMethodTwoStep.h
                 IntegratorTwoStep.h
+                Lifetime.h #[PROCF2023]
                 ManifoldZCylinder.h
                 ManifoldDiamond.h
                 ManifoldEllipsoid.h
