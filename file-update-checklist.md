@@ -29,7 +29,8 @@
 		* [x] NeighborListTree.cc : **modifications for using our boundaries with MPI**
 		* [x] PotentialPairDPDThermo.h : **get box size/periodic, shear rate (SR)**
   		* [x] `test/`
-    			* [x] test_fire_energy_minimizer.cc **shear rate (SR)** 
+			* [x] test_communication.cc **shear rate (SR)**
+			* [x] test_fire_energy_minimizer.cc **shear rate (SR)** 
 		* [x] TwoStepBD.cc **shear rate (SR)**
 		* [x] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity**
 		* [x] TwoStepLangevin.cc **shear rate (SR)**
@@ -37,7 +38,7 @@
 		* [x] Integrator.cc : **shear rate (SR)**
 		* [x] Integrator.h : **shear rate (SR)**
   	* [x] `test/`
-        	* [x] test_system.cc **shear rate (SR)** 
+		* [x] test_system.cc **shear rate (SR)** 
 	* [x] `update/`
 		* [x] box_resize.py : **shear rate (SR)**
 		
