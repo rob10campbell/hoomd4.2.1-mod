@@ -9,12 +9,13 @@ For any questions, or to help with the upgrade, contact Rob.
 To-Do:
 - [x] copy in core mods 
 - [x] test compile
-- [ ] resolve segmentation fault in DPDMorse or Integrator
+- [x] resolve segmentation fault in DPDMorse or Integrator
 - [ ] update sim template scripts
-- [ ] test initialization, equilibrium, and gelation with DPDMorse
+- [x] test initialization, equilibrium, and gelation with DPDMorse
 - [ ] test initialization, equilibrium, and gelation with BD/Langevin
-- [ ] copy in Lifetime.h
-- [ ] test compile
+- [x] copy in Lifetime.h
+- [x] test compile
+- [ ] resolve Lifetime compilation error re: "getMPICommunicator()"
 - [ ] test gelation sim with bond lifetime tracking
 - [ ] add bond tracking to BD/Langevin sims?
 - [ ] copy in shear mods
