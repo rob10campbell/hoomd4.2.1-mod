@@ -1942,7 +1942,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _cpp_class_name = "PotentialPairDPDThermoDPDMorse"
     _accepted_modes = ("none",)
 
-    def __init__(self, nlist, kT, default_r_cut=None):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
@@ -1964,6 +1964,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         param_dict = ParameterDict(kT=hoomd.variant.Variant)
         param_dict["kT"] = kT
         self._param_dict.update(param_dict)
+        self._param_dict.update(
+            ParameterDict(bond_calc=bool(bond_calc)))
     def _add(self, simulation):
         """Add the operation to a simulation.
         

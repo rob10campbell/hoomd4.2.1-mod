@@ -8,11 +8,6 @@
 		* [ ] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity, wall amp freq and bounceback**
 		* [ ] TwoStepConstantVolume.h **wall amp and freq**
 
-## get particle diameter (why?)
-* [ ] `hoomd/`
-	* [ ] `md/`
-		* [ ] PotentialPairDPDThermo.h : **get diameter**
-
 ## adding shear rate for regular particles (does not include rigid bodies)
 * [x] `hoomd/`
 	* [x] BoxResizeUpdater.cc : **shear rate (SR)**
@@ -47,13 +42,13 @@
 		* [x] box_resize.py : **shear rate (SR)**
 		
 ## tracking bond formation and breaking
-* [ ] `hoomd/`
-	* [ ] `md/`
-		* [ ] CMakeLists.txt : **set new file (Lifetime.h)**
-		* [ ] **[ADD NEW FILE]** Lifetime.h		
-		* [ ] `pair`
-			* [ ] pair.py : **call DPDMorse**
-		* [ ] PotentialPairDPDThermo.h : **Lifetime, bond_calc, get particle diameter**
+* [x] `hoomd/`
+	* [x] `md/`
+		* [x] CMakeLists.txt : **set new file (Lifetime.h)**
+		* [x] **[ADD NEW FILE]** Lifetime.h		
+		* [x] `pair`
+			* [x] pair.py : **add bond_calc flag**
+		* [x] PotentialPairDPDThermo.h : **Lifetime, bond_calc, get particle diameter (for bond calc)**
 
 ## Asakura-Oosawa Potential (might be incorrect calc?)
 * [ ] `hoomd/`
