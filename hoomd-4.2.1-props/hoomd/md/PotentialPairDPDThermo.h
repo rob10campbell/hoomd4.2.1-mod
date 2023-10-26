@@ -130,11 +130,6 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     ArrayHandle<unsigned int> h_tag(this->m_pdata->getTags(),
                                     access_location::host,
                                     access_mode::read);
-    //~ access particle diameter [PROCF2023] 
-    ArrayHandle<Scalar> h_diameter(this->m_pdata->getDiameters(),
-                                   access_location::host,
-                                   access_mode::read);
-    //~
 
     // force arrays
     ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::overwrite);
@@ -344,9 +339,6 @@ CommFlags PotentialPairDPDThermo<evaluator>::getRequestedCommFlags(uint64_t time
     flags[comm_flag::velocity] = 1;
     // DPD needs tags for RNG
     flags[comm_flag::tag] = 1;
-    //~ add particle diameter [PROCF2023]
-    flags[comm_flag::diameter]=1; 
-    //~
 
     flags |= PotentialPair<evaluator>::getRequestedCommFlags(timestep);
 
