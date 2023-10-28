@@ -15,9 +15,16 @@ from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 import numpy as np
 from hoomd.data.typeconverter import OnlyFrom, nonnegative_real
+from abc import ABCMeta, abstractproperty ##~ add abstract property for bond_calc [PROCF2023]
+
+##~ add abstract property for bond_calc [PROCF2023] 
+# add custom metaclass that inherits from both ABCMeta and force.Force
+class PairMeta(ABCMeta, type(force.Force)):
+    pass
+##~
 
 
-class Pair(force.Force):
+class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_calc [PROCF2023]
     r"""Base class pair force.
 
     `Pair` is the base class for all pair forces.
@@ -66,7 +73,7 @@ class Pair(force.Force):
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [PROCF2023]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -88,6 +95,13 @@ class Pair(force.Force):
                           nlist=hoomd.md.nlist.NeighborList))
         self.mode = mode
         self.nlist = nlist
+        self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [PROCF2023]
+
+    ##~ add a property to access _bond_calc instance variable
+    @property
+    def bond_calc(self):
+        return self._bond_calc
+    ##~
 
     def compute_energy(self, tags1, tags2):
         r"""Compute the energy between two sets of particles.
@@ -142,8 +156,16 @@ class Pair(force.Force):
             cls = getattr(self._ext_module, self._cpp_class_name + "GPU")
             self.nlist._cpp_obj.setStorageMode(
                 _md.NeighborList.storageMode.full)
-        self._cpp_obj = cls(self._simulation.state._cpp_sys_def,
-                            self.nlist._cpp_obj)
+
+        ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [PROCF2023]
+        if "PotentialPairDPDThermo" in self._cpp_class_name:
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
+        else: 
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
+        ##~ 
+        #self._cpp_obj = cls(self._simulation.state._cpp_sys_def,
+        #                    self.nlist._cpp_obj) ##~ comment out [PROCF2023]
+
 
     def _detach_hook(self):
         self.nlist._detach()
@@ -667,7 +689,7 @@ class Morse(Pair):
 
     _cpp_class_name = "PotentialPairMorse"
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'): 
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter(
             'params', 'particle_types',
@@ -1947,6 +1969,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                          default_r_cut=default_r_cut,
                          default_r_on=0,
                          mode='none')
+        self._bond_calc = bond_calc
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(A0=float,
@@ -1964,8 +1987,9 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         param_dict = ParameterDict(kT=hoomd.variant.Variant)
         param_dict["kT"] = kT
         self._param_dict.update(param_dict)
-        self._param_dict.update(
-            ParameterDict(bond_calc=bool(bond_calc)))
+        #self._param_dict.update(
+        #    ParameterDict(bond_calc=bool(bond_calc)))
+
     def _add(self, simulation):
         """Add the operation to a simulation.
         
@@ -1975,5 +1999,19 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
             simulation._warn_if_seed_unset()
 
         super()._add(simulation)
+
+    @property
+    def bond_calc(self):
+        """
+        Getter method for the bond_calc property.
+        """
+        return self._bond_calc
+
+    @bond_calc.setter
+    def bond_calc(self, value):
+        """
+        Setter method for the bond_calc property.
+        """
+        self._bond_calc = value
 ##~
 

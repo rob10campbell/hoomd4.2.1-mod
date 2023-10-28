@@ -48,7 +48,7 @@
 		* [x] CMakeLists.txt : **set new file (Lifetime.h)**
 		* [x] **[ADD NEW FILE]** Lifetime.h		
 		* [x] `pair`
-			* [x] pair.py : **add bond_calc flag**
+			* [x] pair.py : **add bond_calc flag to Pair and DPDMorse**
 		* [x] PotentialPairDPDThermo.h : **Lifetime, bond_calc, get particle diameter (for bond calc)**
 
 ## Asakura-Oosawa Potential (might be incorrect calc?)

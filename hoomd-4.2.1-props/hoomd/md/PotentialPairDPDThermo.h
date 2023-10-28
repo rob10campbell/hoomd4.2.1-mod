@@ -52,7 +52,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 
     //! Construct the pair potential
     PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
-                           std::shared_ptr<NeighborList> nlist);
+                           std::shared_ptr<NeighborList> nlist,
+                           bool bond_calc); //~ add bond_calc [PROCF2023]
     //! Destructor
     virtual ~PotentialPairDPDThermo() {};
 
@@ -85,7 +86,7 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     protected:
     std::shared_ptr<Variant> m_T; //!< Temperature for the DPD thermostat
 
-    bool m_bond_calc = true;      //~!< bond_calc flag (default true) [PROCF2023]
+    bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [PROCF2023]
 
     //! Actually compute the forces (overwrites PotentialPair::computeForces())
     virtual void computeForces(uint64_t timestep);
@@ -96,8 +97,9 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 */
 template<class evaluator>
 PotentialPairDPDThermo<evaluator>::PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
-                                                          std::shared_ptr<NeighborList> nlist)
-    : PotentialPair<evaluator>(sysdef, nlist)
+                                                          std::shared_ptr<NeighborList> nlist,
+                                                          bool bond_calc) //~ add bond_calc [PROCF2023]
+    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc) //~ add bond_calc [PROCF2023]
     {
     //~ add bond_calc flag [PROCF2023]
     if(m_bond_calc)
@@ -431,7 +433,7 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
     pybind11::class_<PotentialPairDPDThermo<T>,
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>())
         .def_property("bond_calc",  
 		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [PROCF2023]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
