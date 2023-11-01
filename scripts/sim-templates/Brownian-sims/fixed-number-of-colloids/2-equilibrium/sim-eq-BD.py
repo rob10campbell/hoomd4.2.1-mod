@@ -32,10 +32,6 @@ rho = 3 # number density (per unit volume)
 KT = 0.1 # system temperature
 D0 = 0.0 * KT # attraction strength (gels at >=4kT)
 
-
-eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
-gamma = 6.0*numpy.pi*eta0*R_C1) # BD stock friction coefficient
-
 N_time_steps = 100000 # number  of  time steps
 dt_Integration = 0.001 # dt! (DPD timestep)
 period = 10000 # recording interval
@@ -45,6 +41,10 @@ N_C1 = 1000 # number of 1st type of colloidal particles
 R_C1 = 1 # 1st type colloid particle radius
 V_C1 = (4./3.) * math.pi * R_C1 ** 3 # 1st type colloid particle volume (1 particle)
 m_C1 = V_C1 * rho # 1st type colloid particle mass
+
+# Brownian parameters
+eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
+gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
 
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter (r_cut = # * r_c) 
