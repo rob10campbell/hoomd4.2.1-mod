@@ -33,7 +33,7 @@ KT = 0.1 # system temperature
 D0 = 0.0 * KT # attraction strength (gels at >=4kT)
 
 N_time_steps = 100000 # number  of  time steps
-dt_Integration = 0.001 # dt! (DPD timestep)
+dt_Integration = 0.001 # dt! (BD timestep, may need to be smaller than DPD)
 period = 10000 # recording interval
 
 # Simulation box size (fixed by L_X)
@@ -56,7 +56,7 @@ gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter (r_cut = # * r_c) 
 r0 = 0.0 # minimum inter-particle distance
-kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa 
+kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa 
 f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
 
 # Total number of particles in the simulation
