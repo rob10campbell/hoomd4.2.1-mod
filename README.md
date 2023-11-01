@@ -10,7 +10,7 @@ To-Do:
 - [x] copy in core mods 
 - [x] test compile
 - [x] resolve segmentation fault in DPDMorse or Integrator
-- [ ] update sim template scripts
+- [x] update sim template scripts
 - [x] test initialization, equilibrium, and gelation with DPDMorse
 - [x] test initialization, equilibrium, and gelation with BD/Langevin
 - [x] copy in Lifetime.h
