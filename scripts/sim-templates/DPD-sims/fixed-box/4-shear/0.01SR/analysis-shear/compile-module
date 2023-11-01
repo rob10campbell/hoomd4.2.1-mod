@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH -J f90cmpl
+#SBATCH -n 1 -N 1
+#SBATCH -t 1:00:00
+#SBATCH -o cmpl-%A.out
+#SBATCH -e cmpl-%A.err
+
+# compile the fortran module for use analyzing simulation data
+module load python/3.8.1
+f2py -c module_DPDshear-analysis.f90 -m module
+
+# NOTE: error file will warn that you are using a deprecated version of NumPy API
+#       this is a known issue for f2py and can be ignored
