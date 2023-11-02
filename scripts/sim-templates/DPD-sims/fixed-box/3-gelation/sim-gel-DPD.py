@@ -59,7 +59,9 @@ V_Colloids = phi * V_total # total volume of type 1 colloids
 N_C1 = round(V_Colloids / V_C1) # number of 1st type of colloid particles (INT)
 
 # Particle interaction parameters
-r_c = 1.0 # cut-off radius parameter (r_cut = # * r_c) 
+r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
+if r_c < (3/kappa):
+  print('WARNING: r_c is less than range of attraction. Increase r_c')
 r0 = 0.0 # minimum inter-particle distance
 kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa
 f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
