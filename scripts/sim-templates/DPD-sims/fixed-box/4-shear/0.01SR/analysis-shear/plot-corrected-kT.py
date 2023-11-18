@@ -10,19 +10,23 @@ kT = 0.1
 
 f = np.genfromtxt('T_corrected.txt')
 
-# number of timesteps: frame*period
-period = 10000
-timesteps = f[:,0]*period
 
-# DPD time: frame*t1
-dt_Integration = 0.001
-t1 = period * dt_Integration
-DPDtimes = f[:,0]*t1
+# NOTE: for shear analysis, we want time in terms of strain
+# 	i.e. the trigger is "nframe_strain" not "period"
+SR = 0.1 # from simulation
+N_strains = 10 # from simulation
+theta = 1.0 # from simulation
+dt_Integration = 0.001 # from simulation
+delta_T_shearing = round(theta/SR/dt_Integration)
+nframe_strain = delta_T_shearing/10 # 20 frames per for each theta strain(s)
+t1 = theta / nframe_strain * N_strains # timestep conversion to strains
+strains = f[:,0]*t1
 
-plt.plot(f[:,0],f[0:,4])
+
+plt.plot(strains,f[0:,4])
 plt.axhline(y=kT, color="r")
 
-plt.xlabel('DPD times')
+plt.xlabel('Strains')
 plt.ylabel('Corrected kT')
 
 plt.yscale('log')
