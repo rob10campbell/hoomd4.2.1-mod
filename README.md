@@ -29,7 +29,7 @@ To-Do:
 - [ ] remove AO from README or add AO mods
 - [ ] update sim analysis scripts
 - [ ] test sim analysis
-- [ ] update colloids-setup repo to use hoomd4.2 (!)
+- [x] update colloids-setup repo to use hoomd4.2 (!)
 
 -----------------
 
