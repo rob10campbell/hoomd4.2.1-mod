@@ -23,12 +23,12 @@ module load gcc/11.1.0
 module load openmpi/4.1.2-gcc11.1
 
 # install prereqs (pybind11, cereal, Eigen)
-yes | python3 hoomd4.2.1-mod/hoomd-4.2.1-props/install-prereq-headers.py
+yes | python3 hoomd4.2.1-mod/hoomd-4.2.1-procf/install-prereq-headers.py
 
 # compile and install hoomd-blue
 # NOTE: make sure ENABLE_MPI=on
 # NOTE: HPMC, METAL, and TESTING are unused and turned off to speed up install 
-cmake -B build/hoomd -S hoomd4.2.1-mod/hoomd-4.2.1-props -DENABLE_MPI=on -DBUILD_HPMC=off -DBUILD_METAL=off -DBUILD_TESTING=off
+cmake -B build/hoomd -S hoomd4.2.1-mod/hoomd-4.2.1-procf -DENABLE_MPI=on -DBUILD_HPMC=off -DBUILD_METAL=off -DBUILD_TESTING=off
 cmake --build build/hoomd
 cmake --install build/hoomd
 
