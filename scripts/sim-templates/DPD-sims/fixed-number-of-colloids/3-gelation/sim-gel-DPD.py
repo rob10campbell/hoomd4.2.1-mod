@@ -144,6 +144,9 @@ else:
   gsd_writer = hoomd.write.GSD(trigger=period, filename="Gelation-DPD.gsd", 
     filter=all_, mode='wb', dynamic=['property','momentum','attribute'])
 
+  # save diameters
+  gsd_writer.write_diameter = True
+
   # don't need to thermalize the system after equilibrium because
   # we are tracking velocity during gelation
   #sim.state.thermalize_particle_momenta(filter=all_, kT=KT)

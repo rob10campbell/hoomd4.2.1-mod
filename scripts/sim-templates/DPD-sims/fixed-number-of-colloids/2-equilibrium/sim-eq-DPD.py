@@ -141,6 +141,9 @@ else:
   gsd_writer = hoomd.write.GSD(trigger=period, filename="Equilibrium-DPD.gsd", 
     filter=all_, mode='wb', dynamic=['property','momentum','attribute'])
 
+  # save diameters
+  gsd_writer.write_diameter = True
+
   # set buffer size (how often data is saved to the file, large buffers can increase performace, but can lead to lost data if sim is cancelled or times-out)
   gsd_writer.maximum_write_buffer_size = period
 

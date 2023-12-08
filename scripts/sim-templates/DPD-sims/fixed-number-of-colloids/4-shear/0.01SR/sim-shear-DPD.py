@@ -186,6 +186,7 @@ else:
   # save outputs
   gsd_writer = hoomd.write.GSD(trigger=nframe_strain, filename='Shearing'+str(SR)+'-DPD.gsd', 
   filter=all_, mode='wb', dynamic=['property','momentum','attribute']) 
+  gsd_writer.write_diameter = True
   sim.operations.writers.append(gsd_writer)
   gsd_writer.logger = logger
 
