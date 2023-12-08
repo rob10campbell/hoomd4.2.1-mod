@@ -433,7 +433,7 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
     pybind11::class_<PotentialPairDPDThermo<T>,
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>()) //~ add bool for bond_calc [PROCF2023]
         .def_property("bond_calc",  
 		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [PROCF2023]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
