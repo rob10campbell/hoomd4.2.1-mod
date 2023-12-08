@@ -60,7 +60,7 @@ kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance 
 f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
 
 # Total number of particles in the simulation
-N_total = int(N_Solvents + N_C1)
+N_total = int(N_C1)
 
 
 ######### SIMULATION
