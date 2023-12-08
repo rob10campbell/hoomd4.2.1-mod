@@ -128,10 +128,8 @@ else:
   # save diameters
   gsd_writer.write_diameter = True
 
-  # don't need to thermalize the system after equilibrium because
-  # we are tracking velocity during gelation
-  #sim.state.thermalize_particle_momenta(filter=all_, kT=KT)
-  gsd_writer.maximum_write_buffer_size = period
+  # [optional] set buffer size (how often data is saved to the file, large buffers can increase performace, but can lead to lost data if sim is cancelled or times-out)
+  #gsd_writer.maximum_write_buffer_size = 1e8 # max 100 million bytes
 
   # save outputs
   sim.operations.writers.append(gsd_writer)
