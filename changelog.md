@@ -1,6 +1,9 @@
 # Changelog with full list of changed files
 
+
 If the box next to a filename is NOT checked, that means the modifications have not been added
+
+File lists are formatted as: `folder/`; file
 
 * [Core Mods](/changelog.md#core-modifications)
 * [Shear Rate](/changelog.md#shear-rate)
