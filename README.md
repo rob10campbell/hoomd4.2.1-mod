@@ -1,10 +1,24 @@
 # hoomd4.2.1-mod
 
-## NOTICE: THIS REPO IS NOT READY FOR USE
+This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the PRO-CF group. It also includes: 
+* [Installation instructions](/README.md#installation)
+* [Background Reading](/background-reading) about how these simulations work
+* [Example scripts](/scripts) for installing and running simulations on an HPC research cluster
+* [Citation information](/citation-guide.md) for papers published using this simulation platform
+* A [Changelog](/README.md#changelog) summarizing what was changed
+* [A full list of the files that were changed](/README.md#Full-list-of-changed-files)
 
-**This repo is in the process of having modifications added to it and is not ready for use**
+Additional branches are available, tho they may be incomplete:
+- branch "polydispersity": modifications for non-uniform particle sizes
+- branch "hoomd4.2_w_wall": modifications for flat and sinusoidal walls
+- branch "no_shear": clean version without shear or bond-tracking
 
-For any questions, or to help with the upgrade, contact Rob.
+[Last Updated: December 2023]
+
+Contact: Rob Campbell (campbell.r@northeastern.edu)
+
+-----------------
+For any questions, or to help with modifications, contact Rob.
 
 To-Do:
 - [x] copy in core mods 
@@ -21,7 +35,7 @@ To-Do:
 - [x] copy in shear mods
 - [x] test compile
 - [x] test shear sim with DPDMorse
-- [x] shear does not work in BD/Langevin (thermostat issues)
+- [ ] shear does not work in BD/Langevin (thermostat issues)
 - [ ] copy in wall mods
 - [ ] test compile
 - [ ] test DPD initialization, equilibrium, and gelation w/ and w/out walls
@@ -30,20 +44,7 @@ To-Do:
 - [ ] update sim analysis scripts
 - [ ] test sim analysis
 - [x] update colloids-setup repo to use hoomd4.2 (!)
-
 -----------------
-
-This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the PRO-CF group. It also includes: 
-* [Installation instructions](/README.md#installation)
-* [Background Reading](/background-reading) about how these simulations work
-* [Example scripts](/scripts) for installing and running simulations on an HPC research cluster
-* [Citation information](/citation-guide.md) for papers published using this simulation platform
-* A [Changelog](/README.md#changelog) summarizing what was changed
-* [A full list of the files that were changed](/README.md#Full-list-of-changed-files)
-
-[Last Updated: September 2023]
-
-Contact: Rob Campbell (campbell.r@northeastern.edu)
 
 ## Installation
 
@@ -76,7 +77,7 @@ Core Modifications: Contact Force, Lubrication Force, track virial components (N
 - **DPDMorse**: Add a new method for evaluating the pair-forces between two particles called "DPDMorse." This method calculates the correct combination of forces for each pair of particles as described in the [background reading on DPD for Colloids](/background-reading/2-DPD-for-Colloids-18pg.pdf); i.e., the standard DPD forces plus the Morse potential, hydrodynamics (the squeezing force AKA lubrication force), and a contact force for resolving semi-hard colloid-colloid particle overlaps. (filename: `EvaluatorPairDPDThermoDPDMorse.h`)
 - **virial_ind**: Add the ability to track the "independent virials" (AKA the virial_ind) for each particle pair. This is the contribution of each of the individual forces in the virial (conservative, dissipative, random, Morse, lubrication, and contact) in addition to the total virial component of the pressure tensor
 
-Track Bond Formation and Breaking (Nabi and Deepak)
+Track Bond Formation and Breaking (Nabi, Deepak, and Rob)
 - **Lifetime**: Add the ability to track the formation and breaking of any bond between two particles, and calculate and record the bond lifetime (filename: `Lifetime.h`)
 - **bond_calc**: Create a flag to turn the bond-lifetime calculation On or Off (True/False) *NOTE: lifetime calculation is slow and was not able to be sped up with MPI*
 
