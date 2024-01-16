@@ -31,6 +31,7 @@ phi =  0.2 # volume fraction
 rho = 3.0 # number density (per unit volume)
 KT = 0.1; # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
+kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa
 
 eta0 = 0.3 # background viscosity
 gamma = 4.5 # DPD controlling parameter for viscous resistance (dissipative force)
@@ -63,7 +64,6 @@ r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c)
 if r_c < (3/kappa):
   print('WARNING: r_c is less than range of attraction. Increase r_c')
 r0 = 0.0 # minimum inter-particle distance
-kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa
 f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
 r_cut_sc = (r_c**3 + R_C1**3)**(1/3) # modified center-center cut-off radius for solvent-colloid interactions
 bond_calc = False # do you want to track what bonds form and break? True=yes, False=no

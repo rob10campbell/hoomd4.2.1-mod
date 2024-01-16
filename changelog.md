@@ -14,6 +14,7 @@ File lists are formatted as: `folder/`; file
 ## Core Modifications
 Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
 - **DPDMorse**: Add a new method for evaluating the pair-forces between two particles called "DPDMorse." This method calculates the correct combination of forces for each pair of particles as described in the [background reading on DPD for Colloids](/background-reading/2-DPD-for-Colloids-18pg.pdf); i.e., the standard DPD forces plus the Morse potential, hydrodynamics (the squeezing force AKA lubrication force), and a contact force for resolving semi-hard colloid-colloid particle overlaps. (filename: `EvaluatorPairDPDThermoDPDMorse.h`)
+- **contact force**: Add a contact force to Brownian simulations for resolving semi-hard colloid-colloid particle overlaps
 - **virial_ind**: Add the ability to track the "independent virials" (AKA the virial_ind) for each particle pair. This is the contribution of each of the individual forces in the virial (conservative, dissipative, random, Morse, lubrication, and contact) in addition to the total virial component of the pressure tensor
 
 * [x] `hoomd/`

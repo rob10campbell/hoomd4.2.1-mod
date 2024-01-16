@@ -31,6 +31,7 @@ phi =  0.2 # volume fraction
 rho = 3.0 # number density (per unit volume)
 KT = 0.1; # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
+kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa
 
 N_time_steps = 1500000 # number of time steps
 dt_Integration = 0.001 # dt! (BD timestep, may need to be smaller than DPD)
@@ -58,7 +59,6 @@ r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c)
 if r_c < (3/kappa):
   print('WARNING: r_c is less than range of attraction. Increase r_c')
 r0 = 0.0 # minimum inter-particle distance
-kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa
 f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
 #bond_calc = False # do you want to track what bonds form and break? True=yes, False=no
 
