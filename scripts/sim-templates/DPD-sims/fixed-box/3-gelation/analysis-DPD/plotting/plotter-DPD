@@ -1,14 +1,16 @@
 #!/bin/bash
 
 #SBATCH -J plot
-#SBATCH -n 1 -N 1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
 #SBATCH -t 1:00:00
 #SBATCH -o %A-plt.out
 #SBATCH -e %A-plt.err
 
 module purge
 module load python/3.8.1
-source /work/props/Rob/software/hoomd4.2.1-mod/hoomdmod4.2.1-venv/bin/activate 
+source # path to software, for example: /work/props/Rob/software/hoomd4.2.1-mod/hoomdmod4.2.1-venv/bin/activate 
 
 # run the plot file
 python plot-kT-DPD.py
