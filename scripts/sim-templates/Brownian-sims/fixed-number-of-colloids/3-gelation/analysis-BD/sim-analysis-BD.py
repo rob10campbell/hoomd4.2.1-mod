@@ -52,11 +52,11 @@ data_outpath = 'data'
 
 ## simulation specific parameters
 period = 10000 # data recording interval (the number of timesteps between frames)
-Lbox_shortest = 70 #float(os.environ.get('L_X', 0.0)) # the shortest side of the simulation box
+Lbox_shortest = 30 #float(os.environ.get('L_X', 0.0)) # the shortest side of the simulation box
 kT = 0.1 # the temperature of the simulation (usually kT = 0.1)
 R_C = 1 #float(os.environ.get('R_C1', 0.0))  # colloid particle radius
 eta0 = 0.3 # background solvent viscosity
-kappa = 60 # the attraction range parameter
+kappa = 30 # the attraction range parameter
 
 
 

@@ -17,7 +17,7 @@ import matplotlib.cm as cmx
 
 # sim parameters
 phi = 20
-D0 = 5
+D0 = 12
 R_C = 1
 period = 10000
 dt_Integration = 0.001

@@ -21,7 +21,7 @@ D0 = 12
 R_C = 1
 period = 10000
 dt_Integration = 0.001
-sim_vol = 70*70*70 
+sim_vol = 30*30*30 
 
 # choose timeaxis for plot:  'frame', 'timesteps', or 'BD'
 timeaxis = 'BD'

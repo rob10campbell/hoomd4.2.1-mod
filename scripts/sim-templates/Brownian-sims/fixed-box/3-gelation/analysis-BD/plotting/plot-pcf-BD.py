@@ -23,8 +23,8 @@ from matplotlib.ticker import MaxNLocator
 # set data-specific parameters
 phi = 20
 D0 = 12
-dims_max = 10
 R_C = 1
+dims_max = 10 # max distance explored in sim-analysis-BD.py
 
 # data source
 data_directory = '../data'
