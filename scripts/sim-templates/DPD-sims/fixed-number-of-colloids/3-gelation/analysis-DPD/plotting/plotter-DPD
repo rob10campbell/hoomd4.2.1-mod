@@ -1,0 +1,29 @@
+#!/bin/bash
+
+#SBATCH -J plot
+#SBATCH -n 1 -N 1
+#SBATCH -t 1:00:00
+#SBATCH -o %A-plt.out
+#SBATCH -e %A-plt.err
+
+module purge
+module load python/3.8.1
+source /work/props/Rob/software/hoomd4.2.1-mod/hoomdmod4.2.1-venv/bin/activate 
+
+# run the plot file
+python plot-kT-DPD.py
+python plot-shearstress-DPD.py
+python plot-Zavg-DPD.py
+python plot-Zdist-DPD.py
+python plot-msd-DPD.py
+python plot-gofr-DPD.py
+python plot-pcf-DPD.py
+python plot-sofq-and-gofr-DPD.py
+python plot-ndf-DPD.py
+python plot-ndf-v-binsize-DPD.py
+python plot-poresize-DPD.py
+python plot-voronoi-dist-DPD.py
+python plot-voronoi-mean-and-sd-DPD.py 
+python plot-voronoi-skew-DPD.py
+python plot-voronoi-kurtosis-DPD.py
+python plot-lcc-DPD.py
