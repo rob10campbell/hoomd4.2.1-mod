@@ -12,7 +12,7 @@ Additional branches are available, tho they may be incomplete:
 - branch "hoomd4.2_w_wall": modifications for flat and sinusoidal walls
 - branch "no_shear": clean version without shear or bond-tracking
 
-[Last Updated: December 2023]
+[Last Updated: January 2024]
 
 Contact: Rob Campbell (campbell.r@northeastern.edu)
 
@@ -20,29 +20,13 @@ Contact: Rob Campbell (campbell.r@northeastern.edu)
 For any questions, or to help with modifications, contact Rob.
 
 To-Do:
-- [x] copy in core mods 
-- [x] test compile
-- [x] resolve segmentation fault in DPDMorse or Integrator
-- [x] update sim template scripts
-- [x] test initialization, equilibrium, and gelation with DPDMorse
-- [x] test initialization, equilibrium, and gelation with BD/Langevin
-- [x] copy in Lifetime.h
-- [x] test compile
-- [x] resolve Lifetime compilation error re: "getMPICommunicator()"
-- [x] test gelation sim with bond lifetime tracking
 - [ ] add bond tracking to BD/Langevin sims?
-- [x] copy in shear mods
-- [x] test compile
-- [x] test shear sim with DPDMorse
 - [ ] shear does not work in BD/Langevin (thermostat issues)
 - [ ] copy in wall mods
-- [ ] test compile
-- [ ] test DPD initialization, equilibrium, and gelation w/ and w/out walls
-- [ ] test BD/Langevin sims with and without walls
+- [ ] test compile wall mods
+- [ ] test DPD initialization, equilibrium, and gelation w/ walls
+- [ ] test BD/Langevin sims w/ walls
 - [ ] remove AO from README or add AO mods
-- [ ] update sim analysis scripts
-- [ ] test sim analysis
-- [x] update colloids-setup repo to use hoomd4.2 (!)
 -----------------
 
 ## Installation
