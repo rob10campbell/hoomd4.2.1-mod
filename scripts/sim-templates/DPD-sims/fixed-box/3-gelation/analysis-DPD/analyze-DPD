@@ -19,9 +19,9 @@ module load gcc/11.1.0
 module load openmpi/4.1.2-gcc11.1
 
 # run the analysis file(s)
-#python sim-analysis-DPD.py
+python sim-analysis-DPD.py
 echo "----"
-#python sim-networkCSV-DPD.py
+python sim-networkCSV-DPD.py
 echo "----"
 python sim-voronoi-DPD.py
 

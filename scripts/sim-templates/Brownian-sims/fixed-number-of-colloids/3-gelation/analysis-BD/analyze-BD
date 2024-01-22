@@ -14,14 +14,14 @@
 start=$SECONDS
 
 module load python/3.8.1
-source /work/props/Rob/software/hoomd4.2.1-mod/hoomdmod4.2.1-venv/bin/activate 
+source # path to software, for example: /work/props/Rob/software/hoomd4.2.1-mod/hoomdmod4.2.1-venv/bin/activate  
 module load gcc/11.1.0
 module load openmpi/4.1.2-gcc11.1
 
 # run the analysis file(s)
-#python sim-analysis-BD.py
+python sim-analysis-BD.py
 echo "----"
-#python sim-networkCSV-BD.py
+python sim-networkCSV-BD.py
 echo "----"
 python sim-voronoi-BD.py
 
