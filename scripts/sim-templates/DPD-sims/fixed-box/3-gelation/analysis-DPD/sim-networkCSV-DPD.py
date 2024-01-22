@@ -37,7 +37,7 @@ from statistics import mean
 """ INPUT PARAMETERS """
 ##########################
 # path to sim data
-filename = '../Gelation.gsd'
+filename = '../Gelation-DPD.gsd'
 
 # filepath to folder where data files will be created
 data_outpath = 'data'

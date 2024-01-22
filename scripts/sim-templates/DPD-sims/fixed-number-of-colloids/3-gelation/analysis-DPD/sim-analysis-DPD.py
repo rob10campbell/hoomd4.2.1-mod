@@ -47,7 +47,7 @@ import re
 """ INPUT PARAMETERS """
 ##########################
 # path to sim data
-filepath = '../Gelation.gsd'
+filepath = '../Gelation-DPD.gsd'
 
 # filepath to folder where data files will be created
 data_outpath = 'data'
