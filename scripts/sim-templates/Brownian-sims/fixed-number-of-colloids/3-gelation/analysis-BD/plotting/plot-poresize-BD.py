@@ -165,3 +165,4 @@ plt.tight_layout()
 plt.savefig('void-dist_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 
+print('pore size (void size) distribution plot created')
