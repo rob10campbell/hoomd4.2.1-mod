@@ -61,8 +61,16 @@ plt.plot(times, lcc, 'grey', label="colloids")
 # add particle size to the legend
 plt.plot([], [], ' ', label='$r_{C} = $'+str(R_C))
 
+# linear axes
 plt.ylim([0, 105]) # max 100%
-plt.xlim([0, max_time]) 
+#plt.xlim([0, max_time]) 
+#plt.xticks(np.arange(0, max_time+1, 2.0))
+
+# log axes
+#plt.yscale('log')
+plt.xscale('log')
+#plt.ylim([1e-1, 125]) # max 100%
+plt.xlim([1e-1, max_time])
 #plt.xticks(np.arange(0, max_time+1, 2.0))
 
 plt.title('Largest Connected Component', fontsize=20)
