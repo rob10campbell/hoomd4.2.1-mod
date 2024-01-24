@@ -28,7 +28,7 @@ data_directory = '../data'
 # load data: columns = position gofr_cc
 f = np.genfromtxt(data_directory+'/gofr.txt', skip_header=1)
 
-plt.title('Radial Distribution Function g(r) ($\phi$='+str(phi)+'% at $D_0$='+str(D0)+'kT)', fontsize=16)
+plt.title('Radial Distribution Function g(r) ($\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT)', fontsize=16)
 
 plt.axhline(y=1, linewidth=1, linestyle='--', color='black') 
 plt.plot(f[:,0], f[:,1], 'dimgrey', label='colloid-colloid')

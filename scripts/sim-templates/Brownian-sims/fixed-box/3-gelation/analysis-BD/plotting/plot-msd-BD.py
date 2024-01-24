@@ -56,7 +56,7 @@ def plot_msd_py(timechoice,flag,stddev):
   if flag=='BD':
     plt.xlabel('Brownian Dynamics (BD) times', fontsize=16)
   plt.ylabel('$\langle | x(t) - x_0 |^2 \\rangle$ [BD units]', fontsize=16)
-  plt.legend(prop={"size":12}, loc=7, bbox_to_anchor=(1,0.4), title='$\phi$='+str(phi)+'% at $D_0$='+str(D0)+'kT', title_fontsize=12)
+  plt.legend(prop={"size":12}, loc=7, bbox_to_anchor=(1,0.4), title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
   plt.rcParams['figure.figsize'] = [6, 6]
   plt.tight_layout()
 

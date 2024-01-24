@@ -28,7 +28,7 @@ data_directory = '../data'
 f = np.genfromtxt(data_directory+'/gofr.txt', skip_header=1)
 
 fig, axs = plt.subplots(1, 2, figsize=(12,6), tight_layout=True)
-fig.suptitle('Radial Distribution Function g(r) ($\phi$='+str(phi)+'% at $D_0$='+str(D0)+'kT)', fontsize=16)
+fig.suptitle('Radial Distribution Function g(r) ($\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT)', fontsize=16)
 
 axs[0].axhline(y=1, linewidth=1, linestyle='--', color='black') 
 axs[0].plot(f[:,0], f[:,1], 'royalblue', label='colloid-solvent')
