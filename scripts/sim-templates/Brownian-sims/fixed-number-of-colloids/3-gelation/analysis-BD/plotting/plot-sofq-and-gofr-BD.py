@@ -99,7 +99,7 @@ plt.legend(prop={"size":10}, loc='lower left', title='$\phi$='+str(phi)+'%, $D_0
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 
-plt.savefig('sofq'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+plt.savefig('sofq_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 plt.close()
 
@@ -154,7 +154,7 @@ plt.legend(prop={"size":10}, loc='upper right', title='$\phi$='+str(phi)+'% at $
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 
-plt.savefig('sq_gofr'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+plt.savefig('sq_gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 plt.close()
 

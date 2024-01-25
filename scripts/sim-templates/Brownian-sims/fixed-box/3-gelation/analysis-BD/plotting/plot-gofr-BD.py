@@ -40,7 +40,7 @@ plt.xlabel('$r$ [BD units]', fontsize=16)
 plt.ylabel('$g(r)$', fontsize=16)
 plt.legend(prop={"size":12})
 
-plt.savefig('gofr'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+plt.savefig('gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 
 print('g(r) plot created')

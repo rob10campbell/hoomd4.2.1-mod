@@ -49,7 +49,7 @@ for ax in axs.flat:
     ax.xaxis.label.set_size(16)
     ax.yaxis.label.set_size(16)
 
-plt.savefig('gofr'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+plt.savefig('gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 
 print('g(r) plot created')
