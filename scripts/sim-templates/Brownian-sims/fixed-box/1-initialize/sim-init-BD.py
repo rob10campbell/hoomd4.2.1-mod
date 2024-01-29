@@ -44,6 +44,9 @@ N_C1 = round(V_Colloids / V_C1) # number of 1st type of colloid particles (INT)
 # Total number of particles in the simulation
 N_total = int(N_C1)
 
+# set random seed for repeatable random number generation
+seed_value = 42
+numpy.random.seed(seed_value)
 
 ######### SIMULATION
 ## Checks for existing files. If none are found, creates a new 
@@ -82,6 +85,7 @@ else:
     f.append(snapshot)
 
   print("New Brownian dynamics initialization file (init-BD.gsd) created.\n")
+  print("Seed for Random Number Generator: "+str(seed_value)) 
   print("Simulation volume: L_X = " + str(L_X) + ", L_Y = " + str(L_Y) 
     + ", L_Z = " + str(L_Z))
   print("Volume fraction: " + str(phi) + "\n")

@@ -77,8 +77,8 @@ for i in range(nbinsizes):
   symcolor = scalarMap.to_rgba(values[i])
   plt.plot(time,bin_df['ndfluc_C'], color=symcolor, label="bin-size "+str(curr_bin)) 
 
-#plt.yscale('log')
-#plt.xscale('log')
+plt.yscale('log')
+plt.xscale('log')
 
 plt.title('Number Density Fluctuation', fontsize=16)
 
