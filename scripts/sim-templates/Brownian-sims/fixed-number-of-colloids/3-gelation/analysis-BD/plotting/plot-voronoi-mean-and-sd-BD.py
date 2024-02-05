@@ -93,7 +93,7 @@ plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 #plt.grid(True)
 
-plt.savefig('voronoi-sd_'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+plt.savefig('voronoi-sd_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 
 print('Voronoi dist standard deviation plot created')
