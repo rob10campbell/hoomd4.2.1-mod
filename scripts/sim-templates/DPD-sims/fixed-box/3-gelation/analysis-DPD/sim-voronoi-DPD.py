@@ -280,7 +280,7 @@ def voronoi_distribution_py(filename):
 
   # add remaining data to the dataframes
   voro_df["particles"] = f[:,1]
-  voro_df["typeid"] = f[:,2]
+  voro_df["radius"] = f[:,2]
   voro_df["voronoi_v"] = f[:,3]
 
   # get number of frames
