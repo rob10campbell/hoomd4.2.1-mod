@@ -70,7 +70,7 @@ plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 #plt.grid(True)
 
-plt.savefig('voronoi-mean_phi'+str(int(phi))+'_'+str(D0)+'.png',dpi=600, transparent=False)
+plt.savefig('voronoi-mean_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 plt.close()
 

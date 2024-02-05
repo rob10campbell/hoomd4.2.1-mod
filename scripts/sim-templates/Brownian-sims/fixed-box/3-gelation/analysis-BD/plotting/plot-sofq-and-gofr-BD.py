@@ -154,7 +154,7 @@ plt.legend(prop={"size":10}, loc='upper right', title='$\phi$='+str(phi)+'% at $
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 
-plt.savefig('sq_gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+plt.savefig('sq-gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
 #plt.show()
 plt.close()
 
