@@ -41,6 +41,10 @@ filename = '../Gelation-DPD.gsd'
 # filepath to folder where data files will be created
 data_outpath = 'data'
 
+# extra distance to make sure particles at the edge of the box are included
+# range becomes (min+Lbuffer) to (max+Lbuffer) --> size+(2*Lbuffer) in each direction
+Lbuffer = 0.001 
+
 ###########################
 """ DEFINE SIM CHECKS """
 ###########################
@@ -182,7 +186,7 @@ def voronoi_volume_py(filename):
    
     cells_all = pyvoro.compute_voronoi(
       framepos_c, # point positions
-      [[-L_X/2, L_X/2], [-L_Y/2, L_Y/2], [-L_Z/2, L_Z/2]], # limits
+      [[(-L_X/2)-Lbuffer, (L_X/2)+Lbuffer], [(-L_Y/2)-Lbuffer, (L_Y/2)+Lbuffer], [(-L_Z/2)-Lbuffer, (L_Z/2)+Lbuffer]], # limits 
       2.0, # block size
       radii=frameradii_array # matching list of particle radii -- required for polydisperse / radical tessellation 
     )
@@ -208,6 +212,15 @@ def voronoi_volume_py(filename):
 """
 
 def voronoi_stats_py(filename):
+  # get volume information
+  traj = gsd.hoomd.open(filename, 'r')
+  Lbox = traj[-1].configuration.box[:3]
+  L_X = Lbox[0]
+  L_Y = Lbox[1]
+  L_Z = Lbox[2]
+  real_vol = L_X * L_Y * L_Z
+  buffer_vol = (L_X+(2*Lbuffer)) * (L_Y+(2*Lbuffer)) * (L_Z+(2*Lbuffer))
+
   f = np.genfromtxt(data_outpath+'/voronoi-volumes.txt', skip_header=1)
   nframes = len(np.unique(f[:,0]))
   ncolloids = len(np.unique(f[:,1]))
@@ -218,7 +231,7 @@ def voronoi_stats_py(filename):
 
   # 1. Calculate the mean volume for each frame (1st mode/moment)
   # The mean volume is the same throughout (total volume and number of particles do not change)
-  mean_volume = np.mean(vorvol_array, axis=(1, 2))
+  mean_volume = np.mean(vorvol_array, axis=(1, 2)) * (real_vol / buffer_vol)
 
   # 2. Calculate the divergence of volumes for each frame (2nd mode/moment)
   sd_volume = np.std(vorvol_array, axis=(1, 2))
