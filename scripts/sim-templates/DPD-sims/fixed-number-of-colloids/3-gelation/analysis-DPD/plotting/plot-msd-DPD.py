@@ -69,6 +69,9 @@ def plot_msd_py(timechoice,flag,solvent,stddev,expected_solvent):
   if flag=='DPD':
     plt.xlabel('DPD times', fontsize=16)
   plt.ylabel('$\langle | x(t) - x_0 |^2 \\rangle$ [DPD units]', fontsize=16)
+
+  plt.loglog()
+
   plt.legend(prop={"size":12}, loc=7, bbox_to_anchor=(1,0.4), title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
   plt.rcParams['figure.figsize'] = [6, 6]
   plt.tight_layout()
