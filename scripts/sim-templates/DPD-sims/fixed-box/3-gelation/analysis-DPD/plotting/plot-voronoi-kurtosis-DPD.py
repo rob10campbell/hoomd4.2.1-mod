@@ -74,15 +74,17 @@ def plot_voronoi_kurtosis(stats_df, bare=False, excess=True, show=False):
     plt.ylabel('Bare Kurtosis', fontsize=16)
     plt.xlabel(axis_text, fontsize=16)
 
-    plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+    # figsize includes title, axes, and plot; move lgd before this to include lgd in figsize 
     plt.rcParams['figure.figsize'] = [6, 6]
     plt.tight_layout()
     #plt.grid(True)
 
+    lgd = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
     if show==True:
-      plt.show()
+      plt.show() #NOTE: plt.show() will cut off the legend but the figure will save correctly
     else:
-      plt.savefig('voronoi-kurtosis_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+      plt.savefig('voronoi-kurtosis_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False) 
 
     print('Voronoi dist kurtosis plot created')
 
@@ -100,15 +102,17 @@ def plot_voronoi_kurtosis(stats_df, bare=False, excess=True, show=False):
     plt.ylabel('Excess Kurtosis', fontsize=16)
     plt.xlabel(axis_text, fontsize=16)
 
-    plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+    # figsize includes title, axes, and plot; move lgd before this to include lgd in figsize 
     plt.rcParams['figure.figsize'] = [6, 6]
     plt.tight_layout()
     #plt.grid(True)
 
+    lgd = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
     if show==True:
-      plt.show()
+      plt.show() #NOTE: plt.show() will cut off the legend but the figure will save correctly 
     else:
-      plt.savefig('voronoi-excesskurtosis_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
+      plt.savefig('voronoi-excesskurtosis_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
 
     print('Voronoi dist excess kurtosis plot created')
 

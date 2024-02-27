@@ -61,15 +61,17 @@ plt.plot([], [], ' ', label='$r_{C} = $'+str(R_C))
 
 plt.title('Asymmetry of the Voronoi Volumes Over Time', fontsize=16)
 
-plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
 plt.xlabel(axis_text, fontsize=16)
 plt.ylabel('Skew', fontsize=16)
 
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 #plt.grid(True)
 
-plt.savefig('voronoi-skew_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
+plt.savefig('voronoi-skew_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() #NOTE: plot.show() cuts off the legend, but the figure will save correctly
 
 print('Voronoi dist skew plot created')

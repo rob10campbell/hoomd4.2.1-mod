@@ -65,13 +65,15 @@ plt.title('Mean Voronoi Volume Over Time', fontsize=16)
 plt.xlabel(axis_text, fontsize=16)
 plt.ylabel('Mean Voronoi Volume', fontsize=16)
 
-plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 #plt.grid(True)
 
-plt.savefig('voronoi-mean_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd_mn = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
+plt.savefig('voronoi-mean_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd_mn,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() #NOTE: plt.show() cuts off the legend, but the figure will save correctly
 plt.close()
 
 print('Voronoi dist mean plot created')
@@ -88,13 +90,15 @@ plt.title('Divergence of Voronoi Volumes Over Time', fontsize=16)
 plt.xlabel(axis_text, fontsize=16)
 plt.ylabel('Divergence of Voronoi Volume', fontsize=16)
 
-plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 #plt.grid(True)
 
-plt.savefig('voronoi-sd_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd_sd = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
+plt.savefig('voronoi-sd_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd_sd,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() #NOTE: plt.show() cuts off the legend, but the figure will save correclty
 
 print('Voronoi dist standard deviation plot created')
 

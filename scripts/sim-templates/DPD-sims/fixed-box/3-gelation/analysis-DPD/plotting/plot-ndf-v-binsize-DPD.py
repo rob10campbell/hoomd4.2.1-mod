@@ -67,9 +67,6 @@ def plot_ndfluc_py(flag):
       ndf_all = frame_df.loc[frame_df['bin-size']==bin_size]['ndfluc_C'].to_numpy()[0]
       ndf_all_bybin.append(ndf_all)
  
-    # create the plot for this frame
-    plt.rcParams['figure.figsize'] = [6, 6]
-
     # select lable to match the units of time 
     if flag=='frame':
       label_text = 'frame '+str(round(time))
@@ -94,13 +91,14 @@ def plot_ndfluc_py(flag):
     plt.xlabel('bin size [DPD units]')
     plt.ylabel('$(\langle N^2 \\rangle - \langle N \\rangle^2) / \langle N \\rangle$', fontsize=16)
 
-    
-    plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)# loc='upper right')
-
+    # figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
+    plt.rcParams['figure.figsize'] = [6, 6]
     plt.tight_layout()
 
-    plt.savefig('ndfluc-vs-binsize-frame'+str(round(frame))+'_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False) 
-    #plt.show()
+    lgd = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5)) #, loc=7, bbox_to_anchor=(1,0.4))
+
+    plt.savefig('ndfluc-vs-binsize-frame'+str(round(frame))+'_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
+    #plt.show() #NOTE: plot.show() will cut off the legend, but the figure will save correctly
     plt.close()
 
     print('NDF vs. bin size plot created')

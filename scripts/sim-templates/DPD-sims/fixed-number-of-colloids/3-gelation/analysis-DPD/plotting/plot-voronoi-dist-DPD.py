@@ -96,18 +96,21 @@ plt.plot([], [], ' ', label='$r_{C} = $'+str(R_C))
 
 plt.ylabel('$P(V_{voro})$', fontsize=16)
 plt.xlabel('$V_{voro}$ [cubic DPD units]', fontsize=16)
-#plt.xticks(range(0,true_max_Z+1,1))
+
+plt.loglog()
 plt.xlim(0.1,sim_vol)
 plt.ylim(0.0001,1)
+#plt.xticks(range(0,true_max_Z+1,1))
 
-lgd = plt.legend(prop={"size":12}, loc="upper right", title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.tight_layout() 
 plt.rcParams['figure.figsize'] = [6, 6]
 
-plt.loglog()
-plt.savefig('voronoi_loglog_phi'+str(int(phi))+'_'+str(D0)+'kT.png', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight', transparent=False)
+lgd = plt.legend(prop={"size":12}, loc="center left", bbox_to_anchor=(1,0.5), title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
 
-#plt.show()
+plt.savefig('voronoi_loglog_phi'+str(int(phi))+'_'+str(D0)+'kT.png', dpi=600, bbox_extra_artists=(lgd,), bbox_inches='tight', transparent=False)
+#plt.show() #NOTE: plt.show() will cut off the legend but the figure will save correctly
+
 plt.close()
 
 print('Voronoi distribution plot created')

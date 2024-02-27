@@ -95,12 +95,15 @@ plt.xscale('log')
 #plt.ylim([0.4,15])
 plt.xlim([0.08,2.2])
 
-plt.legend(prop={"size":10}, loc='lower left', title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 
-plt.savefig('sofq_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd = plt.legend(prop={"size":10}, loc='center left', bbox_to_anchor=(1,0.5), title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+
+plt.savefig('sofq_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() #NOTE: plot.show() will cut off the legend, but the figure will save correctly
+
 plt.close()
 
 print('S(q) plot created')
@@ -150,12 +153,15 @@ plt.title('Radial Distribution Function $g(r)$', fontsize=16)
 plt.xlabel('$r$ [BD units]', fontsize=16)
 plt.ylabel('$g(r)$', fontsize=16)
 
-plt.legend(prop={"size":10}, loc='upper right', title='$\phi$='+str(phi)+'% at $D_0$='+str(D0)+'kT', title_fontsize=12)
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 
-plt.savefig('sq-gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd = plt.legend(prop={"size":10}, loc='center left', bbox_to_anchor=(1,0.5), title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)
+
+plt.savefig('sq-gofr_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() #NOTE: plot.show() will cut off the legend, but the figure will still save correctly
+
 plt.close()
 
 print('Plot of g(r) data used to calculate S(q) created')

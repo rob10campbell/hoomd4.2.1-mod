@@ -148,21 +148,23 @@ for i in range(len(framechoice)):
     legend_title="Gubbin's PSD"
 
 # add particle size to the legend
-plt.plot([], [], ' ', label='$r_{C} = $'+str(R_C))
+plt.plot([], [], ' ', label='$d_{C} = 2r_{C} = $'+str(round(2*R_C,2)))
 
 #plt.yscale('log')
 #plt.xscale('log')
 
 plt.title('Void Size Distribution ('+str(lastframe_npores)+' probe points)', fontsize=16)
-plt.xlabel('Void Radius $r$ [BD units]', fontsize=16) 
+plt.xlabel('Void Diameter $r$ [BD units]', fontsize=16) 
 plt.ylabel('$P(d)$', fontsize=16)
 #plt.ylabel('Number of Voids', fontsize=16)
 
-plt.legend(prop={"size":12}, title=legend_title, title_fontsize=12) #,loc=7, bbox_to_anchor=(1,0.4))
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
 
-plt.savefig('void-dist_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd = plt.legend(prop={"size":12}, title=legend_title, title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
+plt.savefig('void-dist_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() #NOTE: plot.show() will cut off the legend, but the plot will save correctly
 
 print('pore size (void size) distribution plot created')

@@ -111,12 +111,14 @@ plt.ylabel('$P(Z)$', fontsize=16)
 
 #ax.set_xticks(range(0,max_Z,2))
 
+# figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
 plt.tight_layout()
-plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12)#, loc=7, bbox_to_anchor=(1,0.4))
 
-plt.savefig('Zdist_phi'+str(int(phi))+'_'+str(D0)+'kT.png',dpi=600, transparent=False)
-#plt.show()
+lgd = plt.legend(prop={"size":12}, title='$\phi$='+str(phi)+'%, $D_0$='+str(D0)+'kT', title_fontsize=12, loc='center left', bbox_to_anchor=(1,0.5))
+
+plt.savefig('Zdist_phi'+str(int(phi))+'_'+str(D0)+'kT.png', bbox_extra_artists=(lgd,), bbox_inches='tight', dpi=600, transparent=False)
+#plt.show() # NOTE: plot.show() will cut off the legend, but the figure saves correctly
 
 print('Z distribution plot created')
  
