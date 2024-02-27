@@ -527,7 +527,7 @@ end subroutine pcf_calc
 
 
 !###########################################
-subroutine structure_factor(data_outpath,nframes,Lbox,m_xys,ncolloids,pos,rmax,rmin,nq,q)
+subroutine structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloids,pos,rmax,rmin,nq,q)
 ! calculate the structure factor S(q) -- the fluctuation of the 
 ! **Fourier component** of the fluctuations of pair density in space
 ! using the radial correlation function h(r) = g(r)-1
@@ -538,8 +538,9 @@ subroutine structure_factor(data_outpath,nframes,Lbox,m_xys,ncolloids,pos,rmax,r
   !!! INPUTS
   ! the filepath to the output folder 
   character*20, intent(in) :: data_outpath
-  ! the number of frames
+  ! the number of frames and the selected frames
   integer, intent(in) :: nframes
+  integer, intent(in) :: framechoice(0:nframes-1)
   ! the simulation box size (L_X, L_Y, L_Z)
   real(8), intent(in) :: Lbox(0:2)
   ! the xy tilt factor per frame (box deformation from shear in x-direction)
@@ -562,7 +563,7 @@ subroutine structure_factor(data_outpath,nframes,Lbox,m_xys,ncolloids,pos,rmax,r
   real(8), intent(in) :: q(0:nq-1)
  
   !f2py depend(nframes,ncolloids) pos
-  !f2py depend(nframes) m_xys
+  !f2py depend(nframes) framechoice, m_xys
   !f2py depend(nq) q
 
 
@@ -701,7 +702,7 @@ subroutine structure_factor(data_outpath,nframes,Lbox,m_xys,ncolloids,pos,rmax,r
       bin_cc_density_g(f,i) = norm_cc_num * inv_binvolume * inv_cc_nd 
 
       ! write the data
-      write(14,fmt="(*(g0:','))") f, rmin+(i+0.5d0)*bin_width_g, bin_cc_density_g(f,i)
+      write(14,fmt="(*(g0:','))") framechoice(f), rmin+(i+0.5d0)*bin_width_g, bin_cc_density_g(f,i)
 
     enddo
 
@@ -722,7 +723,7 @@ subroutine structure_factor(data_outpath,nframes,Lbox,m_xys,ncolloids,pos,rmax,r
       Sq(f,i) = 1.d0 + Sq(f,i) * 4.d0 * pi * rho * bin_width_g / q(i)
 
       ! write the data
-      write(15,fmt="(*(g0:','))") f, q(i), Sq(f,i)
+      write(15,fmt="(*(g0:','))") framechoice(f), q(i), Sq(f,i)
 
     enddo
 
@@ -822,6 +823,7 @@ integer, public :: ncolloid
 integer, public :: nframes 
 
 !Framewise particles positions and simulation box size
+integer, allocatable, save, public :: framechoice(:)   ! the selected frames 
 real(8), allocatable, save, public :: rxi(:,:)         ! framewise x-coordinates
 real(8), allocatable, save, public :: ryi(:,:)         ! framewise y-cordinates
 real(8), allocatable, save, public :: rzi(:,:)         ! framewise z-coordinates
@@ -860,13 +862,14 @@ DEALLOCATE(seed)
 END SUBROUTINE init_random_seed
 !--------------------------------------------------------------------------
 
-subroutine pore_size_calc(data_outpath, ncolloids_py, nframes_py, nprobe, rhs_py, &
+subroutine pore_size_calc(data_outpath, ncolloids_py, nframes_py, framechoice_py, nprobe, rhs_py, &
 dcell_init_py, rxi_py, ryi_py, rzi_py, box_length_py)
 implicit none
 
 ! Variables imported from Python file
 character*20, intent(in) :: data_outpath
 integer, intent(in) :: ncolloids_py, nframes_py, nprobe
+integer, intent(in) :: framechoice_py(0:nframes_py-1)
 real(8), intent(in) :: dcell_init_py
 real(8), intent(in) :: rhs_py(ncolloids_py)
 real(8), intent(in) :: rxi_py(0:nframes_py-1,0:ncolloids_py-1)
@@ -875,6 +878,7 @@ real(8), intent(in) :: rzi_py(0:nframes_py-1,0:ncolloids_py-1)
 real(8), intent(in) :: box_length_py(0:nframes_py-1,3)
 !f2py depend(ncolloids_py,nframes_py) rxi_py,ryi_py,rzi_py
 !f2py depend(nframes_py,3) box_length_py
+!f2py depend(nframes_py) framechoice_py
 !f2py depend(ncolloids_py) rhs_py
 
 ! Internal Variables
@@ -891,6 +895,7 @@ call init_random_seed()
 dcell_init = dcell_init_py
 ncolloid = ncolloids_py
 nframes = nframes_py
+framechoice = framechoice_py
 
 allocate( rxi(0:nframes-1,0:ncolloid-1) )
 allocate( ryi(0:nframes-1,0:ncolloid-1) )
@@ -956,16 +961,18 @@ do i=0,nframes-1
       call fun(ri,f_T)
     enddo
 
-    ! get the fraction of pore volume with Torquato's method 
+    ! get poresize with Torquato's method 
     poresize_T = 2.d0*dsqrt(-f_T)
-    ! get the fraction of pore volume with Torquato's method 
+
+    ! get the fraction of pore volume with Gubbin's method 
     f_G = 0.d0
     call solvopt(3, ri, f_G, fun, .false., atemp, .true., func, .false., atemp)
-    ! get the fraction of pore volume with Torquato's method 
+    ! get the poresize with Gubbin's method 
     poresize_G = 2.d0*dsqrt(-f_G)
-    ! get the fraction of pore volume with Torquato's method 
-    write(14,fmt="(*(g0:','))") i, rp, ri, poresize_T, poresize_G
-    !write(14,'(8f16.5)')  frame, rp, ri, poresize_T, poresize_G
+
+    ! save the data for both poresize calculations 
+    !write(14,fmt="(*(g0:','))") i, rp, ri, poresize_T, poresize_G
+    write(14,'(I8, 8f16.5)')  framechoice(i), rp, ri, poresize_T, poresize_G
   enddo
   deallocate(rpos)
   call finalize_list()

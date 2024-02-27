@@ -284,8 +284,6 @@ def voronoi_stats_py(filename):
 
 def voronoi_distribution_py(filename):
 
-  #framechoice = vdist_framechoice
-
   f = np.genfromtxt(data_outpath+'/voronoi-volumes.txt', skip_header=1)
 
   # create dataframes with the frames as integer values
