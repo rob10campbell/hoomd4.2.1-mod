@@ -11,10 +11,11 @@
 !     distributions in one frame
 ! * particle counts to approximate the pair correlation function h(r1,r2) 
 !     for the colloid-colloid distribution in one frame
-! * static structure factor S(q) (and associated g(r)) for colloids in one final frame
+! * static structure factor S(q) (and associated g(r)) for colloids in the final frame
+!     or a selection of frames
 ! * edgelist creation (for network analysis) for all colloid-colloid connections in each frame
-! * pore size calculation for all frames using two methods: Torquato's Pore Size Distribution
-!     and Gubbibn's Pore Size Distribution  
+! * pore size calculation for the final frame or a selection of frames, using two methods: 
+!     Torquato's Pore Size Distribution and Gubbibn's Pore Size Distribution  
 !     ! NOTE: This is the most complicated code, it has MULTIPLE subroutines
 !     !       uses a linked-list implementation, and REQUIRES an additional module
 !     !       generated with solvopt.f90 (which is also compiled in compile module)
@@ -961,7 +962,7 @@ do i=0,nframes-1
       call fun(ri,f_T)
     enddo
 
-    ! get poresize with Torquato's method 
+    ! get the poresize with Torquato's method 
     poresize_T = 2.d0*dsqrt(-f_T)
 
     ! get the fraction of pore volume with Gubbin's method 
@@ -971,8 +972,8 @@ do i=0,nframes-1
     poresize_G = 2.d0*dsqrt(-f_G)
 
     ! save the data for both poresize calculations 
-    !write(14,fmt="(*(g0:','))") i, rp, ri, poresize_T, poresize_G
-    write(14,'(I8, 8f16.5)')  framechoice(i), rp, ri, poresize_T, poresize_G
+    write(14,fmt="(*(g0:','))") framechoice(i), rp, ri, poresize_T, poresize_G
+    !write(14,'(I8, 8f16.5)')  framechoice(i), rp, ri, poresize_T, poresize_G
   enddo
   deallocate(rpos)
   call finalize_list()

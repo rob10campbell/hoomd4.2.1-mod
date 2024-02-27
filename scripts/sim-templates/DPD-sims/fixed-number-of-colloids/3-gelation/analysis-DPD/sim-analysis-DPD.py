@@ -491,7 +491,7 @@ sq_gofr_rmax = 6.0*R_C # recommended < half Lbox_shortest
 # set the min distance (usually the smallest particle size / point of contact)
 sq_gofr_rmin = R_C
 
-# calculate poresize for the last frame only (or select a different frame)
+# calculate S(q) for the last frame only (or select a different frame)
 framechoice = [-1]
 
 # choose a range of wavenumbers, q, generally between 0-10

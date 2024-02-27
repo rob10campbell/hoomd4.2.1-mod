@@ -17,11 +17,12 @@
 ##        * qualitative approximation of the pair correlation function h(r1,r2) 
 ##           for the colloid-colloid distribution of chosen frames
 ##        * static structure factor S(q) (and associated g(r)) 
-##           for colloids in each frame
+##           for colloids in the final frame OR a selection of frames
 ##        * number density fluctuation (NDF) of colloids for each frame 
 ##          (AKA "variance to mean ratio" or "index of dispersion") 
 ##          with the option to test a range of bin-sizes
-##        * pore size distribution for each frames, using two methods: 
+##        * pore size distribution for the final frame OR a selection of frames, 
+##          using two methods: 
 ##           - Torquato’s Pore Size Distribution
 ##           - Gubbins’s Pore Size Distribution 
 ##           (requires the solvopt algorithm, included as a separate f90 module)
@@ -425,7 +426,7 @@ def pair_correlation_py(filename):
 #######
 ## static structure factor S(q)
 """
-# calculates the static structure factor S(q) for the LAST FRAME in a simulation
+# calculates the static structure factor S(q) 
 # (and the associated g(r) values used to caluclate S(q))
 #
 # S(q) gives us information about short-range order in our colloidal structures, 
@@ -455,6 +456,10 @@ def pair_correlation_py(filename):
 sq_gofr_rmax = 6.0*R_C # recommended < half Lbox_shortest
 # set the min distance (usually the smallest particle size / point of contact)
 sq_gofr_rmin = R_C
+
+# calculate S(q) for the last frame only (or select a different frame)
+framechoice = [-1]
+
 # choose a range of wavenumbers, q, generally between 0-10
 q = np.linspace(0, 10, num=1000)
 q = np.delete(q, np.where(q == 0)) # a value of 0 will generate NaN; remove it
@@ -465,6 +470,15 @@ def sofq_py(filename):
   traj = gsd.hoomd.open(filename, 'r')
   # get the number of frames
   nframes = len(traj)
+
+  # convert negative framechoice values into specific frames 
+  for i in range(len(framechoice)):
+    if framechoice[i] < 0:
+      framechoice[i] = nframes - abs(framechoice[i])
+  # replace the total nframes with the desired nframes to analyze
+  nframes = len(framechoice)
+
+
   # get the simulation box size [L_X, L_Y, L_Z] from the last frame 
   Lbox = traj[-1].configuration.box[:3]
   # get all the type1 colloid particles in the last frame
@@ -475,11 +489,12 @@ def sofq_py(filename):
   # gather data for the frames to be averaged
   pos_allframe = np.zeros((nframes,ncolloids,3))
   m_xys = np.zeros(nframes)
-  for frame in range(nframes):
+  for i in range(nframes):
+    frame = framechoice[i]
     # get all colloid positions in the frame
-    pos_allframe[frame] = traj[frame].particles.position[colloids]
+    pos_allframe[i] = traj[frame].particles.position[colloids]
     # get the xy tilt factor (square=0.0, sheared-right=0.45)
-    m_xys[frame] = traj[frame].configuration.box[3]
+    m_xys[i] = traj[frame].configuration.box[3]
 
 
   # set the maximum distance considered from the center of a particle
@@ -493,7 +508,7 @@ def sofq_py(filename):
 
   # run the module to calculate g(r) and S(q)
   # (output files "gofr_sq.csv" and "sofq.csv" created in the Fortran module)
-  module.structure_factor(data_outpath,nframes,Lbox,m_xys,ncolloids,pos_allframe,rmax,rmin,nq,q)
+  module.structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloids,pos_allframe,rmax,rmin,nq,q)
 
   print("S(q), and associated g(r), calculations complete")
 #######
@@ -639,6 +654,9 @@ def ndfluc_py(filename):
 # use kappa to calculate attraction range (cut-off distance)
 pore_cut_off = round(3/kappa,2) 
 
+# calculate poresize for the last frame only (or select a different frame)
+framechoice = [-1]
+
 def pore_size_calc_py(filename):
   # set the cut-off distance for interaction
   cut_off = pore_cut_off
@@ -646,6 +664,15 @@ def pore_size_calc_py(filename):
   traj = gsd.hoomd.open(filename, 'r')
   # get the number of frames
   nframes = len(traj)
+
+  # convert negative framechoice values into specific frames 
+  for i in range(len(framechoice)):
+    if framechoice[i] < 0:
+      framechoice[i] = nframes - abs(framechoice[i])
+  # replace the total nframes with the desired nframes to analyze
+  nframes = len(framechoice)
+
+
   # get the index of all type1 colloids
   colloids = np.where(traj[-1].particles.typeid == [0])[0]
   # calculate the number of type1 colloids
@@ -666,13 +693,14 @@ def pore_size_calc_py(filename):
 
   # fill arrays with data from each frame
   for i in range(nframes):
-    box_length[i,:]=traj[i].configuration.box[:3]
-    rxi[i,:] = traj[i].particles.position[colloids,0]
-    ryi[i,:] = traj[i].particles.position[colloids,1]
-    rzi[i,:] = traj[i].particles.position[colloids,2]
+    frame = framechoice[i]
+    box_length[i,:]=traj[frame].configuration.box[:3]
+    rxi[i,:] = traj[frame].particles.position[colloids,0]
+    ryi[i,:] = traj[frame].particles.position[colloids,1]
+    rzi[i,:] = traj[frame].particles.position[colloids,2]
 
   # calculate the pore_size for all the selected data
-  pore_size_calculation.pore_size_calc(data_outpath,ncolloids,nframes,nprobe,radii,dcell_init,rxi,ryi,rzi,box_length)
+  pore_size_calculation.pore_size_calc(data_outpath,ncolloids,nframes,framechoice,nprobe,radii,dcell_init,rxi,ryi,rzi,box_length)
 
   print("Pore size distribution calculated for "+str(nprobe)+" probe points in each of "+str(nframes)+" frames")
 #######
