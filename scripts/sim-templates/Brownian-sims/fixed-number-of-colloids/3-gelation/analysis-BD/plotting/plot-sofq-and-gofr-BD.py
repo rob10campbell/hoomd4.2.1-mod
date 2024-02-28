@@ -93,7 +93,8 @@ plt.yscale('log')
 plt.xscale('log')
 
 #plt.ylim([0.4,15])
-plt.xlim([0.08,2.2])
+#plt.xlim([0.08,2.2])
+plt.xlim(right=4)
 
 # figsize includes title, axes, and plot; move lgd before this to include lgd in figsize
 plt.rcParams['figure.figsize'] = [6, 6]
