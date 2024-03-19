@@ -53,9 +53,9 @@ data_outpath = 'data'
 
 ## simulation specific parameters
 period = 10000 # data recording interval (the number of timesteps between frames)
-Lbox_shortest = 30 #float(os.environ.get('L_X', 0.0)) # the shortest side of the simulation box
+Lbox_shortest = 30 # the shortest side of the simulation box
 kT = 0.1 # the temperature of the simulation (usually kT = 0.1)
-R_C = 1 #float(os.environ.get('R_C1', 0.0))  # colloid particle radius
+R_C = 1 # colloid particle radius
 eta0 = 0.3 # background solvent viscosity
 kappa = 30 # the attraction range parameter
 
@@ -426,7 +426,7 @@ def pair_correlation_py(filename):
 #######
 ## static structure factor S(q)
 """
-# calculates the static structure factor S(q) 
+# calculates the static structure factor S(q)
 # (and the associated g(r) values used to caluclate S(q))
 #
 # S(q) gives us information about short-range order in our colloidal structures, 
@@ -434,11 +434,18 @@ def pair_correlation_py(filename):
 # (i.e. comparable to experimental data from X-ray diffraction or other diffraction methods)
 #
 # S(q) measures the fluctuation of the **Fourier component** of the fluctuations 
-# of pair density in space. It is caluclated from h(r)=g(r)-1 (the radial correlation function)
-# q is a wavenumber or scattering vector associated with the type of lightwaves used.
-# We do not match specific q values, we look at S(q) over a range of high and low q values;
-# in a log-log plot, the slope of S(q) corresponds to lengthscales in the system
+# of pair density in space. The q is a wavenumber or scattering vector associated 
+# with the type of lightwaves used in scattering experiments.
+#
+# We do NOT match specific q values or calculate S(q) from q itself, instead we can
+# caluclate it from h(r)=g(r)-1 (the radial correlation function)
+# The result approximates S(q) over a range of high and low q values.
+#
+# In a log-log plot, the slope of S(q) corresponds to lengthscales in the system
 # (you will often see S(q) reported as S(q*a), where a is particle size)
+#
+# In a linear plot, the peaks of S(q) should correspond to different types of order
+# (i.e. different crystal structures); however we usually use a log-log plot
 #
 # Citation: Filipponi 1994, DOI 10.1088/0953-8984/6/41/006
 # Citation using S(q) for colloids: Shah et.al. 2003, DOI 10.1021/la020982g
