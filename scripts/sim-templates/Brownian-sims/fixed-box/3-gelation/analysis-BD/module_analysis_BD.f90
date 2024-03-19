@@ -616,8 +616,8 @@ subroutine structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloid
     ! for each bin/layer
     do i=0,nlayers_g-1
       ! calculate the volume for the current and previous bin/layer
-      curr_volume = (4.d0/3.d0) * pi * ((i+1)*bin_width_g)**3
-      prev_volume = (4.d0/3.d0) * pi * (i*bin_width_g)**3
+      curr_volume = (4.d0/3.d0) * pi * (rmin+(i+1)*bin_width_g)**3
+      prev_volume = (4.d0/3.d0) * pi * (rmin+i*bin_width_g)**3
       inv_binvolume = 1.d0 / (curr_volume - prev_volume)
 
       ! for comparing like-particles:

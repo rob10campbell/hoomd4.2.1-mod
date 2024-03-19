@@ -459,18 +459,12 @@ def pair_correlation_py(filename):
 #   the compressibility of the system (based purely on particle position NOT including bond properties, etc.)
 """
 
-# set the max distance used to calculate g(r)
-sq_gofr_rmax = 6.0*R_C # recommended < half Lbox_shortest
-# set the min distance (usually the smallest particle size / point of contact)
-sq_gofr_rmin = R_C
+# set the min distance to integrate from (to reduce noise at low-q values) 
+# (usually just under the smallest particle size AKA point of center-center contact AKA expected g(r) peak)
+sq_gofr_rmin = 2*R_C-0.01
 
 # calculate S(q) for the last frame only (or select a different frame)
 framechoice = [-1]
-
-# choose a range of wavenumbers, q, generally between 0-10
-q = np.linspace(0, 10, num=1000)
-q = np.delete(q, np.where(q == 0)) # a value of 0 will generate NaN; remove it
-q = q*R_C # scale q as q*a
 
 def sofq_py(filename):	
   # open the simulation GSD file as "traj" (trajectory)
@@ -488,6 +482,8 @@ def sofq_py(filename):
 
   # get the simulation box size [L_X, L_Y, L_Z] from the last frame 
   Lbox = traj[-1].configuration.box[:3]
+  Lbox_shortest = min(Lbox[0],Lbox[1],Lbox[2])
+
   # get all the type1 colloid particles in the last frame
   colloids = np.where(traj[-1].particles.typeid == [0])[0]
   # use this to count the total number of colloid1
@@ -505,13 +501,17 @@ def sofq_py(filename):
 
 
   # set the maximum distance considered from the center of a particle
-  # (AKA size of the search box)
-  rmax = sq_gofr_rmax
+  # (AKA size of the search box, recommended 10 < rmax < Lbox_shortest/2)
+  rmax = Lbox_shortest/2.0
   # set the minimum distance considered from the center of a particle
   rmin = sq_gofr_rmin
 
-  # set the number of qs being tested
-  nq = len(q)
+  # set the q values (likely 0-pi or 0-10, but avoid 0 for log-scale plot)
+  qmin = 4*np.pi/Lbox[0]
+  qmax = np.pi
+  nq = 500
+  q = np.logspace(np.log10(qmin),np.log10(qmax),nq)
+  #q = q*R_C # scale q -> qa
 
   # run the module to calculate g(r) and S(q)
   # (output files "gofr_sq.csv" and "sofq.csv" created in the Fortran module)

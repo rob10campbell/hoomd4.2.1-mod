@@ -9,7 +9,7 @@ cp -r path-to-this-folder analysis
 cd analysis
 ``` 
 
-2. Update the filepaths sourced to in `package-install`, `analyze`, and `plotting/plotter` to match your installation of HOOMD-blue.
+2. Update the filepaths sourced to in `package-install`, `compile-module`, `analyze`, and `plotting/plotter` to match your installation of HOOMD-blue.
 
 3. Compile the fortran modules:
 ```bash

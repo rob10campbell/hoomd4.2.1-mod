@@ -44,7 +44,12 @@ data_directory = '../data'
 sq_df_allframes = pd.read_csv(data_directory+'/sofq.csv')
 
 # get the number of frames in the data (starts at 0)
-nframes = len(pd.unique(sq_df_allframes['frame']))
+frames = pd.unique(sq_df_allframes['frame'])
+# check if framechoice is in the available data
+missing_frames = [value for value in framechoice if value >= 0 and value not in frames]
+if missing_frames:
+    print("Not all of the selected frames are available. Data is missing frames:")
+    print(missing_values)
 
 # get colors
 n_curves = len(framechoice)
@@ -60,7 +65,7 @@ scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
 for i in range(len(framechoice)):
 
   if framechoice[i] < 0:
-    frame = nframes - abs(framechoice[i])
+    frame = frames[framechoice[i]]
   else:
     frame = framechoice[i]
 
@@ -120,7 +125,7 @@ plt.axhline(y=1, linewidth=1, linestyle='--', color='black')
 for i in range(len(framechoice)):
 
   if framechoice[i] < 0:
-    frame = nframes - abs(framechoice[i])
+    frame = frames[framechoice[i]]
   else:
     frame = framechoice[i]
 
