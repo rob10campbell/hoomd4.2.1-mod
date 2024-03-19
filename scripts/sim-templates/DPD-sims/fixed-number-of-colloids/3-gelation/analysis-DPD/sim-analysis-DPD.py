@@ -21,7 +21,6 @@
 ##           average of the last few frames
 ##        * static structure factor S(q) (and associated g(r)) 
 ##           for colloids in the final frame OR a selection of frames
-##           NOTE: requires a large number of particles (on the order of 100,000)
 ##        * number density fluctuation (NDF) of colloids for each frame 
 ##          (AKA "variance to mean ratio" or "index of dispersion") 
 ##          with the option to test a range of bin-sizes
@@ -463,7 +462,6 @@ def pair_correlation_py(filename):
 """
 # calculates the static structure factor S(q)
 # (and the associated g(r) values used to caluclate S(q))
-# NOTE: requires a large number of particles (on the order of 100,000)
 #
 # S(q) gives us information about short-range order in our colloidal structures, 
 # it is a mathematical description of how a material scatters incident radiation 
