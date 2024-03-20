@@ -41,14 +41,7 @@ dt_Integration = 0.001 # dt! (DPD timestep)
 period = 10000 # recording interval
 
 # Colloid particle details
-N_C1 = 1000 # number of 1st type of colloidal particles
 R_C1 = 1 # 1st type colloid particle radius
-V_C1 = (4./3.) * math.pi * R_C1 ** 3 # 1st type colloid particle volume (1 particle)
-m_C1 = V_C1 * rho # 1st type colloid particle mass
-
-# Solvent particle details
-m_S = 1 # solvent particle mass 
-R_S = 0.5 # solvent particle radius 
 
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
@@ -57,23 +50,6 @@ if r_c < (3/kappa):
 r0 = 0.0 # minimum inter-particle distance
 f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
 r_cut_sc = (r_c**3 + R_C1**3)**(1/3) # modified center-center cut-off radius for solvent-colloid interactions
-
-# Simulation box size (calculated from # colloids)
-L_X = (N_C1 * V_C1 / phi)**(1./3.) 
-L_Y = L_X
-L_Z = L_X 
-
-# Volumes
-V_total = L_X*L_Y*L_Z # total volume of simulation box (cube)
-# NOTE: volume calculation currently ASSUMES 1 colloid type and 1 solvent type
-V_Colloids = N_C1 * V_C1 # total volume of all colloid particles
-V_Solvents = V_total - V_Colloids # total volume of solvents
-
-# Calculate number of solvent particles (from volumes & number density)
-N_Solvents = math.floor(rho * V_Solvents)
-
-# Total number of particles in the simulation
-N_total = int(N_Solvents + N_C1)
 
 
 ######### SIMULATION
