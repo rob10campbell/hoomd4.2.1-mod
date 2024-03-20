@@ -693,7 +693,7 @@ class Morse(Pair):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(D0=float, alpha=float, r0=float, len_keys=2))
+            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, len_keys=2)) ##~ add f_contact [PROCF2023]
         self._add_typeparam(params)
 
 

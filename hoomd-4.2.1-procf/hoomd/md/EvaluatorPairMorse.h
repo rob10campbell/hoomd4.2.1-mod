@@ -52,6 +52,7 @@ class EvaluatorPairMorse
         Scalar D0;
         Scalar alpha;
         Scalar r0;
+        Scalar f_contact; //~ add f_contact param [PROCF2023]
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -63,20 +64,23 @@ class EvaluatorPairMorse
 #endif
 
 #ifndef __HIPCC__
-        param_type() : D0(0), alpha(0), r0(0) { }
+        param_type() : D0(0), alpha(0), r0(0), f_contact(0) { }
 
         param_type(pybind11::dict v, bool managed = false)
             {
             D0 = v["D0"].cast<Scalar>();
             alpha = v["alpha"].cast<Scalar>();
             r0 = v["r0"].cast<Scalar>();
+            f_contact = v["f_contact"].cast<Scalar>(); //~ add f_contact param [PROCF2023]
             }
 
-        param_type(Scalar d, Scalar a, Scalar r, bool managed = false)
+        param_type(Scalar d, Scalar a, Scalar r, Scalar f, bool managed = false) //~ add f_contact param [PROCF2023]
+
             {
             D0 = d;
             alpha = a;
             r0 = r;
+            f_contact = f; //~ add f_contact param [PROCF2023]
             }
 
         pybind11::dict asDict()
@@ -85,6 +89,8 @@ class EvaluatorPairMorse
             v["D0"] = D0;
             v["alpha"] = alpha;
             v["r0"] = r0;
+            v["f_contact"] = f_contact; //~ add f_contact param [PROCF2023]
+ 
             return v;
             }
 #endif
@@ -96,7 +102,7 @@ class EvaluatorPairMorse
         \param _params Per type pair parameters of this potential
     */
     DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0)
+        : rsq(_rsq), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact) //~ add f_contact [PROCF2023]
         {
         }
 
@@ -128,17 +134,17 @@ class EvaluatorPairMorse
             Scalar r = fast::sqrt(rsq);
             Scalar Exp_factor = fast::exp(-alpha * (r - r0));
 
-            //~ add contact force [procf2023]
+            //~ add contact force [PROCF2023]
             //~ if particles overlap (r < r0) apply contact force
-            if(r < r0)force_divr = Scalar(100.0) * (Scalar(1.0) - (r-r0)) * pow((Scalar(0.50)*r0),3) / r;
+            if(r < r0)force_divr = f_contact * (Scalar(1.0) - (r-r0)) * pow((Scalar(0.50)*r0),3) / r;
 
             else{
                 //~ calculate force as normal
                 force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
 
                 //~ but still include contact force within 0.001 dist of colloid-colloid contact 
-                Scalar Del_max = Scalar(0.001);
-                if(r<(r0+Del_max))force_divr += Scalar(100.0) * pow((Scalar(1.0) - (r-r0)/Del_max), 3) * pow((Scalar(0.50)*r0),3) / r;
+                Scalar Del_max = Scalar(0.001); //~ 0.001 or 0.01
+                if(r<(r0+Del_max))force_divr += f_contact * pow((Scalar(1.0) - (r-r0)/Del_max), 3) * pow((Scalar(0.50)*r0),3) / r;
                 } 
             //~ 
 
@@ -188,6 +194,7 @@ class EvaluatorPairMorse
     Scalar D0;     //!< Depth of the Morse potential at its minimum
     Scalar alpha;  //!< Controls width of the potential well
     Scalar r0;     //!< Offset, i.e., position of the potential minimum
+    Scalar f_contact; //!< Contact force magnitude, for resolving overlap [PROCF2023]
     };
 
     } // end namespace md

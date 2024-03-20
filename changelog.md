@@ -36,7 +36,7 @@ Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
 		* [x] module-md.cc : **add void/export for DPDMorse()**	
 		* [x] `pair`
 			* [x] \_\_init\_\_.py **call DPDMorse**
-			* [x] pair.py : **define DPDMorse Python interface**
+			* [x] pair.py : **define DPDMorse Python interface, add Morse contact force param**
 		* [x] PotentialPairDPDThermo.h : **virial_ind**
 	* [x] ParticleData.cc : **virial_ind**
 	* [x] ParticleData.h : **virial_ind**

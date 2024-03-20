@@ -37,18 +37,8 @@ N_time_steps = 100000 # number  of  time steps
 dt_Integration = 0.001 # dt! (BD timestep, may need to be smaller than DPD)
 period = 10000 # recording interval
 
-# Simulation box size (fixed by L_X)
-L_X = 30
-L_Y = L_X
-L_Z = L_X
-V_total = L_X * L_Y * L_Z # total volume of simulation box (cube)
-
 # Colloid particle details
 R_C1 = 1 # 1st type colloid particle radius
-V_C1 = (4./3.) * math.pi * R_C1 ** 3 # 1st type colloid particle volume (1 particle)
-m_C1 = V_C1 * rho # 1st type colloid particle mass
-V_Colloids = phi * V_total # total volume of type 1 colloids
-N_C1 = round(V_Colloids / V_C1) # number of 1st type of colloid particles (INT)
 
 # Brownian parameters
 eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
@@ -59,10 +49,8 @@ r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c)
 if r_c < (3/kappa):
   print('WARNING: r_c is less than range of attraction. Increase r_c')
 r0 = 0.0 # minimum inter-particle distance
-f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
+f_contact = 100 # magnitude of contact force (usually 100 or 1000)
 
-# Total number of particles in the simulation
-N_total = int(N_C1)
 
 
 ######### SIMULATION
@@ -97,7 +85,7 @@ else:
   morse = hoomd.md.pair.Morse(nlist=nl, default_r_cut=1.0 * r_c)
 
   # colloid-colloid: hard particles (no deformation/overlap)
-  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1))	
+  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), f_contact=f_contact)	
   morse.r_cut[('A','A')] = r_c+(R_C1+R_C1) # used to assemble nl
 
   # choose integration method for the end of each timestep
