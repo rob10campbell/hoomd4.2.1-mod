@@ -167,6 +167,8 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [PROCF2023]
         if "PotentialPairDPDThermo" in self._cpp_class_name:
             self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self._poly)
+        #elif "PotentialPairMorse" in self._cpp_class_name:
+        #    self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._poly)
         else: 
             self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
         ##~ 
@@ -655,8 +657,9 @@ class Morse(Pair):
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list.
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
-        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`.
+        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
+        poly (float): The percentage of polydispersity (ex: 0.05) [PROCF2023]
 
     `Morse` computes the Morse pair force on every particle in the simulation
     state:
@@ -683,6 +686,8 @@ class Morse(Pair):
           :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
         * ``r0`` (`float`, **required**) - position of the minimum
           :math:`r_0` :math:`[\mathrm{length}]`
+        * ``poly`` (float) - the percentage of polydispersity (ex: 0.05) [PROCF2023]
+          :math: `poly` :math: `[percent]` [PROCF2023]
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -696,13 +701,12 @@ class Morse(Pair):
 
     _cpp_class_name = "PotentialPairMorse"
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'): 
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, len_keys=2)) ##~ add f_contact [PROCF2023]
+            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, poly=float, len_keys=2)) ##~ add f_contact and poly [PROCF2023]
         self._add_typeparam(params)
-
 
 class DPD(Pair):
     r"""Dissipative Particle Dynamics.

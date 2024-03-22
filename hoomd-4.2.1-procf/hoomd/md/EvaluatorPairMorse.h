@@ -51,8 +51,9 @@ class EvaluatorPairMorse
         {
         Scalar D0;
         Scalar alpha;
-        Scalar r0;
+        Scalar r0; 
         Scalar f_contact; //~ add f_contact param [PROCF2023]
+        Scalar poly; //~ add poly param [PROCF2023]
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -64,7 +65,7 @@ class EvaluatorPairMorse
 #endif
 
 #ifndef __HIPCC__
-        param_type() : D0(0), alpha(0), r0(0), f_contact(0) { }
+        param_type() : D0(0), alpha(0), r0(0), f_contact(0), poly(0) { } //~ add f_contact and poly params [PROCF2023]
 
         param_type(pybind11::dict v, bool managed = false)
             {
@@ -72,15 +73,16 @@ class EvaluatorPairMorse
             alpha = v["alpha"].cast<Scalar>();
             r0 = v["r0"].cast<Scalar>();
             f_contact = v["f_contact"].cast<Scalar>(); //~ add f_contact param [PROCF2023]
+            poly = v["poly"].cast<Scalar>(); //~ add poly param [PROCF2023]
             }
 
-        param_type(Scalar d, Scalar a, Scalar r, Scalar f, bool managed = false) //~ add f_contact param [PROCF2023]
-
+        param_type(Scalar d, Scalar a, Scalar r, Scalar f, Scalar p, bool managed = false) //~ add f_contact and poly params [PROCF2023]
             {
             D0 = d;
             alpha = a;
             r0 = r;
             f_contact = f; //~ add f_contact param [PROCF2023]
+            poly = p; //~ add poly param [PROCF2023]
             }
 
         pybind11::dict asDict()
@@ -90,7 +92,7 @@ class EvaluatorPairMorse
             v["alpha"] = alpha;
             v["r0"] = r0;
             v["f_contact"] = f_contact; //~ add f_contact param [PROCF2023]
- 
+            v["poly"] = poly; //~ add poly param [PROCF2023] 
             return v;
             }
 #endif
@@ -104,7 +106,7 @@ class EvaluatorPairMorse
         \param _params Per type pair parameters of this potential
     */
     DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add contact and pair_typeIDs [PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact) //~ add contact dist for poly and f_contact for contact force [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact), poly(_params.poly) //~ add contact dist, poly param, and f_contact [PROCF2023]
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
@@ -132,8 +134,15 @@ class EvaluatorPairMorse
     */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
-
-        Scalar r0 = contact; //~ set r0 = contact [PROCF2023] 
+        //~ update values if polydispersity != 0 [PROCF2023]
+        if (poly != 0.0)
+          {
+          //~ set r0 = contact 
+          Scalar r0 = contact; 
+          //~ Scale attraction strength by particle size
+          D0 = D0 * (0.5*r0);
+          }   
+        //~ 
 
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
@@ -206,6 +215,7 @@ class EvaluatorPairMorse
     Scalar alpha;  //!< Controls width of the potential well
     Scalar r0;     //!< Offset, i.e., position of the potential minimum
     Scalar f_contact; //!< Contact force magnitude, for resolving overlap [PROCF2023]
+    Scalar poly;   //!< the polydispersity of the system (percent as scalar, ex: 0.05)
     };
 
     } // end namespace md

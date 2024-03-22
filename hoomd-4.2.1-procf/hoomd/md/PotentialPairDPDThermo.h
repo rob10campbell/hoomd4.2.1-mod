@@ -257,7 +257,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             //~ store the typeIDs of the current pair [PROCF2023]
             //~ the value is only stored if there is polydispersity 
             unsigned int pair_typeids[2] = {0, 0};
-            if (m_poly) 
+            if (m_poly != 0.0) 
               {
               pair_typeids[0] = typei;
               pair_typeids[1] = typej;
@@ -273,7 +273,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
             //~ the calculation is only used if there is polydispersity
             Scalar contact = 0.0;
-            if (m_poly) 
+            if (m_poly != 0.0) 
               {
               contact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
               }

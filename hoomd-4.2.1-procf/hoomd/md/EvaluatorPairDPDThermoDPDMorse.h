@@ -284,7 +284,7 @@ class EvaluatorPairDPDThermoDPDMorse
 
         //~ use provided particle radii unless a polydispersity value is provided
         Scalar radsum = a1 + a2;
-        if (poly)
+        if (poly != 0.0)
           {
           radsum = contact;
           //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
@@ -297,7 +297,7 @@ class EvaluatorPairDPDThermoDPDMorse
             radsum = contact - 0.5;
             }
           //~ Scale attraction strength by particle size
-          D0 = D0 * (0.5*radsum)
+          D0 = D0 * (0.5*radsum);
           }   
         //~ 
 
@@ -373,7 +373,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	// get the sum of the particle radii
         //~ use provided particle radii unless a polydispersity value is provided
         Scalar radsum = a1 + a2;
-        if (poly)
+        if (poly != 0.0)
           {
           radsum = contact;
           //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
@@ -386,7 +386,7 @@ class EvaluatorPairDPDThermoDPDMorse
             radsum = contact - 0.5;
             }
           //~ Scale attraction strength by particle size
-          D0 = D0 * (0.5*radsum)
+          D0 = D0 * (0.5*radsum);
           }
         //~ 
 	
