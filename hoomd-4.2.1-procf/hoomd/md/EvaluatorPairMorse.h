@@ -98,11 +98,12 @@ class EvaluatorPairMorse
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact) //~ add f_contact [PROCF2023]
+    DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~add contact dist (for poly) [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact) //~ add contact dist for poly and f_contact for contact force [PROCF2023]
         {
         }
 
@@ -128,10 +129,13 @@ class EvaluatorPairMorse
     */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
+
+        Scalar r0 = contact; //~ set r0 = contact [PROCF2023] 
+
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
             {
-            Scalar r = fast::sqrt(rsq);
+            Scalar r = fast::sqrt(rsq); 
             Scalar Exp_factor = fast::exp(-alpha * (r - r0));
 
             //~ add contact force [PROCF2023]
@@ -190,6 +194,7 @@ class EvaluatorPairMorse
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
+    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar D0;     //!< Depth of the Morse potential at its minimum
     Scalar alpha;  //!< Controls width of the potential well

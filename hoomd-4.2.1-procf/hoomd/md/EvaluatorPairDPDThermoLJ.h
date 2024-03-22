@@ -122,11 +122,12 @@ class EvaluatorPairDPDThermoLJ
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023] 
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoLJ(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6),
+    DEVICE EvaluatorPairDPDThermoLJ(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6), //~ add contact [PROCF2023]
           lj2(_params.epsilon_x_4 * _params.sigma_6), gamma(_params.gamma)
         {
         }
@@ -317,6 +318,7 @@ class EvaluatorPairDPDThermoLJ
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
+    Scalar contact;      //!<~ Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     Scalar lj1;          //!< lj1 parameter extracted from the params passed to the constructor
     Scalar lj2;          //!< lj2 parameter extracted from the params passed to the constructor

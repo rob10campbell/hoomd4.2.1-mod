@@ -133,11 +133,12 @@ class EvaluatorPairDPDThermoDPD
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoDPD(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), a(_params.A), gamma(_params.gamma)
+    DEVICE EvaluatorPairDPDThermoDPD(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), a(_params.A), gamma(_params.gamma) //~add contact [PROCF2023]
         {
         }
 
@@ -340,6 +341,7 @@ class EvaluatorPairDPDThermoDPD
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
+    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     Scalar a;            //!< a parameter for potential extracted from params by constructor
     Scalar gamma;        //!< gamma parameter for potential extracted from params by constructor

@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_YUKAWA_H__
 #define __PAIR_EVALUATOR_YUKAWA_H__
 
@@ -97,11 +99,12 @@ class EvaluatorPairYukawa
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairYukawa(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), epsilon(_params.epsilon), kappa(_params.kappa)
+    DEVICE EvaluatorPairYukawa(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), epsilon(_params.epsilon), kappa(_params.kappa) //~add contact [PROCF2023]
         {
         }
 
@@ -178,6 +181,7 @@ class EvaluatorPairYukawa
 
     protected:
     Scalar rsq;     //!< Stored rsq from the constructor
+    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq;  //!< Stored rcutsq from the constructor
     Scalar epsilon; //!< epsilon parameter extracted from the params passed to the constructor
     Scalar kappa;   //!< kappa parameter extracted from the params passed to the constructor

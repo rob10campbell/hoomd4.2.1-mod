@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_OPP_H__
 #define __PAIR_EVALUATOR_OPP_H__
 
@@ -95,11 +97,12 @@ class EvaluatorPairOPP
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairOPP(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), params(_params)
+    DEVICE EvaluatorPairOPP(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), params(_params) //~ add contact [PROC2023]
         {
         }
 
@@ -189,6 +192,7 @@ class EvaluatorPairOPP
 
     protected:
     Scalar rsq;        /// Stored rsq from the constructor
+    Scalar contact;    ///~ Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq;     /// Stored rcutsq from the constructor
     param_type params; /// Stored pair parameters for a given type pair
     };

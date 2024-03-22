@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_LJ0804_H__
 #define __PAIR_EVALUATOR_LJ0804_H__
 
@@ -101,8 +103,8 @@ class EvaluatorPairLJ0804
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairLJ0804(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.epsilon_x_4 * _params.sigma_4 * _params.sigma_4),
+    DEVICE EvaluatorPairLJ0804(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), lj1(_params.epsilon_x_4 * _params.sigma_4 * _params.sigma_4), //~ add contact [PROCF2023]
           lj2(_params.epsilon_x_4 * _params.sigma_4)
         {
         }
@@ -179,6 +181,7 @@ class EvaluatorPairLJ0804
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
+    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar lj1;    //!< lj1 parameter extracted from the params passed to the constructor
     Scalar lj2;    //!< lj2 parameter extracted from the params passed to the constructor

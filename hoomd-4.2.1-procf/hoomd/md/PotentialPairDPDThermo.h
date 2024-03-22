@@ -162,7 +162,6 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                                    access_mode::read);
     //~
 
-
     // force arrays
     ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(this->m_virial, access_location::host, access_mode::overwrite);
@@ -248,6 +247,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            Scalar contact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+            //~
+
             // calculate the drag term r \dot v
             Scalar rdotv = dot(dx, dv);
 
@@ -273,7 +276,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             Scalar cont_divr = Scalar(0.0);
 	    //~
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, rcutsq, param);
+            evaluator eval(rsq, contact, rcutsq, param); //~ add contact for polydispersity [PROCF2023]
 
             // Special Potential Pair DPD Requirements
             const Scalar currentTemp = m_T->operator()(timestep);

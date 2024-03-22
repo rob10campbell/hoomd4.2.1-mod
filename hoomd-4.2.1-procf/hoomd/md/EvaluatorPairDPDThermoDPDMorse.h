@@ -20,6 +20,7 @@
 #include "hoomd/RNGIdentifiers.h"
 #include "hoomd/RandomNumbers.h"
 
+
 /*! \file EvaluatorPairDPDMorseThermo.h
  \brief Defines the pair evaluator class for different particle interactions:
 		   the DPD conservative potential : solvent-solvent and solvent-colloid
@@ -212,11 +213,12 @@ class EvaluatorPairDPDThermoDPDMorse
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), 
+    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), //~ add contact [PROCF2023]
 	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut){ }
 
     //! Set i and j, (particle tags), and the timestep
@@ -269,7 +271,7 @@ class EvaluatorPairDPDThermoDPDMorse
     */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
-	Scalar radsum = a1 + a2;
+	Scalar radsum = contact; //a1 + a2; //~ switch to contact
         Scalar rinv = fast::rsqrt(rsq);
 	Scalar r = (Scalar(1.0) / rinv) - radsum;
 	//Scalar rcut = fast::sqrt(rcutsq) - radsum;
@@ -525,6 +527,7 @@ class EvaluatorPairDPDThermoDPDMorse
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
+    Scalar contact;      //!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     // parameters for potential extracted from the params by constructor
     Scalar A0;		 //!< the conservative force scaling parameter

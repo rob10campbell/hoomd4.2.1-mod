@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #include "hoomd/ManagedArray.h"
 #include <memory>
 
@@ -119,11 +121,12 @@ class EvaluatorPairTable
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairTable(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), rmin(_params.rmin), V_table(_params.V_table),
+    DEVICE EvaluatorPairTable(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), rmin(_params.rmin), V_table(_params.V_table), //~ add contact [PROCF2023]
           F_table(_params.F_table)
         {
         }
@@ -220,6 +223,7 @@ class EvaluatorPairTable
 
     protected:
     Scalar rsq;                          //!< distance squared
+    Scalar contact;                      //!< sum of particle radii (contact distance) [PROCF2023]
     Scalar rcutsq;                       //!< the potential cuttoff distance squared
     size_t width;                        //!< the distance between table indices
     Scalar rmin;                         //!< the distance of the first index of the table potential

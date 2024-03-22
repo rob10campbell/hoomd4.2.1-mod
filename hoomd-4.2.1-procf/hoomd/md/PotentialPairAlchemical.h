@@ -310,6 +310,9 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
+    //~ access particle diameter [PROCF2023] 
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
+    //~
 
     // force arrays
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
@@ -381,6 +384,10 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            Scalar contact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+            //~
+
             // get parameters for this type pair
             unsigned int typpair_idx = m_typpair_idx(typei, typej);
             const auto& param = m_params[typpair_idx];
@@ -404,7 +411,7 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, rcutsq, param);
+            evaluator eval(rsq, contact, rcutsq, param); //~ add contact [PROCF2023]
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 

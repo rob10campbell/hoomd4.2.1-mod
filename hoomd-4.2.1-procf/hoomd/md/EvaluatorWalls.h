@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 /*! \file EvaluatorWalls.h
     \brief Executes an external field potential of several evaluator types for each wall in the
    system.
@@ -164,11 +166,12 @@ template<class evaluator> class EvaluatorWalls
     DEVICE inline void callEvaluator(Scalar3& F, Scalar& energy, const Scalar3 drv)
         {
         Scalar rsq = dot(drv, drv);
+        Scalar contact = 0.0; //~ set contact to 0.0, NO PARTICLE SIZE CONSIDERED [PROCF2023]
 
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
-        evaluator eval(rsq, m_params.rcutsq, m_params.params);
+        evaluator eval(rsq, contact, m_params.rcutsq, m_params.params); //~ add contact [PROCF2023]
         if (evaluator::needsCharge())
             eval.setCharge(qi, Scalar(0.0));
 
@@ -202,8 +205,9 @@ template<class evaluator> class EvaluatorWalls
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
+        Scalar contact = 0.0; //~ set contact to 0.0, NO PARTICLE SIZE CONSIDERED [PROCF2023]
 
-        evaluator eval(rextrapsq, m_params.rcutsq, m_params.params);
+        evaluator eval(rextrapsq, contact, m_params.rcutsq, m_params.params); //~ add contact [PROCF2023]
         if (evaluator::needsCharge())
             eval.setCharge(qi, Scalar(0.0));
 

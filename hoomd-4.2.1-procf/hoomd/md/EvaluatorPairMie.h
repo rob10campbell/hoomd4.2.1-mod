@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_MIE_H__
 #define __PAIR_EVALUATOR_MIE_H__
 
@@ -96,13 +98,14 @@ class EvaluatorPairMie
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _n First, larger exponent that captures hard-core repulsion
         \param -m Second, smaller exponent that captures attraction
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairMie(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), mie1(_params.m1), mie2(_params.m2), mie3(_params.m3),
+    DEVICE EvaluatorPairMie(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), mie1(_params.m1), mie2(_params.m2), mie3(_params.m3), //~add contact [PROCF2023]
           mie4(_params.m4)
         {
         }
@@ -178,6 +181,7 @@ class EvaluatorPairMie
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
+    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar mie1;   //!< mie1 parameter extracted from the params passed to the constructor
     Scalar mie2;   //!< mie2 parameter extracted from the params passed to the constructor

@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_ExpandedMie_H__
 #define __PAIR_EVALUATOR_ExpandedMie_H__
 
@@ -98,8 +100,8 @@ class EvaluatorPairExpandedMie
         \param _delta Horizontal shift in r
     */
     DEVICE
-    EvaluatorPairExpandedMie(const Scalar _rsq, const Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), repulsive(_params.repulsive), attractive(_params.attractive),
+    EvaluatorPairExpandedMie(const Scalar _rsq, const Scalar _contact, const Scalar _rcutsq, const param_type& _params) //~add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), repulsive(_params.repulsive), attractive(_params.attractive), //~add contact [PROCF2023]
           n_pow(_params.n_pow), m_pow(_params.m_pow), delta(_params.delta)
         {
         }
@@ -186,6 +188,7 @@ class EvaluatorPairExpandedMie
 
     protected:
     Scalar rsq;        //!< distance between particles squared
+    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     Scalar rcutsq;     //!< the cutoff radius of the potential squared
     Scalar repulsive;  //!< Lumped repulsive term to simplify/speed up computation
     Scalar attractive; //!< Lumped attractive term to simplify/speed up computation
