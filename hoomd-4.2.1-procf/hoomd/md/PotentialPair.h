@@ -641,6 +641,12 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         // sanity check
         assert(typei < m_pdata->getNTypes());
 
+        //~ access diameter (if needed) removed in v4 upgrade, readded by [PROCF2023]
+        //Scalar di = Scalar(0.0);
+        //if (evaluator::needsDiameter())
+        //   di = h_diameter.data[i];
+        //~
+
         // access charge (if needed)
         Scalar qi = Scalar(0.0);
         if (evaluator::needsCharge())
@@ -675,6 +681,12 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
 
             //~ store the typeIDs of the current pair [PROCF2023]
             unsigned int pair_typeids[2] = {typei, typej};
+            //~
+
+            //~ access diameter (if needed) removed in v4 upgrade, readded by [PROCF2023]
+            //Scalar dj = Scalar(0.0);
+            //if (evaluator::needsDiameter())
+            //    dj = h_diameter.data[j];
             //~
 
             // access charge (if needed)
@@ -716,6 +728,10 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
             evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeIDs [PROCF2023]
+            //~ add diameter (if needed) removed in v4, readded [PROCF2023]
+            //if (evaluator::needsDiameter())
+            //    eval.setDiameter(di, dj);
+            //~
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 
@@ -820,6 +836,11 @@ CommFlags PotentialPair<evaluator>::getRequestedCommFlags(uint64_t timestep)
     if (evaluator::needsCharge())
         flags[comm_flag::charge] = 1;
 
+    //~ add diameter (if needed) removed in v4 re-added [PROCF2023]
+    //if (evaluator::needsDiameter())
+    //    flags[comm_flag::diameter] = 1;
+    //~
+
     flags |= ForceCompute::getRequestedCommFlags(timestep);
 
     return flags;
@@ -902,6 +923,12 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
         // sanity check
         assert(typei < m_pdata->getNTypes());
 
+        //~ access diameter (if needed) removed in v4, re-added [PROCF2023]
+        //Scalar di = Scalar(0.0);
+        //if (evaluator::needsDiameter())
+        //    di = h_diameter.data[i];
+        //~
+
         // access charge (if needed)
         Scalar qi = Scalar(0.0);
         if (evaluator::needsCharge())
@@ -924,6 +951,12 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
 
             //~ store the typeIDs of the current pair [PROCF2023]
             unsigned int pair_typeids[2] = {typei, typej};
+            //~
+
+            //~ access diameter (if needed) removed in v4 upgrade, readded by [PROCF2023]
+            //Scalar dj = Scalar(0.0);
+            //if (evaluator::needsDiameter())
+            //    dj = h_diameter.data[j];
             //~
 
             // access charge (if needed)
@@ -965,6 +998,10 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
             evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeIDs [PROCF2023]
+            //~ add diameter (if needed), removed in v4 but re-added [PROCF2023]
+            //if (evaluator::needsDiameter())
+            //    eval.setDiameter(di, dj);
+            //~
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 

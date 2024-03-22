@@ -73,7 +73,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [PROCF2023]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False, poly=0.0): ##~ default bond_calc to False, default poly to zero [PROCF2023]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -96,11 +96,18 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         self.mode = mode
         self.nlist = nlist
         self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [PROCF2023]
+        self._poly = poly ##~ Store poly value as an instance variable [PROCF2023]
 
     ##~ add a property to access _bond_calc instance variable
     @property
     def bond_calc(self):
         return self._bond_calc
+    ##~
+
+    ##~ add a property to access _poly instance variable
+    @property
+    def poly(self):
+        return self._poly
     ##~
 
     def compute_energy(self, tags1, tags2):
@@ -159,7 +166,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
 
         ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [PROCF2023]
         if "PotentialPairDPDThermo" in self._cpp_class_name:
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self._poly)
         else: 
             self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
         ##~ 
@@ -1905,6 +1912,7 @@ class DPDMorse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
         bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
+        poly (float): The percentage of polydispersity (ex: 0.05)
 
     `DPDMorse` computes the Morse pair force, semi-hard potential contact force, and short-range lubrication (squeezing) force approximation  on every particle in the simulation
     state:
@@ -1926,7 +1934,7 @@ class DPDMorse(Pair):
 
     Example::
         nl = nlist.Tree()
-        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True)
+        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True, poly=0.05)
          morse.params[('A','A')] = dict(A0=25.0, gamma=45, D0=0, alpha=3.0, r0=0, eta=1.1, f_contact=0.0, a1=0.0, a2=0.0, rcut=1.0)
         morse.r_cut[('A', 'B')] = 1.0
 
@@ -1964,12 +1972,13 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _cpp_class_name = "PotentialPairDPDThermoDPDMorse"
     _accepted_modes = ("none",)
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, poly=0.0):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
                          mode='none')
         self._bond_calc = bond_calc
+        self._poly = poly
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(A0=float,
@@ -1982,6 +1991,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                               a1=float,
                               a2=float,
                               rcut=float,
+                              poly=float,
                               len_keys=2))
         self._add_typeparam(params)
         param_dict = ParameterDict(kT=hoomd.variant.Variant)
@@ -2013,5 +2023,20 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         Setter method for the bond_calc property.
         """
         self._bond_calc = value
+
+    @property
+    def poly(self):
+        """
+        Getter method for the polydispersity property.
+        """
+        return self._poly
+
+    @poly.setter
+    def poly(self, value):
+        """
+        Setter method for the polydispersity property.
+        """
+        self._poly = value
+
 ##~
 

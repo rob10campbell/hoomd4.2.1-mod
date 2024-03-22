@@ -76,12 +76,13 @@ namespace md
     - 2 \cdot \exp(-\alpha  \cdot \left( (r_{ij} - a_{i} - a_{j} \right) - r_{\mathrm{0}}) \right)\f]
 
 
-    The Morse potential does not need charge. Eight parameters are specified and
+    The Morse potential does not need charge. Nine parameters are specified and
     stored in a Scalar. \a A0 is placed in \a params.A0, \a D0 is placed in \a params.D0, 
     \a alpha is placed in \a params.alpha, \a r0 is placed in \a params.r0, 
     \a eta is placed in \a params.eta, \a f_contact is placed in \a params.f_contact, 
     \a a1 is placed in \a params.a1, \a a2 is placed in \a params.a2, 
-    and \a rcut is placed in \a params.rcut
+    \a rcut is placed in \a params.rcut
+    and \a poly is placed in \a params.poly
 
 
     The thermostat potential EvaluatorPairDPDThermoMorse::evalForceEnergyThermo evaluates includes 
@@ -134,12 +135,13 @@ namespace md
     F_{\mathrm{contact}}(r_{ij}) = 0
  
  
-    The Thermostat potential does not need charge. Eight parameters are specified and
+    The Thermostat potential does not need charge. Nine parameters are specified and
     stored in a Scalar. \a A0 is placed in \a params.A0, \a D0 is placed in \a params.D0, 
     \a alpha is placed in \a params.alpha, \a r0 is placed in \a params.r0, 
     \a eta is placed in \a params.eta, \a f_contact is placed in \a params.f_contact, 
     \a a1 is placed in \a params.a1, \a a2 is placed in \a params.a2, 
-    and \a rcut is placed in \a params.rcut
+    \a rcut is placed in \a params.rcut
+    and \a poly is placed in \a params.poly
 
     These are related to the standard lj parameters sigma and epsilon by:
     - \a A0 = \f$ A \f$
@@ -162,6 +164,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	Scalar a1;
 	Scalar a2;
 	Scalar rcut;
+	Scalar poly;
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -172,7 +175,7 @@ class EvaluatorPairDPDThermoDPDMorse
         void set_memory_hints() const { }
 #endif
 #ifndef __HIPCC__
-        param_type() : A0(0), gamma(0), D0(0), alpha(0), r0(0), eta(0), f_contact(0), a1(0), a2(0) { }
+        param_type() : A0(0), gamma(0), D0(0), alpha(0), r0(0), eta(0), f_contact(0), a1(0), a2(0), rcut(0), poly(0) { }
 
         param_type(pybind11::dict v, bool managed = false)
             {
@@ -186,6 +189,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	    a1 = v["a1"].cast<Scalar>();
 	    a2 = v["a2"].cast<Scalar>();
 	    rcut = v["rcut"].cast<Scalar>();
+	    poly = v["poly"].cast<Scalar>();
             }
 
         pybind11::dict asDict()
@@ -201,6 +205,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	    v["a1"] = a1;
 	    v["a2"] = a2;
 	    v["rcut"] = rcut;
+	    v["poly"] = poly;
             return v;
             }
 #endif
@@ -220,7 +225,7 @@ class EvaluatorPairDPDThermoDPDMorse
     */
     DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeIDs [PROCF2023]
         : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), //~ add contact [PROCF2023]
-	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut)
+	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), poly(_params.poly) // add poly [PROCF2023]
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023]  
@@ -277,18 +282,22 @@ class EvaluatorPairDPDThermoDPDMorse
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
 
-        Scalar radsum = contact;
-        //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
-        if (typei == 0 && typej == 0)
-          { 
-          radsum = contact - 1.0; 
-          }
-        else if (typei == 0 || typej == 0)
+        //~ use provided particle radii unless a polydispersity value is provided
+        Scalar radsum = a1 + a2;
+        if (poly)
           {
-          radsum = contact - 0.5;
+          radsum = contact;
+          //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
+          if (typei == 0 && typej == 0)
+            { 
+            radsum = contact - 1.0; 
+            }
+          else if (typei == 0 || typej == 0)
+            {
+            radsum = contact - 0.5;
+            }
           }   
         //~ 
-        //Scalar radsum = a1 + a2
 
         Scalar rinv = fast::rsqrt(rsq);
         // convert to h_ij (surface-surface distance)
@@ -360,18 +369,22 @@ class EvaluatorPairDPDThermoDPDMorse
                                       bool energy_shift)
         {
 	// get the sum of the particle radii
-        Scalar radsum = contact;
-        //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
-        if (typei == 0 && typej == 0)
-          { 
-          radsum = contact - 1.0; 
-          }
-        else if (typei == 0 || typej == 0)
+        //~ use provided particle radii unless a polydispersity value is provided
+        Scalar radsum = a1 + a2;
+        if (poly)
           {
-          radsum = contact - 0.5;
+          radsum = contact;
+          //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
+          if (typei == 0 && typej == 0)
+            { 
+            radsum = contact - 1.0; 
+            }
+          else if (typei == 0 || typej == 0)
+            {
+            radsum = contact - 0.5;
+            }
           }
         //~ 
-        //Scalar radsum = a1 + a2
 	
 	// get 1/r_ij
         Scalar rinv = fast::rsqrt(rsq);
@@ -576,6 +589,7 @@ class EvaluatorPairDPDThermoDPDMorse
     Scalar a1;		 //!< the radius of particle i
     Scalar a2;		 //!< the radius of particle j
     Scalar rcut;	 //!< the cut-off radius for particle interaction
+    Scalar poly;	 //!< the polydispersity of the system (percent as scalar, ex: 0.05)
     uint16_t m_seed;     //!< User set seed for thermostat PRNG
     unsigned int m_i;    //!< index of first particle (should it be tag?).  For use in PRNG
     unsigned int m_j;    //!< index of second particle (should it be tag?). For use in PRNG
