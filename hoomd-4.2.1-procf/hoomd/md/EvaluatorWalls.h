@@ -167,11 +167,12 @@ template<class evaluator> class EvaluatorWalls
         {
         Scalar rsq = dot(drv, drv);
         Scalar contact = 0.0; //~ set contact to 0.0, NO PARTICLE SIZE CONSIDERED [PROCF2023]
+        unsigned int pair_typeids[2] = {0,0}; //~ set typeIDs to 0, not needed [PROCF2023]
 
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
-        evaluator eval(rsq, contact, m_params.rcutsq, m_params.params); //~ add contact [PROCF2023]
+        evaluator eval(rsq, contact, pair_typeids, m_params.rcutsq, m_params.params); //~ add contact and pair_typeIDs [PROCF2023]
         if (evaluator::needsCharge())
             eval.setCharge(qi, Scalar(0.0));
 
@@ -206,8 +207,9 @@ template<class evaluator> class EvaluatorWalls
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
         Scalar contact = 0.0; //~ set contact to 0.0, NO PARTICLE SIZE CONSIDERED [PROCF2023]
+        unsigned int pair_typeids[2] = {0,0}; //~ set typeIDs to 0, not needed [PROCF2023]
 
-        evaluator eval(rextrapsq, contact, m_params.rcutsq, m_params.params); //~ add contact [PROCF2023]
+        evaluator eval(rextrapsq, contact, pair_typeids, m_params.rcutsq, m_params.params); //~ add contact and pair_typeIDs [PROCF2023]
         if (evaluator::needsCharge())
             eval.setCharge(qi, Scalar(0.0));
 

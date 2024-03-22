@@ -241,6 +241,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < this->m_pdata->getNTypes());
 
+            //~ store the typeIDs of the current pair [PROCF2023]
+            unsigned int pair_typeids[2] = {typei, typej};
+            //~
+
             // apply periodic boundary conditions
             dx = box.minImage(dx);
 
@@ -250,9 +254,6 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
             Scalar contact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
             //~
-
-            // calculate the drag term r \dot v
-            Scalar rdotv = dot(dx, dv);
 
             // get parameters for this type pair
             unsigned int typpair_idx = this->m_typpair_idx(typei, typej);
@@ -276,7 +277,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             Scalar cont_divr = Scalar(0.0);
 	    //~
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, contact, rcutsq, param); //~ add contact for polydispersity [PROCF2023]
+            evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeids for polydispersity [PROCF2023]
 
             // Special Potential Pair DPD Requirements
             const Scalar currentTemp = m_T->operator()(timestep);
@@ -292,10 +293,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 	    //~ add bond_calc [PROCF2023]
 	    if(m_bond_calc)
 		{
-           	if(typei && typej)
+           	if(typei && typej) // if both are NOT zero (solvents are type zero)
                	    {
    	       	    Scalar rsq_root = fast::sqrt(rsq) - Scalar(0.5)*(h_diameter.data[i]+h_diameter.data[j]);
-   	            if(rsq_root < Scalar(0.10))
+   	            if(rsq_root < Scalar(0.10)) // assumes the cut-off is 0.1
    	                {
    	                unsigned int var1 = tagi - this->LTIME->num_solvent;
    	                unsigned int var2 = tagj - this->LTIME->num_solvent;
@@ -394,7 +395,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     if(m_bond_calc)
 	{
     	this->LTIME->updatebondtime(timestep);
-    	if(timestep%10000 == 0)
+    	if(timestep%10000 == 0) // assumes the recording period is 10000
 	    {
             this->LTIME->writeBondtime();
 	    }

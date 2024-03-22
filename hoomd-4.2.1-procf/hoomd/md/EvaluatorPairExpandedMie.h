@@ -93,6 +93,8 @@ class EvaluatorPairExpandedMie
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _contact the sum of the interacting particle radii [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _n First, larger exponent that captures hard-core repulsion
         \param _m Second, smaller exponent that captures attraction
@@ -100,10 +102,12 @@ class EvaluatorPairExpandedMie
         \param _delta Horizontal shift in r
     */
     DEVICE
-    EvaluatorPairExpandedMie(const Scalar _rsq, const Scalar _contact, const Scalar _rcutsq, const param_type& _params) //~add contact [PROCF2023]
+    EvaluatorPairExpandedMie(const Scalar _rsq, const Scalar _contact, unsigned int _pair_typeids[2], const Scalar _rcutsq, const param_type& _params) //~add contact and pair_typeIDs [PROCF2023]
         : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), repulsive(_params.repulsive), attractive(_params.attractive), //~add contact [PROCF2023]
           n_pow(_params.n_pow), m_pow(_params.m_pow), delta(_params.delta)
         {
+        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
+        typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
 
     //! ExpandedMie doesn't use charge
@@ -188,7 +192,10 @@ class EvaluatorPairExpandedMie
 
     protected:
     Scalar rsq;        //!< distance between particles squared
-    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
+    Scalar contact;    //!< Stored contact-distance from the constructor [PROCF2023]
+    unsigned int pair_typeids;  //!< Stored pair typeIDs from the constructor [PROCF2023] 
+    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
+    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq;     //!< the cutoff radius of the potential squared
     Scalar repulsive;  //!< Lumped repulsive term to simplify/speed up computation
     Scalar attractive; //!< Lumped attractive term to simplify/speed up computation

@@ -373,6 +373,10 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
+            //~ store the typeIDs of the current pair [PROCF2023]
+            unsigned int pair_typeids[2] = {typei, typej};
+            //~
+
             // access charge (if needed)
             Scalar qj = Scalar(0.0);
             if (evaluator::needsCharge())
@@ -411,7 +415,7 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, contact, rcutsq, param); //~ add contact [PROCF2023]
+            evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeIDs [PROCF2023]
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 

@@ -99,12 +99,15 @@ class EvaluatorPairMorse
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
         \param _contact the sum of the interacting particle radii [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~add contact dist (for poly) [PROCF2023]
+    DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add contact and pair_typeIDs [PROCF2023]
         : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact) //~ add contact dist for poly and f_contact for contact force [PROCF2023]
         {
+        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
+        typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
 
     //! Morse doesn't use charge
@@ -195,6 +198,9 @@ class EvaluatorPairMorse
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
     Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
+    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
+    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar D0;     //!< Depth of the Morse potential at its minimum
     Scalar alpha;  //!< Controls width of the potential well

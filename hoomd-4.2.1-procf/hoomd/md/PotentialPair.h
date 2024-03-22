@@ -202,9 +202,10 @@ template<class evaluator> class PotentialPair : public ForceCompute
     std::vector<std::string> getTypeShapeMapping() const
         {
         std::vector<std::string> type_shape_mapping(m_pdata->getNTypes());
+        unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [PROCF2023]
         for (unsigned int i = 0; i < type_shape_mapping.size(); i++)
             {
-            evaluator eval(Scalar(0.0), Scalar(0.0), Scalar(0.0), this->m_params[m_typpair_idx(i, i)]); //~ add scalar for contact [PROCF2023]
+            evaluator eval(Scalar(0.0), Scalar(0.0), pair_typeids, Scalar(0.0), this->m_params[m_typpair_idx(i, i)]); //~ add scalar for contact and array for pair_typeIDs [PROCF2023]
             type_shape_mapping[i] = eval.getShapeSpec();
             }
         return type_shape_mapping;
@@ -287,9 +288,11 @@ template<class evaluator> class PotentialPair : public ForceCompute
                 {
                 for (unsigned int type_j = 0; type_j < m_pdata->getNTypes(); type_j++)
                     {
+                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [PROCF2023]
                     // rho is the number density
                     Scalar rho_j = m_num_particles_by_type[type_j] / volume;
                     evaluator eval(Scalar(0.0), Scalar(0.0), //~ add scalar for contact [PROCF2023]
+                                   pair_typeids, //~ add array for pair_typeIDs [PROCF2023]
                                    h_rcutsq.data[m_typpair_idx(type_i, type_j)],
                                    m_params[m_typpair_idx(type_i, type_j)]);
                     m_external_energy += Scalar(2.0) * m_num_particles_by_type[type_i] * M_PI
@@ -311,12 +314,14 @@ template<class evaluator> class PotentialPair : public ForceCompute
                 {
                 for (unsigned int type_i = 0; type_i < m_pdata->getNTypes(); type_i++)
                     {
+                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [PROCF2023]
                     // rho is the number density
                     Scalar rho_i = m_num_particles_by_type[type_i] / volume;
                     for (unsigned int type_j = 0; type_j < m_pdata->getNTypes(); type_j++)
                         {
                         Scalar rho_j = m_num_particles_by_type[type_j] / volume;
                         evaluator eval(Scalar(0.0), Scalar(0.0), //~ add scalar for contact [PROCF2023]
+                                       pair_typeids, //~ add array for pair_typeIDs [PROCF2023]
                                        h_rcutsq.data[m_typpair_idx(type_i, type_j)],
                                        m_params[m_typpair_idx(type_i, type_j)]);
                         // The pressure LRC, where
@@ -668,6 +673,10 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
+            //~ store the typeIDs of the current pair [PROCF2023]
+            unsigned int pair_typeids[2] = {typei, typej};
+            //~
+
             // access charge (if needed)
             Scalar qj = Scalar(0.0);
             if (evaluator::needsCharge())
@@ -706,7 +715,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, contact, rcutsq, param); //~ add contact [PROCF2023]
+            evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeIDs [PROCF2023]
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 
@@ -913,6 +922,10 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
+            //~ store the typeIDs of the current pair [PROCF2023]
+            unsigned int pair_typeids[2] = {typei, typej};
+            //~
+
             // access charge (if needed)
             Scalar qj = Scalar(0.0);
             if (evaluator::needsCharge())
@@ -951,7 +964,7 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, contact, rcutsq, param); //~ add contact [PROCF2023]
+            evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeIDs [PROCF2023]
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 

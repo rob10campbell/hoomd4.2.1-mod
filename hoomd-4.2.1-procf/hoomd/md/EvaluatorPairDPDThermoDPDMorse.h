@@ -214,12 +214,17 @@ class EvaluatorPairDPDThermoDPDMorse
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
         \param _contact the sum of the interacting particle radii [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeIDs [PROCF2023]
         : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), //~ add contact [PROCF2023]
-	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut){ }
+	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut)
+        {
+        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
+        typej = _pair_typeids[1]; //~ add typej [PROCF2023]  
+        }
 
     //! Set i and j, (particle tags), and the timestep
     DEVICE void
@@ -271,8 +276,22 @@ class EvaluatorPairDPDThermoDPDMorse
     */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
-	Scalar radsum = contact; //a1 + a2; //~ switch to contact
+
+        Scalar radsum = contact;
+        //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
+        if (typei == 0 && typej == 0)
+          { 
+          radsum = contact - 1.0; 
+          }
+        else if (typei == 0 || typej == 0)
+          {
+          radsum = contact - 0.5;
+          }   
+        //~ 
+        //Scalar radsum = a1 + a2
+
         Scalar rinv = fast::rsqrt(rsq);
+        // convert to h_ij (surface-surface distance)
 	Scalar r = (Scalar(1.0) / rinv) - radsum;
 	//Scalar rcut = fast::sqrt(rcutsq) - radsum;
 	Scalar rcutinv = Scalar(1.0) / rcut;
@@ -280,7 +299,8 @@ class EvaluatorPairDPDThermoDPDMorse
         // compute the force divided by r in force_divr
         if(r < rcut)
 	   {
-	   if(a1 == Scalar(0.0) or a2 == Scalar(0.0))
+	   if(typei == 0 || typej == 0) //~ switch to using typeID
+	   //if(a1 == Scalar(0.0) or a2 == Scalar(0.0))
 	      {
 	      force_divr = A0 * w_factor * rinv;
 	      pair_eng = A0 * (rcut - r) - Scalar(1.0 / 2.0) * A0 * rcutinv * (rcut * rcut - r * r);
@@ -340,7 +360,19 @@ class EvaluatorPairDPDThermoDPDMorse
                                       bool energy_shift)
         {
 	// get the sum of the particle radii
-	Scalar radsum = a1 + a2;
+        Scalar radsum = contact;
+        //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
+        if (typei == 0 && typej == 0)
+          { 
+          radsum = contact - 1.0; 
+          }
+        else if (typei == 0 || typej == 0)
+          {
+          radsum = contact - 0.5;
+          }
+        //~ 
+        //Scalar radsum = a1 + a2
+	
 	// get 1/r_ij
         Scalar rinv = fast::rsqrt(rsq);
 	// convert r_ij (center-center) to h_ij (surface-surface)
@@ -353,7 +385,8 @@ class EvaluatorPairDPDThermoDPDMorse
 	   Scalar w_factor = (Scalar(1.0) - r * rcutinv);
 
 	   // if at least one particle has a radius = 0 (solvent-solvent or solvent-colloid)
-	   if(a1 == Scalar(0.0) or a2 == Scalar(0.0))
+	   if(typei == 0 || typej == 0) //~ switch to using typeID
+	   //if(a1 == Scalar(0.0) or a2 == Scalar(0.0))
 	      {
 	      // conservative DPD
 	      cons_divr = A0 * w_factor * rinv;
@@ -528,6 +561,9 @@ class EvaluatorPairDPDThermoDPDMorse
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
     Scalar contact;      //!< Stored contact-distance from the constructor [PROCF2023]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
+    unsigned int typei;  //!<~ Stored typeID of particle i from the constructor [PROCF2023]
+    unsigned int typej;  //!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     // parameters for potential extracted from the params by constructor
     Scalar A0;		 //!< the conservative force scaling parameter

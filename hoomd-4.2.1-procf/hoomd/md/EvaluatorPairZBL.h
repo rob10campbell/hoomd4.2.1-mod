@@ -68,12 +68,15 @@ class EvaluatorPairZBL
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles.
         \param _contact the sum of the interacting particle radii [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to zero.
         \param _params Per type-pair parameters of this potential
     */
-    DEVICE EvaluatorPairZBL(Scalar _rsq, Scalar _contact, Scalar _rcutsq, const param_type& _params) //~ add contact [PROCF2023]
+    DEVICE EvaluatorPairZBL(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeIDs [PROCF2023]
         : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), Zsq(_params.qi * _params.qj), aF(_params.aF) //~ add contact [PROCF2023]
         {
+        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
+        typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
 
     //! ZBL potential does not use particle charges
@@ -153,6 +156,9 @@ class EvaluatorPairZBL
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
     Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
+    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
+    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar Zsq;    //!< Zsq parameter extracted from the params passed to the constructor
     Scalar aF;     //!< aF parameter extracted from the params passed to the constructor
