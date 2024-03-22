@@ -28,10 +28,7 @@ import os # miscellaneous operating system interfaces
 ######### SIMULATION INPUTS
 # General parameters
 phi =  0.2 # volume fraction
-percent_C1 = 1.00
-percent_C2 = 0.00 
-poly_C1 = 0.05
-poly_C2 = 0.00
+poly = 0.05 # standard deviation in size (AKA % polydispersity)
 rho = 3.0 # number density (per unit volume)
 KT = 0.1; # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
@@ -41,28 +38,8 @@ N_time_steps = 10000 #1500000 # number of time steps
 dt_Integration = 0.001 # dt! (BD timestep, may need to be smaller than DPD)
 period = 100 #10000 # recording interval
 
-# Simulation box size (fixed by L_X)
-L_X = 30
-L_Y = L_X
-L_Z = L_X
-V_total = L_X * L_Y * L_Z # total volume of simulation box (cube)
-
 # Colloid particle details
 R_C1 = 1 # 1st type colloid particle radius
-V_C1 = (4./3.) * math.pi * R_C1 ** 3 # 1st type colloid particle volume (1 particle)
-m_C1 = V_C1 * rho # 1st type colloid particle mass
-V_Colloids_type1 = percent_C1 * phi * V_total # total volume of type 1 colloids
-N_C1 = round(V_Colloids_type1 / V_C1) # number of 1st type of colloid particles (INT)
-
-R_C2 = 2 # 2nd type colloid particle radius
-V_C2 = (4./3.) * math.pi * R_C2 ** 3 # 2nd type colloid particle volume (1 particle)
-m_C2 = V_C2 * rho # 2nd type colloid particle mass
-V_Colloids_type2 = percent_C2 * phi * V_total # total volume of type 1 colloids
-N_C2 = round(V_Colloids_type2 / V_C2) # number of 1st type of colloid particles (INT)
-
-# colloids totals NOTE: ASSUMES 2 colloid types
-N_C = N_C1 + N_C2 # total number of colloids
-V_Colloids = V_Colloids_type1 + V_Colloids_type2 # total volume of all colloids
 
 # Brownian parameters
 eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
@@ -73,11 +50,8 @@ r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c)
 if r_c < (3/kappa):
   print('WARNING: r_c is less than range of attraction. Increase r_c')
 r0 = 0.0 # minimum inter-particle distance
-f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions 
+f_contact = 100 # magnitude of contact force (usually 100 or 1000)
 #bond_calc = False # do you want to track what bonds form and break? True=yes, False=no
-
-# Total number of particles in the simulation
-N_total = int(N_C)
 
 
 ######### SIMULATION
@@ -99,8 +73,7 @@ else:
   # (in case we want to integrate over subpopulations only,
   # but would require other mods to source code)
   groupA = hoomd.filter.Type(['A'])
-  groupB = hoomd.filter.Type(['B'])
-  all_ = hoomd.filter.Type(['A','B'])
+  all_ = hoomd.filter.Type(['A'])
 
   # don't want to thermalize the system after equilibrium because
   # we are tracking velocity during gelation
@@ -114,14 +87,8 @@ else:
   morse = hoomd.md.pair.Morse(nlist=nl, default_r_cut=1.0 * r_c)
 
   # colloid-colloid: hard particles (no deformation/overlap)
-  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), poly=poly_C1)	
+  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), f_contact=f_contact, poly=poly)	
   morse.r_cut[('A','A')] = r_c+(R_C1+R_C1) # used to assemble nl
-
-  morse.params[('A','B')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C2), poly=poly_C1+poly_C2)	
-  morse.r_cut[('A','B')] = r_c+(R_C1+R_C2) # used to assemble nl
-
-  morse.params[('B','B')] = dict(D0=D0, alpha=kappa, r0=(R_C2+R_C2), poly=poly_C2)	
-  morse.r_cut[('B','B')] = r_c+(R_C2+R_C2) # used to assemble nl
 
   # choose integration method for the end of each timestep
   # BROWNIAN (overdamped) or LANGEVIN (underdamped)

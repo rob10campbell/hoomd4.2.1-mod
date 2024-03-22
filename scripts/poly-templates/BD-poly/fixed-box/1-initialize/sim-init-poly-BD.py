@@ -26,10 +26,7 @@ import os # miscellaneous operating system interfaces
 #########  SIMULATION INPUTS
 # General parameters
 phi = 0.2 # volume fraction
-percent_C1 = 1.00
-percent_C2 = 0.00
-poly_C1 = 0.05 # colloid polydispersity
-poly_C2 = 0.00 
+poly = 0.05 # standard deviation in size (AKA % polydispersity)
 rho = 3 # number density (per unit volume)
 
 # Simulation box size (fixed by L_X)
@@ -45,15 +42,9 @@ m_C1 = V_C1 * rho # 1st type colloid particle mass
 V_Colloids_type1 = percent_C1 * phi * V_total # total volume of type 1 colloids
 N_C1 = round(V_Colloids_type1 / V_C1) # number of 1st type of colloid particles (INT)
 
-R_C2 = 2  # 2nd type colloid particle radius
-V_C2 = (4./3.) * math.pi * R_C2 ** 3 # 2nd type colloid particle volume (1 particle)
-m_C2 = V_C2 * rho # 2nd type colloid particle mass
-V_Colloids_type2 = percent_C2 * phi * V_total # total volume of type 2 colloids
-N_C2 = round(V_Colloids_type2 / V_C2) # number of 2nd type of colloid particles (INT)
-
-# colloids totals NOTE: ASSUMES 2 colloid types
-N_C = N_C1 + N_C2 # total number of colloids
-V_Colloids = V_Colloids_type1 + V_Colloids_type2 # total volume of all colloids
+# colloids totals NOTE: ASSUMES 1 colloid type
+N_C = N_C1 # total number of colloids
+V_Colloids = V_Colloids_type1 # total volume of all colloids
 
 # Total number of particles in the simulation
 N_total = int(N_C)
@@ -75,39 +66,21 @@ else:
   snapshot.configuration.box = [L_X, L_Y, L_Z, 0, 0, 0] # create the sim box
   snapshot.particles.N=N_total # add all particles to the snapshot
   # set the particle types
-  snapshot.particles.types = ['A','B']
+  snapshot.particles.types = ['A']
   # assign particles to each type
   typeid = []
-  typeid.extend([0]*N_C2)
   typeid.extend([0]*N_C1)
   snapshot.particles.typeid = typeid
   # set mass and diameter for each particle type
   mass = []
   diameter = []
-  # polydisperse options for colloid2
-  if poly_C2 == 0:
-    mass.extend([m_C2]*N_C2)
-    diameter.extend([2.0*R_C2]*N_C2)
-  elif poly_C2 != 0:  
-    if N_C2 != 0: 
-      C2_radii = numpy.random.normal(loc=R_C2, scale=poly_C2, size=N_C2)
-      if round(numpy.mean(C2_radii)) != R_C2:
-        print('WARNING: unexpected mean particle size: R_C2 = ' + str(R_C2) + 
-              ' but polydispersity produces a mean size of ' + str(round(numpy.mean(C2_radii)))+' )')
-      C2_vols = (4./3.) * math.pi * C2_radii ** 3
-      C2_masses = C2_vols * rho
-      mass.extend(C2_masses)
-      diameter.extend(2.0*C2_radii)
-    elif R_C2 == 0:
-      mass.extend([m_C2]*N_C2)
-      diameter.extend([2.0*R_C2]*N_C2)
   # polydisperse options for colloid1
-  if poly_C1 == 0:
+  if poly == 0:
     mass.extend([m_C1]*N_C1)
     diameter.extend([2.0*R_C1]*N_C1)
-  elif poly_C1 != 0:  
+  elif poly != 0:  
     if N_C1 != 0:
-      C1_radii = numpy.random.normal(loc=R_C1, scale=poly_C1, size=N_C1)
+      C1_radii = numpy.random.normal(loc=R_C1, scale=poly, size=N_C1)
       if round(numpy.mean(C1_radii)) != R_C1:
         print('WARNING: unexpected mean particle size: R_C1 = ' + str(R_C1) + 
               ' but polydispersity produces a mean size of ' + str(round(numpy.mean(C1_radii)))+' )')
@@ -133,40 +106,20 @@ else:
   print("Seed for Random Number Generator: "+str(seed_value)) 
   print("Simulation volume: L_X = " + str(L_X) + ", L_Y = " + str(L_Y) 
     + ", L_Z = " + str(L_Z))
-  print("Volume fraction: " + str(phi) + "; percent colloid 1: " + str(percent_C1*100) +
-        "%, percent colloid 2: " + str(percent_C2*100) + "%\n")
+  print("Volume fraction: " + str(phi) + "\n") 
 
-  if (poly_C1 == 0) and (poly_C2 == 0):
-    print("radius of colloid 1: " + str(R_C1) + "; radius of colloid 2: " + str(R_C2) + "\n") 
+  if (poly == 0):
+    print("radius of colloids: " + str(R_C1) + "\n") 
 
-  if poly_C1 != 0:
-    print("Colloid 1 polydispersity: " + str(poly_C1))
+  if poly != 0:
+    print("Colloid polydispersity: " + str(poly))
     if N_C1 != 0:
       vol_C1 = (4/3)*math.pi*C1_radii**3
-      print("Real colloid 1 volume fraction: " + str(round(sum(vol_C1)/V_total,2)))
-      print("expected mean radius of colloid 1: " + str(R_C1))
-      print("mean radius of colloid 1: " + str(round(numpy.mean(C1_radii),2))) 
+      print("Real colloid volume fraction: " + str(round(sum(vol_C1)/V_total,2)))
+      print("expected mean colloid radius: " + str(R_C1))
+      print("mean colloid radius: " + str(round(numpy.mean(C1_radii),2)) + "\n") 
     if N_C1 == 0:
-      print("(no colloid 1, no polydisperse distribution generated for colloid 1)")
-    if poly_C2 == 0:
-      print("---")
-      print("radius of colloid 2: " + str(R_C2) + "\n")
- 
-  if poly_C2 != 0:
-    if poly_C1 == 0:
-      print("radius of colloid 1: " + str(R_C1) + "\n") 
-    print("---")
-    print("Colloid 2 polydispersity: " + str(poly_C2))
-    if N_C2 != 0:
-      vol_C2 = (4/3)*math.pi*C2_radii**3
-      print("Real colloid 2 volume fraction: " + str(round(sum(vol_C2)/V_total,2)))
-      print("expected mean radius of colloid 2: " + str(R_C2))
-      print("mean radius of colloid 2: " + str(round(numpy.mean(C2_radii),2)))
-    if N_C2 == 0:
-      print("(no colloid 2, no polydisperse distribution generated for colloid 2)")
-  print("\n")
+      print("(no colloids, no polydisperse distribution generated for colloid 1) \n")
 
- 
   print("Total number of particles: " + str(N_total))
-  print("Total number of colloid particles: " + str(N_C) + 
-        "; N_C1 = " + str(N_C1) + "; N_C2 = " + str(N_C2))
+  print("Total number of colloid particles: " + str(N_C))

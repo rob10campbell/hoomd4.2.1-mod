@@ -7,6 +7,7 @@ File lists are formatted as: `folder/`; file
 
 * [Core Mods](/changelog.md#core-modifications)
 * [Shear Rate](/changelog.md#shear-rate)
+* [Polydispersity](/changelog.md#polydispersity)
 * [Bond tracking](/changelog.md#bond-tracking)
 * [Walls](/changelog.md#walls)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential)
@@ -79,6 +80,52 @@ Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
 		* [x] test_system.cc **shear rate (SR)** 
 	* [x] `update/`
 		* [x] box_resize.py : **shear rate (SR)**
+
+## Polydispersity
+Track and use polydisperse particle radii for surface-surface distance (h_ij) calculations, and scale D0 by particle size to mimic size-dependent attraction in depletion gels (Rob)
+*NOTE: poly param is optional for DPD sims but* REQUIRED *for BD sims*
+- **track contact dist and typeIDs**: Track particle size and typeID information for each interacting particle pair
+- **pass contact dist and typeIDs**: When evaluating forces between two particles, pass the contact distance (i.e. sum of particle radii) and the particle typeIDs to all the Evaluators, so that information is available for polydisperse h_ij calcualtion, if needed
+- **poly param**: add a polydispersity parameter to trigger radii-dependent force calculations in EvaluatorPairMorse.h and EvaluatorPairDPDThermoDPDMorse.h
+- **on/off poly param**: set the default behavior to match original HOOMD-blue code without polydiserpsity (poly param is optional for DPD)
+- **set contact dist and typeIDs to zero**: for some tests and Evaluators, it is necessary to force these values to be zero, since we are not providing them
+
+* [x] `hoomd/`
+	* [x] `example_plugins/`
+		* [x] `pair_plugin/`
+			* [x] EvaluatorPairExample.h : **pass contact dist and typeIDs**
+	* [x] `md/`
+		* [x] EvaluatorPairBuckingham.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairDLVO.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairDPDThermoDPD.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairDPDThermoDPDMorse.h : **pass contact dist and typeIDs, poly param, poly defaults to mono**
+		* [x] EvaluatorPairDPDThermoLJ.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairEwald.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairExpandedGaussian.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairExpandedLJ.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairExpandedMie.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairForceShiftedLJ.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairFourier.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairGauss.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairLJ.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairLJ0804.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairLJ1208.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairLJGauss.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairMie.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairMoliere.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairMorse.h : **pass contact dist and typeIDs, poly param**
+		* [x] EvaluatorPairOPP.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairReactionField.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairTWF.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairTable.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairYukawa.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorPairZBL.h : **pass contact dist and typeIDs**
+		* [x] EvaluatorWalls.h : **set contact dist and typeIDs to zero, pass contact dist and typeIDs**
+		* [x] `pair/`
+			* [x] pair.py : **on/off poly param [PotentialPairDPDThermo], poly param [Morse, DPDMorse]**
+		* [x] PotentialPair.h : **track contact dist and typeIDs**
+		* [x] PotentialPairAlchemical.h : **track contact dist**
+		* [x] PotentialPairDPDThermo.h : **track contact dist, on/off poly param**
 
 ## Bond Tracking
 Track bond formation and breaking (Nabi, Deepak, and Rob)

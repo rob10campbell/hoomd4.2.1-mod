@@ -1,4 +1,10 @@
-# hoomd4.2.1-mod
+# hoomd4.2.1-mod : polydispersity branch
+
+**THIS BRANCH IS FOR POLYDISPERSE SIMULATIONS**
+Polydisperse parameters are optional for DPD, but *REQUIRED* for BD sims. If the params can be made optional for BD sims, then these mods will be merged with the main branch.<br>
+See [template scripts](/scripts/poly-templates) for parameters you need to add in Python to be able to use polydiserpsity<br>
+**NOTE**: These modifications scale D0 by particle size to mimic size-dependent attraction in depletion gels. To remove this feature but still use polydisperse radii when calculatin h_ij, you can comment out the D0 scaling in EvaluatorPairMorse.h (line 139) and EvaluatorPairDPDThermoDPDMorse.h (lines 300 and 389)
+-----------------------------
 
 This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the PRO-CF group. It also includes: 
 * [Installation instructions](/README.md#installation)
