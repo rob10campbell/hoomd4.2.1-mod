@@ -48,7 +48,6 @@ gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
 if r_c < (3/kappa):
   print('WARNING: r_c is less than range of attraction. Increase r_c')
-r0 = 0.0 # minimum inter-particle distance
 f_contact = 100 # magnitude of contact force (usually 100 or 1000)
 
 ######### SIMULATION
