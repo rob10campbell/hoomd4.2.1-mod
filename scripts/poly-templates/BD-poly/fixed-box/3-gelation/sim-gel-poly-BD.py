@@ -1,12 +1,13 @@
-## mpi simulation to resolve overlaps from init-BD.gsd
-## Brings a Brownian Dynamics simulation of attractive colloids
-## to thermal equilibrium and creates Equilibrium-BD.gsd
-## NOTE: requires matching init-BD.gsd file
-##       for a variable number of colloids and FIXED BOX SIZE 
+## mpi simulation to bring a Brownian Dynamics sim of an 
+## attractive colloid system from an equilibrium suspension 
+## to a quasi-steady state gel
+## NOTE: requires POLYDISPERSITY param for variable colloid size
+## NOTE: requires matching Equilibrium-BD.gsd file
+##       for a fixed number of colloids and FIXED BOX SIZE 
 ## (Rob Campbell)
 
 
-#########  MODULE LIBRARY
+######### MODULE LIBRARY 
 # Use HOOMD-blue
 import hoomd
 import hoomd.md # molecular dynamics
@@ -16,7 +17,7 @@ import gsd.hoomd # read and write HOOMD schema GSD files
 # Maths
 import numpy
 import math
-import random # psuedo-random number generator
+import random # pseudo-random number generator
 # Other
 import os # miscellaneous operating system interfaces
 
@@ -29,12 +30,12 @@ import os # miscellaneous operating system interfaces
 # General parameters
 phi =  0.2 # volume fraction
 poly = 0.05 # standard deviation in size (AKA % polydispersity)
-rho = 3 # number density (per unit volume)
-KT = 0.1 # system temperature
-D0 = 0.0 * KT # attraction strength (gels at >=4kT)
-kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa 
+rho = 3.0 # number density (per unit volume)
+KT = 0.1; # system temperature
+D0 = 12.0 * KT # attraction strength (gels at >=4kT)
+kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa
 
-N_time_steps = 10000 #100000 # number  of  time steps
+N_time_steps = 10000 #1500000 # number of time steps
 dt_Integration = 0.001 # dt! (BD timestep, may need to be smaller than DPD)
 period = 100 #10000 # recording interval
 
@@ -49,39 +50,40 @@ gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
 if r_c < (3/kappa):
   print('WARNING: r_c is less than range of attraction. Increase r_c')
-r0 = 0.0 # minimum inter-particle distance
 f_contact = 100 # magnitude of contact force (usually 100 or 1000)
+#bond_calc = False # do you want to track what bonds form and break? True=yes, False=no
 
 
 ######### SIMULATION
-## Checks for existing equilibrium files. If none are found, brings the 
-## initial random distribution of particles to thermal equilibrium. 
+# Checks for existing gelation files. If none exist, continues from
+# the equilibrium state towards a quasi-steady state gel (no shear).
 
-if os.path.exists('Equilibrium-poly-BD.gsd'):
-  print("Equilibrium file already exists. No new files created.")
+if os.path.exists('Gelation-poly-BD.gsd'):
+  print('Gelation file already exists. No new files created.')
 else:
-  print("Brownian Dynamics initialization state is being brought to equilibrium")
+  print('Polydisperse Brownian Dynamics equilibrium state is being brought to quasi-steady state gelation')
   ## Create a CPU simulation
   device = hoomd.device.CPU()
   sim = hoomd.Simulation(device=device, seed=50) # set seed to a fixed value for reproducible simulations
 
-  # start the simulation from the initialized system
-  sim.timestep = 0 # set initial timestep to 0
-  sim.create_state_from_gsd(filename='../1-initialize/init-poly-BD.gsd')
+  # start the simulation from Equilibrium (and don't set timestep to 0)
+  sim.create_state_from_gsd(filename='../2-equilibrium/Equilibrium-poly-BD.gsd')
 
-  # assign particle types to groups 
-  # (in case we want to integrate over subpopulations only, 
+  # assign particle types to groups
+  # (in case we want to integrate over subpopulations only,
   # but would require other mods to source code)
   groupA = hoomd.filter.Type(['A'])
   all_ = hoomd.filter.Type(['A'])
 
-  # thermalize (aka bring to thermal equilibrium) the system
-  sim.state.thermalize_particle_momenta(filter=all_, kT=KT)
+  # don't want to thermalize the system after equilibrium because
+  # we are tracking velocity during gelation
+  #sim.state.thermalize_particle_momenta(filter=all_, kT=KT)
 
   # create neighboring list
   nl = hoomd.md.nlist.Tree(buffer=0.05);
 
   # define Morse force (attraction) interactions
+  # TO BE ADDED: bond_calc=bond_calc
   morse = hoomd.md.pair.Morse(nlist=nl, default_r_cut=1.0 * r_c)
 
   # colloid-colloid: hard particles (no deformation/overlap)
@@ -100,12 +102,12 @@ else:
   logger = hoomd.logging.Logger()
   thermodynamic_properties = hoomd.md.compute.ThermodynamicQuantities(filter=all_)
   sim.operations.computes.append(thermodynamic_properties)
-  logger.add(thermodynamic_properties, quantities=['kinetic_temperature', 
-    'pressure_tensor', 'virial_ind_tensor', 'potential_energy'])
+  logger.add(thermodynamic_properties,quantities=['kinetic_temperature',
+		'pressure_tensor','virial_ind_tensor','potential_energy'])
   logger.add(sim, quantities=['tps'])
 
   # set output file
-  gsd_writer = hoomd.write.GSD(trigger=period, filename="Equilibrium-poly-BD.gsd", 
+  gsd_writer = hoomd.write.GSD(trigger=period, filename="Gelation-poly-BD.gsd", 
     filter=all_, mode='wb', dynamic=['property','momentum','attribute'])
 
   # save diameters
@@ -121,5 +123,5 @@ else:
   # run simulation!
   # (and write the initial state (e.g. the last frame of Equilibrium) in this file!)
   sim.run(N_time_steps, write_at_start=True)
-
-  print("New Brownian Dynamics equilibrium state (Equilibrium-poly-BD.gsd) created.")
+	
+  print('New polydisperse Brownian Dyanmics gelation state (Gelation-poly-BD.gsd) created.')

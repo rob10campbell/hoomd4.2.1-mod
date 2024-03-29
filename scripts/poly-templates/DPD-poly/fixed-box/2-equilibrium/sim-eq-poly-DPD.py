@@ -1,10 +1,9 @@
-## mpi simulation to resolve overlaps from init.gsd
-## Brings a simulation of neutral colloids suspended
-## in a solvent (colloid-colloid attraction = 0)  to 
-## thermal equilibrium, resolving non-physical particle
-## overlaps to create a colloid suspension Equilibrium.gsd
-## NOTE: for BIMODAL GELS (2 colloid types)
-## NOTE: requires matching init.gsd file
+## mpi simulation to resolve overlaps from init-DPD.gsd
+## Brings a DPD simulation of attractive colloids in solvent
+## to thermal equilibrium and creates Equilibrium-DPD.gsd
+## NOTE: for variable colloid size (POLYDISPERSITY)
+## NOTE: requires matching init-DPD.gsd file
+##       for a variable number of colloids and FIXED BOX SIZE 
 ## (Rob Campbell)
 
 
@@ -45,8 +44,6 @@ N_time_steps = 10000 #375000 # number  of  time steps ### NOTE: maybe 200,000 ti
 dt_Integration = 0.001 # dt! (DPD timestep)
 period = 100 #2500 # recording interval
 
-SR = 0.0 # shear parameter (shear rate = SR*L_X)
-
 # Colloid particle details
 R_C1 = 1 #float(os.environ.get('R_C1', 0.0))  # 1st type colloid particle radius
 
@@ -58,7 +55,6 @@ f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions
 # modified cut-off radius for colloid-solvent interactions
 # NOTE: ASSUMES 2 colloid types
 r_sc1_cut = (r_c**3 + R_C1**3) ** (1/3)
-r_sc2_cut = (r_c**3 + R_C2**3) ** (1/3)
 
 
 ######### SIMULATION
@@ -68,7 +64,7 @@ r_sc2_cut = (r_c**3 + R_C2**3) ** (1/3)
 if os.path.exists('Equilibrium-poly-DPD.gsd'):
   print("Equilibrium file already exists. No new files created.")
 else:
-  print("Initialization state is being brought to equilibrium")
+  print("Polydisperse DPD initialization state is being brought to equilibrium")
   ## Create a CPU simulation
   device = hoomd.device.CPU()
   sim = hoomd.Simulation(device=device, seed=50) # set seed to a fixed value for reproducible simulations
@@ -77,7 +73,7 @@ else:
   sim.timestep = 0 # set initial timestep to 0
   sim.create_state_from_gsd(filename='../1-initialize/init-poly-DPD.gsd')
   # optional: force domain decomposition to predetermined viable size 3x3x3=27cores
-  #sim.create_state_from_gsd(filename='../1-initialize/init.gsd', domain_decomposition=(5,5,5))
+  #sim.create_state_from_gsd(filename='../1-initialize/init-poly-DPD.gsd', domain_decomposition=(5,5,5))
 
 
   # assign particle types to groups 
@@ -117,7 +113,7 @@ else:
 
   # choose integration method for the end of each timestep
   nve = hoomd.md.methods.ConstantVolume(filter=all_, thermostat=None)
-  integrator=hoomd.md.Integrator(dt=dt_Integration, SR=SR*L_Y, forces=[morse], methods=[nve])
+  integrator=hoomd.md.Integrator(dt=dt_Integration, forces=[morse], methods=[nve])
   sim.operations.integrator = integrator
 
   # set the simulation to log certain values
@@ -129,7 +125,7 @@ else:
   logger.add(sim, quantities=['tps'])
 
   # set output file
-  gsd_writer = hoomd.write.GSD(trigger=period, filename="Equilibrium-DPD.gsd", 
+  gsd_writer = hoomd.write.GSD(trigger=period, filename="Equilibrium-poly-DPD.gsd", 
     filter=all_, mode='wb', dynamic=['property','momentum','attribute'])
 
   # save diameters
@@ -146,5 +142,5 @@ else:
   # (and write the initial state (e.g. the last frame of Equilibrium) in this file!)
   sim.run(N_time_steps, write_at_start=True)
 
-  print("New DPD equilibrium state (Equilibrium-DPD.gsd) created.")
+  print("New polydisperse DPD equilibrium state (Equilibrium-poly-DPD.gsd) created.")
 

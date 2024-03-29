@@ -1,10 +1,9 @@
-## mpi simulation to resolve overlaps from init.gsd
-## Brings a simulation of attractive colloids in solvent
-## to thermal equilibrium and creates Equilibrium.gsd
-## the number of colloids is calculated from a FIXED BOX SIZE
-## generated with NO solvent-colloid overlap
-## NOTE: for BIJELS (2 colloid types)
-## NOTE: requires matching init.gsd file
+## mpi simulation to bring a DPD sim of an attractive 
+## colloid system from equilibrium suspension to a 
+## quasi-steady state gel
+## NOTE: for variable colloid size (POLYDISPERSITY)
+## NOTE: requires matching Equilibrium-DPD.gsd file
+##       for a fixed number of colloids and FIXED BOX SIZE 
 ## (Rob Campbell)
 
 
@@ -36,7 +35,7 @@ rho = 3 # number density (per unit volume)
 # General parameters
 KT = 0.1 # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
-kappa = 30
+kappa = 30 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa
 
 eta0 = 0.3 # background viscosity
 gamma = 4.5 # DPD controlling parameter for viscous resistance (dissipative force) 
@@ -44,8 +43,6 @@ gamma = 4.5 # DPD controlling parameter for viscous resistance (dissipative forc
 N_time_steps = 2000000 # number  of  time steps
 dt_Integration = 0.001 # dt! (DPD timestep)
 period = 10000 # recording interval
-
-SR = 0.0 # shear parameter (shear rate = SR*L_X)
 
 # Colloid particle details
 R_C1 = 1 # 1st type colloid particle radius
@@ -58,25 +55,24 @@ f_contact = 10000.0 * KT / r_c # set colloid-colloid hard-sphere interactions
 # modified cut-off radius for colloid-solvent interactions
 # NOTE: ASSUMES 2 colloid types
 r_sc1_cut = (r_c**3 + R_C1**3) ** (1/3)
-r_sc2_cut = (r_c**3 + R_C2**3) ** (1/3)
 
 
 ######### SIMULATION
 ## Checks for existing equilibrium files. If none are found, brings the 
 ## initial random distribution of particles to thermal equilibrium. 
 
-if os.path.exists('Gelation.gsd'):
+if os.path.exists('Gelation-poly-DPD.gsd'):
   print("Gelation file already exists. No new files created.")
 else:
-  print("Equilibrium state is continuing to be brought to quasi-steady state gelation")
+  print("Polydisperse DPD equilibrium state is continuing to be brought to quasi-steady state gelation")
   ## Create a CPU simulation
   device = hoomd.device.CPU()
   sim = hoomd.Simulation(device=device, seed=50) # set seed to a fixed value for reproducible simulations
 
   # start the simulation from Equilibrium (and don't reset timestep to 0)
-  sim.create_state_from_gsd(filename='../2-equilibrium/Equilibrium.gsd')
+  sim.create_state_from_gsd(filename='../2-equilibrium/Equilibrium-poly-DPD.gsd')
   # optional: force domain decomposition to predetermined viable size 3x3x3=27cores
-  #sim.create_state_from_gsd(filename='../../../2-equilibrium/Equilibrium.gsd', domain_decomposition=(3,3,3))
+  #sim.create_state_from_gsd(filename='../../../2-equilibrium/Equilibrium-poly-DPD.gsd', domain_decomposition=(3,3,3))
 
   # assign particle types to groups 
   # (in case we want to integrate over subpopulations only, 
@@ -116,7 +112,7 @@ else:
 
   # choose integration method for the end of each timestep
   nve = hoomd.md.methods.ConstantVolume(filter=all_, thermostat=None)
-  integrator=hoomd.md.Integrator(dt=dt_Integration, SR=SR*L_Y, forces=[morse], methods=[nve])
+  integrator=hoomd.md.Integrator(dt=dt_Integration, forces=[morse], methods=[nve])
   sim.operations.integrator = integrator
 
   # set the simulation to log certain values
@@ -128,7 +124,7 @@ else:
   logger.add(sim, quantities=['tps'])
 
   # set output file
-  gsd_writer = hoomd.write.GSD(trigger=period, filename="Gelation-DPD.gsd", 
+  gsd_writer = hoomd.write.GSD(trigger=period, filename="Gelation-poly-DPD.gsd", 
     filter=all_, mode='wb', dynamic=['property','momentum','attribute'])
 
   # save diameters
@@ -143,7 +139,7 @@ else:
 
   # save colloids ONLY for smaller file-size
   # NOTE: you MUST save all particles to use the output to run another sim (gel, shear, etc.)
-  gsd_writer_colloids = hoomd.write.GSD(trigger=period, filename="Gelation_Colloids-DPD.gsd", 
+  gsd_writer_colloids = hoomd.write.GSD(trigger=period, filename="Gelation_Colloids-poly-DPD.gsd", 
     filter=all_colloids, mode='wb', dynamic=['property','momentum','attribute'])
   gsd_writer_colloids.write_diameter = True
   #gsd_writer_colloids.maximum_write_buffer_size = 1e8 # max 100 million bytes
@@ -154,4 +150,4 @@ else:
   # (and write the initial state (e.g. the last frame of Equilibrium) in this file!)
   sim.run(N_time_steps, write_at_start=True)
 	
-  print('New DPD gelation state (Gelation-DPD.gsd) created.')
+  print('New polydipserse DPD gelation state (Gelation-poly-DPD.gsd) created.')

@@ -1,5 +1,6 @@
 ## serial simulation to create init.gsd
 ## for a Brownian Dynamics simulation with 1 colloid type
+## NOTE: for variable colloid size (POLYDISPERSITY)
 ## NOTE: for a variable number of colloids and FIXED BOX SIZE
 ## (Rob Campbell)
 

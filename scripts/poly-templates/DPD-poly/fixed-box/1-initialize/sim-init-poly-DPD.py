@@ -1,7 +1,7 @@
 ## serial simulation to create init.gsd
-## for BIMODAL GELS (2 colloid types)
-## number of colloids is calculated from a FIXED BOX SIZE
-## generated with NO solvent-colloid overlap
+## for a DPD simulation with 1 solvent type and 1 colloid type
+## NOTE: for variable colloid size (POLYDISPERSITY)
+## NOTE: for a variable number of colloids and FIXED BOX SIZE
 ## (Rob Campbell)
 
 
@@ -27,7 +27,6 @@ import os # miscellaneous operating system interfaces
 # Density parameters
 phi = 0.20 # volume fraction
 poly = 0.05 # standard deviation in size (AKA % polydispersity)
-poly_C2 = 0.00
 rho = 3 # number density (per unit volume)
 
 # Simulation box size (fixed by L_X)

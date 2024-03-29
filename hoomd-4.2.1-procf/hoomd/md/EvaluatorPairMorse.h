@@ -134,13 +134,15 @@ class EvaluatorPairMorse
     */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
+        //~ Add radsum [PROCF2023] 
+        Scalar radsum = r0;
         //~ update values if polydispersity != 0 [PROCF2023]
         if (poly != 0.0)
           {
-          //~ set r0 = contact 
-          Scalar r0 = contact; 
+          //~ set radsum = contact 
+          radsum = contact; 
           //~ Scale attraction strength by particle size
-          D0 = D0 * (0.5*r0);
+          D0 = D0 * (0.5*radsum);
           }   
         //~ 
 
@@ -148,11 +150,13 @@ class EvaluatorPairMorse
         if (rsq < rcutsq)
             {
             Scalar r = fast::sqrt(rsq); 
-            Scalar Exp_factor = fast::exp(-alpha * (r - r0));
+            Scalar Exp_factor = fast::exp(-alpha * (r - radsum));
 
             //~ add contact force [PROCF2023]
+            //~ if particles overlap (r < radsum) apply contact force
+            if(r < radsum)force_divr = f_contact * (Scalar(1.0) - (r-radsum)) * pow((Scalar(0.50)*radsum),3) / r;
             //~ if particles overlap (r < r0) apply contact force
-            if(r < r0)force_divr = f_contact * (Scalar(1.0) - (r-r0)) * pow((Scalar(0.50)*r0),3) / r;
+            //if(r < r0)force_divr = f_contact * (Scalar(1.0) - (r-r0)) * pow((Scalar(0.50)*r0),3) / r;
 
             else{
                 //~ calculate force as normal
@@ -160,7 +164,8 @@ class EvaluatorPairMorse
 
                 //~ but still include contact force within 0.001 dist of colloid-colloid contact 
                 Scalar Del_max = Scalar(0.001); //~ 0.001 or 0.01
-                if(r<(r0+Del_max))force_divr += f_contact * pow((Scalar(1.0) - (r-r0)/Del_max), 3) * pow((Scalar(0.50)*r0),3) / r;
+                if(r<(radsum+Del_max))force_divr += f_contact * pow((Scalar(1.0) - (r-radsum)/Del_max), 3) * pow((Scalar(0.50)*radsum),3) / r;
+                //if(r<(r0+Del_max))force_divr += f_contact * pow((Scalar(1.0) - (r-r0)/Del_max), 3) * pow((Scalar(0.50)*r0),3) / r;
                 } 
             //~ 
 
@@ -170,7 +175,8 @@ class EvaluatorPairMorse
             if (energy_shift)
                 {
                 Scalar rcut = fast::sqrt(rcutsq);
-                Scalar Exp_factor_cut = fast::exp(-alpha * (rcut - r0));
+                Scalar Exp_factor_cut = fast::exp(-alpha * (rcut - radsum));
+                //Scalar Exp_factor_cut = fast::exp(-alpha * (rcut - r0));
                 pair_eng -= D0 * Exp_factor_cut * (Exp_factor_cut - Scalar(2.0));
                 }
             return true;
