@@ -142,7 +142,7 @@ class EvaluatorPairMorse
           //~ set radsum = contact 
           radsum = contact; 
           //~ Scale attraction strength by particle size
-          D0 = D0 * (0.5*radsum);
+          //D0 = D0 * (0.5*radsum);
           }   
         //~ 
 

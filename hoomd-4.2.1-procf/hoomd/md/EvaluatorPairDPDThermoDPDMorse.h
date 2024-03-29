@@ -297,7 +297,7 @@ class EvaluatorPairDPDThermoDPDMorse
             radsum = contact - 0.5;
             }
           //~ Scale attraction strength by particle size
-          D0 = D0 * (0.5*radsum);
+          //D0 = D0 * (0.5*radsum);
           }   
         //~ 
 
@@ -386,7 +386,7 @@ class EvaluatorPairDPDThermoDPDMorse
             radsum = contact - 0.5;
             }
           //~ Scale attraction strength by particle size
-          D0 = D0 * (0.5*radsum);
+          //D0 = D0 * (0.5*radsum);
           }
         //~ 
 	
