@@ -1,10 +1,10 @@
-# hoomd4.2.1-mod : polydispersity branch
+# hoomd4.2.1-mod : poly-uniformD0 branch
 
 **THIS BRANCH IS FOR POLYDISPERSE SIMULATIONS** <br>
 Polydisperse parameters are optional for DPD, but *REQUIRED* for BD sims. If the params can be made optional for BD sims, then these mods will be merged with the main branch.<br>
 See [template scripts](/scripts/poly-templates) for parameters you need to add in Python to be able to use polydiserpsity
 
-***NOTE**: These modifications scale D0 by particle size to mimic size-dependent attraction in depletion gels. To remove this feature but still use polydisperse radii when calculatin h_ij, you can comment out the D0 scaling in EvaluatorPairMorse.h (line 139) and EvaluatorPairDPDThermoDPDMorse.h (lines 300 and 389)*
+***NOTE**: These modifications DO NOT scale D0 by particle size, to mimic uniform attraction in protein gels and other non-depletion systems. The D0 scaling is commented out in EvaluatorPairMorse.h (line 139) and EvaluatorPairDPDThermoDPDMorse.h (lines 300 and 389)*
 
 -----------------------------
 
