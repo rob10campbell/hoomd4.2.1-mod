@@ -836,6 +836,8 @@ CommFlags PotentialPair<evaluator>::getRequestedCommFlags(uint64_t timestep)
     if (evaluator::needsCharge())
         flags[comm_flag::charge] = 1;
 
+    flags[comm_flag::diameter] = 1; //~ make sure diameter is accessible in MPI
+
     //~ add diameter (if needed) removed in v4 re-added [PROCF2023]
     //if (evaluator::needsDiameter())
     //    flags[comm_flag::diameter] = 1;
