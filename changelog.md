@@ -6,7 +6,8 @@ If the box next to a filename is NOT checked, that means the modifications have 
 File lists are formatted as: `folder/`; file
 
 * [Core Mods](/changelog.md#core-modifications)
-* [Shear Rate](/changelog.md#shear-rate)
+* [Shear Rate DPD](/changelog.md#shear-rate-DPD)
+* [Shear Rate BD](/changelog.md#shear-rate-BD)
 * [Bond tracking](/changelog.md#bond-tracking)
 * [Walls](/changelog.md#walls)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential)
@@ -41,7 +42,7 @@ Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
 	* [x] ParticleData.cc : **virial_ind**
 	* [x] ParticleData.h : **virial_ind**
 
-## Shear Rate 
+## Shear Rate DPD
 Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
 - **shear rate (SR)**: Add a new class for controlling the shear rate (SR) when shearing a system for DPDMorse and Morse Brownian sims (BD and Langevin integration); however this does not apply to rigid bodies
 - **Tree modifications**: Modify the Tree Neighboring List method to remove auto-updates without SR
@@ -79,6 +80,18 @@ Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
 		* [x] test_system.cc **shear rate (SR)** 
 	* [x] `update/`
 		* [x] box_resize.py : **shear rate (SR)**
+
+## Shear Rate BD
+Adding shear rate for regular particles
+* [ ] `hoomd/`
+	* [ ] `md/`
+		* [ ] BoxShearUpdater.cc
+		* [ ] BoxShearUpdater.h
+		* [ ] Variant.cc
+		* [ ] Variant.h
+		* [ ] `pair/`
+			* [ ] box_shear.py
+			* [ ] variant.py
 
 ## Bond Tracking
 Track bond formation and breaking (Nabi, Deepak, and Rob)
