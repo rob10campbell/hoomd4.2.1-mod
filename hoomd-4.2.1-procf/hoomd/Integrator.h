@@ -17,6 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <string>
 #include <vector>
+#include "Variant.h" //~ add BDshear [PROCF2023]
 
 #ifdef ENABLE_HIP
 #include <hip/hip_runtime.h>
@@ -63,7 +64,7 @@ class PYBIND11_EXPORT Integrator : public Updater
     {
     public:
     /// Constructor
-    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add shear rate [PROCF2023]
+    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate, std::shared_ptr<Variant> vinf); //~ add shear rate for DPDShear and vinf for BDShear [PROCF2023]
 
     /// Destructor
     virtual ~Integrator();
@@ -95,15 +96,32 @@ class PYBIND11_EXPORT Integrator : public Updater
         return m_half_step_hook;
         }
 
+    //~ Add vinf for BDShear [PROCF2023]
+    void setVinf(std::shared_ptr<Variant> vinf)
+       {
+        m_vinf = vinf;
+        }
+ 
+    std::shared_ptr<Variant> getVinf()
+        {
+        return m_vinf;
+        }
+    //~
+
     /// Change the timestep
     virtual void setDeltaT(Scalar deltaT);
 
     /// Return the timestep
     Scalar getDeltaT();
 
-    //~ Return the shear rate [PROCF2023]
+    //~ Return the DPD shear rate [PROCF2023]
     virtual void setSR(Scalar);
     Scalar getSR();
+    //~
+
+    //~ Return the BD shear rate [PROCF2023]
+    virtual void setSRBD(Scalar);
+    Scalar getSRBD();
     //~
 
     /// Update the number of degrees of freedom for a group
@@ -187,8 +205,9 @@ class PYBIND11_EXPORT Integrator : public Updater
     /// The step size
     Scalar m_deltaT;
 
-    ///~ the flow velocity vinf AKA SR from the shear rate [PROCF2023]
-    Scalar m_SR;
+    ///~ the flow velocity vinf and SRBD (BDShear) [PROCF2023]
+    std::shared_ptr<Variant> m_vinf;
+    Scalar m_SRBD;
     ///~
 
     /// List of all the force computes

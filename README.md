@@ -1,8 +1,11 @@
 # hoomd4.2.1-mod
 
 **THIS BRANCH IS FOR TESTING BD-SHEAR** <br>
-Testing the Integration of BoxShear and Variant classes from Deepak; once this is documented and revalidated, we can merge it to main
-See [template scripts](/scripts/BD-shear) for parameters you need to add in Python to be able to use shear flow like this
+Testing the Integration of BoxShear and Variant classes from Deepak.<br>
+*NOTE:* Currently DPD shear and BD shear are NOT compatible; must choose one on line 193/194 of `BoxResizeUpdater.cc` <br>
+Once these are reintegrated and validated, we can merge it to main
+
+See [template scripts](/scripts/BDshear) for parameters you need to add in Python to be able to use shear flow like this
 
 -----------------------------
 

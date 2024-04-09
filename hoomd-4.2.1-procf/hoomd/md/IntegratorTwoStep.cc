@@ -18,8 +18,8 @@ namespace hoomd
     {
 namespace md
     {
-IntegratorTwoStep::IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate) //~ add SR [PROCF2023]
-    : Integrator(sysdef, deltaT, shear_rate), m_prepared(false), m_gave_warning(false) //~ add shear rate [PROCF2023]
+IntegratorTwoStep::IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate, std::shared_ptr<Variant> vinf) //~ add DPD SR and BD vinf [PROCF2023]
+    : Integrator(sysdef, deltaT, shear_rate, vinf), m_prepared(false), m_gave_warning(false) //~ add shear rate [PROCF2023]
     {
     m_exec_conf->msg->notice(5) << "Constructing IntegratorTwoStep" << endl;
 
@@ -54,6 +54,10 @@ void IntegratorTwoStep::update(uint64_t timestep)
     {
     Integrator::update(timestep);
 
+    //~ add BD shear rate [PROCF2023]
+    Scalar shear_rate_BD = (*m_vinf)(timestep);
+    //~
+
     // issue a warning if no integration methods are set
     if (!m_gave_warning && m_methods.size() == 0)
         {
@@ -71,11 +75,13 @@ void IntegratorTwoStep::update(uint64_t timestep)
         // files. Work around this by calling setDeltaT every timestep.
         method->setAnisotropic(m_integrate_rotational_dof);
         method->setDeltaT(m_deltaT);
+        method->setSR(shear_rate_BD); //~ add BD shear rate [PROCF2023]
         method->integrateStepOne(timestep);
         }
 
 #ifdef ENABLE_MPI
     if (m_sysdef->isDomainDecomposed())
+        m_comm->setSR(shear_rate_BD); //~ update BD shear rate [PROCF2023]
         {
         // Update the rigid body consituent particles before communicating so that any such
         // particles that move from one domain to another are migrated.

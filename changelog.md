@@ -84,15 +84,28 @@ Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
 ## Shear Rate BD
 Adding shear rate for regular particles
 * [ ] `hoomd/`
-	* [ ] BoxShearUpdater.cc
-	* [ ] BoxShearUpdater.h
-	* [ ] CmakeList.txt
- 	* [ ] Variant.cc
-	* [ ] Variant.h
+	* [ ] BoxResizeUpdater.cc : **flow velocity (vinf), curr_vel**
+	* [ ] BoxResizeUpdater.h : **flow velocity (vinf), SRBD**
+	* [ ] **[ADD NEW FILE]** BoxShearUpdater.cc
+	* [ ] **[ADD NEW FILE]** BoxShearUpdater.h
+	* [ ] CmakeList.txt : **add BoxShearUpdater.h, BoxShearUpdater.cc, confirm Variant.cc, Variant.h, and variant.py are present**
+	* [ ] Integrator.h : **add Variant and vinf, SRBD**
+	* [ ] Integrator.cc : **add Variant and vinf, Box_Dim, SRBD**
+ 	* [ ] Variant.cc : **???**
+	* [ ] Variant.h : **???**
+	* [ ] `md/`
+		* [ ] FIREEnergyMinimizer.cc : **flow velocity vinf**
+		* [ ] IntegratorTwoStep.cc : **flow velocity vinf**
+		* [ ] IntegratorTwoStep.h : **flow velocity vinf**
+		* [ ] IntegratorBD.cc : **flow velocity vinf**
+		* [ ] IntegratorLangevin.cc : **flow velocity vinf**
+		* [ ] integrate.py : **flow velocity vinf**
 	* [ ] `update/`
- 		  * [ ] init.py (add BoxShear?)
-	 	  * [ ] box_shear.py
-	* [ ] variant.py
+		* [ ] CmakeList.txt : **add box_shear.py**
+ 		* [ ] \_\_init\_\_.py : **add BoxShear**
+	 	* [ ] **[ADD NEW FILE]** box_shear.py
+		* [ ] box_resize.py : **add vinf**
+	* [ ] **[ADD NEW FILE]** variant.py
 
 ## Bond Tracking
 Track bond formation and breaking (Nabi, Deepak, and Rob)
