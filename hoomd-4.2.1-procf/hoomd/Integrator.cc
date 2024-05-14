@@ -24,8 +24,8 @@ namespace hoomd
 /** @param sysdef System to update
     @param deltaT Time step to use
 */
-Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate, std::shared_ptr<Variant> vinf) //~ add shear rate and BDshear [PROCF2023]
-    : Updater(sysdef, std::make_shared<PeriodicTrigger>(1)), m_deltaT(deltaT), m_SR(shear_rate), m_vinf(vinf), m_SRBD(0) //~ add SR for DPDshear and vinf and SRBD for BDshear [PROCF2023]
+Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate) //~ add shear rate [PROCF2023]
+    : Updater(sysdef, std::make_shared<PeriodicTrigger>(1)), m_deltaT(deltaT), m_SR(shear_rate) //~ add SR for shear rate [PROCF2023]
     {
 #ifdef ENABLE_MPI
     if (m_sysdef->isDomainDecomposed())
@@ -88,7 +88,7 @@ Scalar Integrator::getDeltaT()
     }
 
 //~ [PROCF2023] 
-/** \return the DPD shear rate SR
+/** \return the shear rate SR
  */
 void Integrator::setSR(Scalar shear_rate)
     {
@@ -104,25 +104,6 @@ Scalar Integrator::getSR()
     return m_SR;
     }
 //~
-
-//~ [PROCF2023] 
-/** \return the BD shear rate (from vinf)
- */
-void Integrator::setSRBD(Scalar shear_rate_BD)
-    {
-    for (auto& force : m_forces)
-        {
-        force->setSRBD(shear_rate_BD);
-        }
-    m_SRBD = shear_rate_BD;
-    }
-
-Scalar Integrator::getSRBD()
-    {
-    return m_SRBD;
-    }
-//~
-
 
 /** Loops over all constraint forces in the Integrator and sums up the number of DOF removed
     @param query The group over which to compute the removed degrees of freedom
@@ -856,17 +837,10 @@ void Integrator::update(uint64_t timestep)
     {
     Updater::update(timestep);
 
-    //~ add shear parameters (DPD and BD) [PROCF2023]
-    BoxDim box_global = m_pdata->getGlobalBox();
-    Scalar shear_rate_BD = (*m_vinf)(timestep);
-    setSRBD(shear_rate_BD);
-    //~
-
     // ensure that the force computes know the current step size
     for (auto& force : m_forces)
         {
         force->setDeltaT(m_deltaT);
-        force->setSRBD(shear_rate_BD);
         }
 
     for (auto& constraint_force : m_constraint_forces)
@@ -887,13 +861,6 @@ void Integrator::update(uint64_t timestep)
 void Integrator::prepRun(uint64_t timestep)
     {
     // ensure that all forces have updated delta t values at the start of step 0
-
-    //~ add shear parameters (DPD and BD) [PROCF2023]
-    BoxDim box_global = m_pdata->getGlobalBox();
-    Scalar shear_rate_BD = (*m_vinf)(timestep);
-    setSRBD(shear_rate_BD);
-    //~
-
 
     for (auto& force : m_forces)
         {
@@ -965,12 +932,10 @@ void export_Integrator(pybind11::module& m)
     pybind11::bind_vector<std::vector<std::shared_ptr<ForceCompute>>>(m, "ForceComputeList");
     pybind11::bind_vector<std::vector<std::shared_ptr<ForceConstraint>>>(m, "ForceConstraintList");
     pybind11::class_<Integrator, Updater, std::shared_ptr<Integrator>>(m, "Integrator")
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, Scalar, std::    shared_ptr<Variant>>()) //~ add Scalar for SR for DPDshear and vinf for BDshear [PROCF2023]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, Scalar>()) //~ add Scalar for SR [PROCF2023]
         .def("updateGroupDOF", &Integrator::updateGroupDOF)
         .def_property("dt", &Integrator::getDeltaT, &Integrator::setDeltaT)
-	.def_property("SR", &Integrator::getSR, &Integrator::setSR) //~ add SR for DPDshear [PROCF2023]
-	.def_property("SRBD", &Integrator::getSRBD, &Integrator::setSRBD) //~ add SR for BDshear [PROCF2023]
-        .def_property("vinf", &Integrator::getVinf, &Integrator::setVinf) //~ add vinf for BDshear [PROCF2023]
+	.def_property("SR", &Integrator::getSR, &Integrator::setSR) //~ add SR [PROCF2023]
         .def_property_readonly("forces", &Integrator::getForces)
         .def_property_readonly("constraints", &Integrator::getConstraintForces)
         .def("computeLinearMomentum", &Integrator::computeLinearMomentum);

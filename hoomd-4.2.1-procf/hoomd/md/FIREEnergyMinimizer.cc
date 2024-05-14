@@ -20,8 +20,8 @@ namespace md
 
     \post The method is constructed with the given particle data.
 */
-FIREEnergyMinimizer::FIREEnergyMinimizer(std::shared_ptr<SystemDefinition> sysdef, Scalar dt, Scalar shear_rate, std::shared_ptr<Variant> vinf) //~ add DPD shear rate and BD vinf [PROCF2023]
-    : IntegratorTwoStep(sysdef, dt, shear_rate, vinf), m_nmin(5), m_finc(Scalar(1.1)), m_fdec(Scalar(0.5)), //~ add DPD shear rate and BD vinf [PROCF2023]
+FIREEnergyMinimizer::FIREEnergyMinimizer(std::shared_ptr<SystemDefinition> sysdef, Scalar dt, Scalar shear_rate) //~ add shear rate [PROCF2023]
+    : IntegratorTwoStep(sysdef, dt, shear_rate), m_nmin(5), m_finc(Scalar(1.1)), m_fdec(Scalar(0.5)), //~ add shear rate [PROCF2023]
       m_alpha_start(Scalar(0.1)), m_falpha(Scalar(0.99)), m_ftol(Scalar(1e-1)),
       m_wtol(Scalar(1e-1)), m_etol(Scalar(1e-3)), m_energy_total(Scalar(0.0)),
       m_old_energy(Scalar(0.0)), m_deltaT_max(dt), m_deltaT_set(dt / Scalar(10.0)),

@@ -30,10 +30,9 @@ BoxResizeUpdater::BoxResizeUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                    std::shared_ptr<BoxDim> box1,
                                    std::shared_ptr<BoxDim> box2,
                                    std::shared_ptr<Variant> variant,
-                                   std::shared_ptr<Variant> vinf, //~ add vinf BD shear [PROCF2023]
                                    std::shared_ptr<ParticleGroup> group,
-                                   Scalar SR) //~ add shear rate DPD shear [PROCF2023]
-    : Updater(sysdef, trigger), m_box1(box1), m_box2(box2), m_variant(variant), m_vinf(vinf), m_group(group), m_SR(SR) //~ add vinf and SR [PROCF2023]
+                                   Scalar SR) //~ add shear rate [PROCF2023]
+    : Updater(sysdef, trigger), m_box1(box1), m_box2(box2), m_variant(variant), m_group(group), m_SR(SR) //~ add SR [PROCF2023]
     {
     assert(m_pdata);
     assert(m_variant);
@@ -122,11 +121,6 @@ void BoxResizeUpdater::update(uint64_t timestep)
     // check if the current box size is the same
     BoxDim cur_box = m_pdata->getGlobalBox();
 
-    //~ add vinf BD shear [PROCF2023]
-    Scalar cur_vel = (*m_vinf)(timestep);
-    //std::cout << "boxresize " << cur_vel << std::endl;
-    //~
-
     // only change the box if there is a change in the box dimensions
     if (new_box != cur_box)
         {
@@ -190,8 +184,8 @@ void BoxResizeUpdater::scaleAndWrapParticles(const BoxDim& cur_box, const BoxDim
         int img0 = h_image.data[i].y; //~ get old y-velocity [PROCF2023]
         local_box.wrap(h_pos.data[i], h_image.data[i]);
         img0 -= h_image.data[i].y; //~ subtract new y-velocity [PROCF2023]
-        //h_vel.data[i].x += (img0 * m_SR); //~ add shear rate [PROCF2023]
-        h_vel.data[i].x += (img0 * cur_vel); //~ OR add BD shear [PROCF2023]
+        h_vel.data[i].x += (img0 * m_SR); //~ add shear rate [PROCF2023]
+
         }
     }
 
@@ -212,7 +206,6 @@ void export_BoxResizeUpdater(pybind11::module& m)
         .def_property("box1", &BoxResizeUpdater::getBox1, &BoxResizeUpdater::setBox1)
         .def_property("box2", &BoxResizeUpdater::getBox2, &BoxResizeUpdater::setBox2)
         .def_property("variant", &BoxResizeUpdater::getVariant, &BoxResizeUpdater::setVariant)
-        .def_property("vinf", &BoxResizeUpdater::getVinf, &BoxResizeUpdater::setVinf) //~ asdd vinf BD shear [PROCF2023]
         .def_property("SR", &BoxResizeUpdater::getSR, &BoxResizeUpdater::setSR) //~ add shear rate [PROCF2023]
         .def_property_readonly("filter",
                                [](const std::shared_ptr<BoxResizeUpdater> method)
