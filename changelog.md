@@ -84,15 +84,14 @@ Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
 ## Shear Rate BD
 Adding shear rate for regular particles
 * [ ] `hoomd/`
-	* [ ] BoxShearUpdater.cc
-	* [ ] BoxShearUpdater.h
-	* [ ] CmakeList.txt
- 	* [ ] Variant.cc
-	* [ ] Variant.h
-	* [ ] `update/`
- 		  * [ ] init.py (add BoxShear?)
-	 	  * [ ] box_shear.py
-	* [ ] variant.py
+	* [ ] `md/`
+		* [ ] BoxShearUpdater.cc
+		* [ ] BoxShearUpdater.h
+		* [ ] Variant.cc
+		* [ ] Variant.h
+		* [ ] `pair/`
+			* [ ] box_shear.py
+			* [ ] variant.py
 
 ## Bond Tracking
 Track bond formation and breaking (Nabi, Deepak, and Rob)
