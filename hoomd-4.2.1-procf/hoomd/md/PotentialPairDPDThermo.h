@@ -171,11 +171,6 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     //~
 
     const BoxDim box = this->m_pdata->getBox();
-    //~ get additional box details [PROCF2023] 
-    Scalar3 L2 = box.getL();
-    uchar3 per_ = box.getPeriodic();
-    //~
-    Scalar shear_rate = this->m_SR; //~ add shear rate [PROCF2023] 
     ArrayHandle<Scalar> h_ronsq(this->m_ronsq, access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_rcutsq(this->m_rcutsq, access_location::host, access_mode::read);
 
@@ -228,15 +223,6 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             // calculate dv_ji (MEM TRANSFER: 3 scalars / FLOPS: 3)
             Scalar3 vj = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
             Scalar3 dv = vi - vj;
-
-	    //~ add shear rate [PROCF2023] 
-            if(shear_rate != Scalar(0.0) && (int)per_.y){
-               if (abs(dx.y) > Scalar(0.5)*L2.y){
-                   if(dx.y > Scalar(0.0)) dv.x -= shear_rate;
-                   else dv.x += shear_rate;
-                   }
-               }
-	    //~
 
             // access the type of the neighbor particle (MEM TRANSFER: 1 scalar)
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);

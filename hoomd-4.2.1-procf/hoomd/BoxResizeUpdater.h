@@ -42,8 +42,8 @@ class PYBIND11_EXPORT BoxResizeUpdater : public Updater
                      std::shared_ptr<BoxDim> box1,
                      std::shared_ptr<BoxDim> box2,
                      std::shared_ptr<Variant> variant,
-                     std::shared_ptr<ParticleGroup> m_group,
-                     Scalar SR); //~ add shear rate [PROCF2023]
+                     std::shared_ptr<ParticleGroup> m_group
+                     );
 
     /// Destructor
     virtual ~BoxResizeUpdater();
@@ -78,11 +78,6 @@ class PYBIND11_EXPORT BoxResizeUpdater : public Updater
         return m_variant;
         }
 
-    //~ Get the shear rate SR [PROCF2023] 
-    void setSR(Scalar);
-    Scalar getSR();
-    //~
-
     /// Get the current box for the given timestep
     BoxDim getCurrentBox(uint64_t timestep);
 
@@ -97,7 +92,6 @@ class PYBIND11_EXPORT BoxResizeUpdater : public Updater
     std::shared_ptr<BoxDim> m_box2;         ///< C++ box assoc with max
     std::shared_ptr<Variant> m_variant;     //!< Variant that interpolates between boxes
     std::shared_ptr<ParticleGroup> m_group; //!< Selected particles to scale when resizing the box.
-    Scalar m_SR;                            //~!< flow velocity vinf [PROCF2023]
     };
 
 namespace detail

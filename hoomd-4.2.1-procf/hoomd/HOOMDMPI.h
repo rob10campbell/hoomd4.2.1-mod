@@ -85,16 +85,6 @@ template<class Archive> void serialize(Archive& ar, uint3& u, const unsigned int
     ar& u.z;
     }
 
-//~ add another uint 4 [PROCF2023]
-//! serialization of uint4
-template<class Archive> void serialize(Archive& ar, uint4& u, const unsigned int version)
-    {
-    ar& u.x;
-    ar& u.y;
-    ar& u.z;
-    ar& u.w;
-    }
-//~
 
 //! serialization of uchar3
 template<class Archive> void serialize(Archive& ar, uchar3& u, const unsigned int version)

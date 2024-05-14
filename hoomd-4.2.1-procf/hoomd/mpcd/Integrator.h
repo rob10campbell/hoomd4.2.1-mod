@@ -36,7 +36,7 @@ class PYBIND11_EXPORT Integrator : public hoomd::md::IntegratorTwoStep
     {
     public:
     //! Constructor
-    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add Scalar for shear rate [PROCF2023]
+    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT);
 
     //! Destructor
     virtual ~Integrator();

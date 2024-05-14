@@ -28,8 +28,7 @@ namespace md
 IntegrationMethodTwoStep::IntegrationMethodTwoStep(std::shared_ptr<SystemDefinition> sysdef,
                                                    std::shared_ptr<ParticleGroup> group)
     : m_sysdef(sysdef), m_group(group), m_pdata(m_sysdef->getParticleData()),
-      m_exec_conf(m_pdata->getExecConf()), m_aniso(false), m_deltaT(Scalar(0.0)), 
-      m_SR(Scalar(0.0)) //~ add SR [PROCF2023]
+      m_exec_conf(m_pdata->getExecConf()), m_aniso(false), m_deltaT(Scalar(0.0))
     {
     // sanity check
     assert(m_sysdef);
@@ -43,15 +42,6 @@ void IntegrationMethodTwoStep::setDeltaT(Scalar deltaT)
     {
     m_deltaT = deltaT;
     }
-
-//~ add shear rate [PROCF2023] 
-/*! \param SR New shear rate to set
- */
-void IntegrationMethodTwoStep::setSR(Scalar shear_rate)
-    {
-    m_SR = shear_rate;
-    }
-//~
 
 /*! \param query_group Group over which to count (translational) degrees of freedom.
     A majority of the integration methods add D degrees of freedom per particle in \a query_group

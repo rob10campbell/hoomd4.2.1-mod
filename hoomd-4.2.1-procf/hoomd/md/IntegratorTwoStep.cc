@@ -18,8 +18,8 @@ namespace hoomd
     {
 namespace md
     {
-IntegratorTwoStep::IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate) //~ add SR [PROCF2023]
-    : Integrator(sysdef, deltaT, shear_rate), m_prepared(false), m_gave_warning(false) //~ add shear rate [PROCF2023]
+IntegratorTwoStep::IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT)
+    : Integrator(sysdef, deltaT), m_prepared(false), m_gave_warning(false)
     {
     m_exec_conf->msg->notice(5) << "Constructing IntegratorTwoStep" << endl;
 
@@ -149,29 +149,6 @@ void IntegratorTwoStep::setDeltaT(Scalar deltaT)
         }
     }
 
-//~ add shear rate [PROCF2023] 
-/*! \param SR new shear rate to set
-    \post \a SR is also set on all contained integration methods
-*/
-void IntegratorTwoStep::setSR(Scalar shear_rate)
-    {
-    Integrator::setSR(shear_rate);
-
-    // set SR on all methods already added
-    for (auto& method : m_methods)
-        {
-        method->setSR(shear_rate);
-        }
-
-#ifdef ENABLE_MPI
-    if (m_sysdef->isDomainDecomposed())
-	// perform all necessary communication steps to update SR for
-	// a) migrated particles
-	// b) ghost particles
-        m_comm->setSR(shear_rate);
-#endif
-    }
-//~
 
 /*! \param group Group over which to count degrees of freedom.
 
@@ -453,7 +430,7 @@ void export_IntegratorTwoStep(pybind11::module& m)
     pybind11::class_<IntegratorTwoStep, Integrator, std::shared_ptr<IntegratorTwoStep>>(
         m,
         "IntegratorTwoStep")
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, Scalar>()) //~ add Scalar for shear rate [PROCF2023]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar>())
         .def_property_readonly("methods", &IntegratorTwoStep::getIntegrationMethods)
         .def_property("rigid", &IntegratorTwoStep::getRigid, &IntegratorTwoStep::setRigid)
         .def_property("integrate_rotational_dof",

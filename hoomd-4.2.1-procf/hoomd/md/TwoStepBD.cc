@@ -83,11 +83,8 @@ void TwoStepBD::integrateStepOne(uint64_t timestep)
                                    access_mode::read);
 
     const BoxDim& box = m_pdata->getBox();
-    const BoxDim& box_global = m_pdata->getGlobalBox(); //~ get global box [PROCF2023]
 
     uint16_t seed = m_sysdef->getSeed();
-
-    Scalar shear_rate = this->m_SR; //~ add shear rate [PROCF2023]
 
     // perform the first half step
     // r(t+deltaT) = r(t) + (Fc(t) + Fr)*deltaT/gamma
@@ -123,25 +120,18 @@ void TwoStepBD::integrateStepOne(uint64_t timestep)
         if (D < 3)
             Fr_z = Scalar(0.0);
 
-        //~ add shear rate [PROCF2023]
-        Scalar vinf = shear_rate * h_pos.data[j].y / box_global.getL().y;
-        //~
-
         // update position
-        h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma + vinf * m_deltaT; //~ include flow velocity [PROCF2023]
+        h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma;
         h_pos.data[j].y += (h_net_force.data[j].y + Fr_y) * m_deltaT / gamma;
         h_pos.data[j].z += (h_net_force.data[j].z + Fr_z) * m_deltaT / gamma;
 
         // particles may have been moved slightly outside the box by the above steps, wrap them back
         // into place
-        int img0 = h_image.data[j].y; //~ get old y-velocity [PROCF2023]
         box.wrap(h_pos.data[j], h_image.data[j]);
-        img0 -= h_image.data[j].y; //~ subtract new y-velocity [PROCF2023]
-        vinf += (img0 * shear_rate); //~ add shear rate [PROCF2023]
 
         if (m_noiseless_t)
             {
-            h_vel.data[j].x = h_net_force.data[j].x / gamma + vinf; //~ include flow velocity [PROCF2023]
+            h_vel.data[j].x = h_net_force.data[j].x / gamma;
             h_vel.data[j].y = h_net_force.data[j].y / gamma;
             if (D > 2)
                 h_vel.data[j].z = h_net_force.data[j].z / gamma;

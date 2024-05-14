@@ -20,8 +20,8 @@ namespace hoomd
  * \param sysdef System definition
  * \param deltaT Fundamental integration timestep
  */
-mpcd::Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate) //~ add shear rate [PROCF2023]
-    : IntegratorTwoStep(sysdef, deltaT, shear_rate) //~ add shear rate [PROCF2023]
+mpcd::Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT)
+    : IntegratorTwoStep(sysdef, deltaT)
     {
     m_exec_conf->msg->notice(5) << "Constructing MPCD Integrator" << std::endl;
     }
@@ -191,7 +191,7 @@ void mpcd::detail::export_Integrator(pybind11::module& m)
     pybind11::class_<mpcd::Integrator,
                      hoomd::md::IntegratorTwoStep,
                      std::shared_ptr<mpcd::Integrator>>(m, "Integrator")
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, Scalar>()) //~ add Scalar for shear rate [PROCF2023]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar>())
         .def("setCollisionMethod", &mpcd::Integrator::setCollisionMethod)
         .def("removeCollisionMethod", &mpcd::Integrator::removeCollisionMethod)
         .def("setStreamingMethod", &mpcd::Integrator::setStreamingMethod)

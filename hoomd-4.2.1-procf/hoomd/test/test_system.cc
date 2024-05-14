@@ -83,7 +83,7 @@ class DummyIntegrator : public Integrator
     public:
     //! Constructs a named analyzer
     DummyIntegrator(std::shared_ptr<SystemDefinition> sysdef, const string& name)
-        : Integrator(sysdef, 0, 0), m_name(name) //~ add dummy value 0 for SR [PROCF2023]
+        : Integrator(sysdef, 0), m_name(name) 
         {
         }
 

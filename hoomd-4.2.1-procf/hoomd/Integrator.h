@@ -63,7 +63,7 @@ class PYBIND11_EXPORT Integrator : public Updater
     {
     public:
     /// Constructor
-    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add shear rate [PROCF2023]
+    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT);
 
     /// Destructor
     virtual ~Integrator();
@@ -100,11 +100,6 @@ class PYBIND11_EXPORT Integrator : public Updater
 
     /// Return the timestep
     Scalar getDeltaT();
-
-    //~ Return the shear rate [PROCF2023]
-    virtual void setSR(Scalar);
-    Scalar getSR();
-    //~
 
     /// Update the number of degrees of freedom for a group
     /** @param group Group to set the degrees of freedom for.
@@ -186,10 +181,6 @@ class PYBIND11_EXPORT Integrator : public Updater
     protected:
     /// The step size
     Scalar m_deltaT;
-
-    ///~ the flow velocity vinf AKA SR from the shear rate [PROCF2023]
-    Scalar m_SR;
-    ///~
 
     /// List of all the force computes
     std::vector<std::shared_ptr<ForceCompute>> m_forces;

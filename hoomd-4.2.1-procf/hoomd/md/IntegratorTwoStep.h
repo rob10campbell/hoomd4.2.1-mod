@@ -41,7 +41,7 @@ class PYBIND11_EXPORT IntegratorTwoStep : public Integrator
     {
     public:
     /// Constructor
-    IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, Scalar shear_rate); //~ add shear rate [PROCF2023]
+    IntegratorTwoStep(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT);
 
     /// Destructor
     virtual ~IntegratorTwoStep();
@@ -51,10 +51,6 @@ class PYBIND11_EXPORT IntegratorTwoStep : public Integrator
 
     /// Change the timestep
     virtual void setDeltaT(Scalar deltaT);
-
-    ///~ Change the shear rate [PROCF2023]
-    virtual void setSR(Scalar shear_rate);
-    //~
 
     /// Get the list of integration methods
     std::vector<std::shared_ptr<IntegrationMethodTwoStep>>& getIntegrationMethods()

@@ -73,16 +73,11 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
                                   access_location::host,
                                   access_mode::readwrite);
 
-        Scalar shear_rate = this->m_SR; //~ add shear rate [PROCF2023]
-
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
             {
             unsigned int j = m_group->getMemberIndex(group_idx);
             // wrap the particles around the box
-	    int img0 = h_image.data[j].y; //~ get old y-velocity [PROCF2023]
             box.wrap(h_pos.data[j], h_image.data[j]);
-	img0 -= h_image.data[j].y; //~ subtract new y-velocity [PROCF2023]
-	h_vel.data[j].x += (img0 * shear_rate); //~ add shear rate [PROCF2023]
             }
         }
 

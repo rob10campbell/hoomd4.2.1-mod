@@ -33,7 +33,7 @@ class PYBIND11_EXPORT FIREEnergyMinimizer : public IntegratorTwoStep
     {
     public:
     //! Constructs the minimizer and associates it with the system
-    FIREEnergyMinimizer(std::shared_ptr<SystemDefinition>, Scalar, Scalar); //~ add Scalar for shear rate [PROCF2023]
+    FIREEnergyMinimizer(std::shared_ptr<SystemDefinition>, Scalar);
     virtual ~FIREEnergyMinimizer();
 
     //! Reset the minimization
