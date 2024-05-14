@@ -1,5 +1,3 @@
-### Modified by PRO-CF #[PROCF2023] ###
-
 add_subdirectory(extern)
 
 # configure the version information file
@@ -59,7 +57,6 @@ set(_hoomd_sources Action.cc
                    Analyzer.cc
                    BondedGroupData.cc
                    BoxResizeUpdater.cc
-                   BoxShearUpdater.cc #[PROCF2023]
                    CellList.cc
                    CellListStencil.cc
                    ClockSource.cc
@@ -128,7 +125,6 @@ set(_hoomd_headers
     BoxResizeUpdater.h
     BoxResizeUpdaterGPU.cuh
     BoxResizeUpdaterGPU.h
-    BoxShearUpdater.h #[PROCF2023]
     UpdaterRemoveDrift.h
     CachedAllocator.h
     CellListGPU.cuh

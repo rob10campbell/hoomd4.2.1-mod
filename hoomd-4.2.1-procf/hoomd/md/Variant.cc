@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2023 The Regents of the University of Michigan.
+// Copyright (c) 2009-2022 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 #include "Variant.h"
@@ -177,6 +177,73 @@ void export_Variant(pybind11::module& m)
                                     params[3].cast<uint64_t>(),
                                     params[4].cast<uint64_t>());
             }));
+
+    pybind11::class_<VariantOscillatory, Variant, std::shared_ptr<VariantOscillatory>>(m, "VariantOscillatory")
+        .def(pybind11::init<Scalar, uint64_t, uint64_t>(),
+             pybind11::arg("A"),
+             pybind11::arg("t_start"),
+             pybind11::arg("t_ramp"))
+        .def_property("A", &VariantOscillatory::getA, &VariantOscillatory::setA)
+        .def_property("t_start", &VariantOscillatory::getTStart, &VariantOscillatory::setTStart)
+        .def_property("t_ramp", &VariantOscillatory::getTRamp, &VariantOscillatory::setTRamp)
+        .def(pybind11::pickle(
+            [](const VariantOscillatory& variant)
+            {
+                return pybind11::make_tuple(variant.getA(),
+                                            variant.getTStart(),
+                                            variant.getTRamp());
+            },
+            [](pybind11::tuple params)
+            {
+                return VariantOscillatory(params[0].cast<Scalar>(),
+                                   params[1].cast<uint64_t>(),
+                                   params[2].cast<uint64_t>());
+            }));
+
+    pybind11::class_<VariantSinusoid, Variant, std::shared_ptr<VariantSinusoid>>(m, "VariantSinusoid")
+        .def(pybind11::init<Scalar, uint64_t, Scalar>(),
+             pybind11::arg("value"),
+             pybind11::arg("t_start"),
+             pybind11::arg("omega"))
+        .def_property("value", &VariantSinusoid::getValue, &VariantSinusoid::setValue)
+        .def_property("t_start", &VariantSinusoid::getTStart, &VariantSinusoid::setTStart)
+        .def_property("omega", &VariantSinusoid::getOmega, &VariantSinusoid::setOmega)
+        .def(pybind11::pickle(
+            [](const VariantSinusoid& variant)
+            {
+                return pybind11::make_tuple(variant.getValue(),
+                                            variant.getTStart(),
+                                            variant.getOmega());
+            },
+            [](pybind11::tuple params)
+            {
+                return VariantSinusoid(params[0].cast<Scalar>(),
+                                   params[1].cast<uint64_t>(),
+                                   params[2].cast<Scalar>());
+            }));
+
+    pybind11::class_<VariantCosinusoid, Variant, std::shared_ptr<VariantCosinusoid>>(m, "VariantCosinusoid")
+        .def(pybind11::init<Scalar, uint64_t, Scalar>(),
+             pybind11::arg("value"),
+             pybind11::arg("t_start"),
+             pybind11::arg("omega"))
+        .def_property("value", &VariantCosinusoid::getValue, &VariantCosinusoid::setValue)
+        .def_property("t_start", &VariantCosinusoid::getTStart, &VariantCosinusoid::setTStart)
+        .def_property("omega", &VariantCosinusoid::getOmega, &VariantCosinusoid::setOmega)
+        .def(pybind11::pickle(
+            [](const VariantCosinusoid& variant)
+            {
+                return pybind11::make_tuple(variant.getValue(),
+                                            variant.getTStart(),
+                                            variant.getOmega());
+            },
+            [](pybind11::tuple params)
+            {
+                return VariantCosinusoid(params[0].cast<Scalar>(),
+                                   params[1].cast<uint64_t>(),
+                                   params[2].cast<Scalar>());
+            }));
+
 
     m.def("_test_variant_call", &testVariantCall);
     m.def("_test_variant_min", &testVariantMin);
