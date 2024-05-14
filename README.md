@@ -1,11 +1,5 @@
 # hoomd4.2.1-mod
 
-**THIS BRANCH IS FOR TESTING BD-SHEAR** <br>
-Testing the Integration of BoxShear and Variant classes from Deepak; once this is documented and revalidated, we can merge it to main
-See [template scripts](/scripts/BD-shear) for parameters you need to add in Python to be able to use shear flow like this
-
------------------------------
-
 This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the PRO-CF group. It also includes: 
 * [Installation instructions](/README.md#installation)
 * [Background Reading](/background-reading) about how these simulations work
