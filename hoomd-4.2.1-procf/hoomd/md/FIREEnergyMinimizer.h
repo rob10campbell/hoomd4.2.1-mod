@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [PROCF2024] ##########
 
 #include "IntegratorTwoStep.h"
 
@@ -33,7 +33,7 @@ class PYBIND11_EXPORT FIREEnergyMinimizer : public IntegratorTwoStep
     {
     public:
     //! Constructs the minimizer and associates it with the system
-    FIREEnergyMinimizer(std::shared_ptr<SystemDefinition>, Scalar);
+    FIREEnergyMinimizer(std::shared_ptr<SystemDefinition>, Scalar, std::shared_ptr<Variant>); //~ add vinf [PROCF2024]
     virtual ~FIREEnergyMinimizer();
 
     //! Reset the minimization

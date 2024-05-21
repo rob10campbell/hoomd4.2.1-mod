@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [PROCF2023] [PROCF2024] ##########
 
 /*! \file Communicator.h
     \brief Defines the Communicator class
@@ -391,8 +391,15 @@ class PYBIND11_EXPORT Communicator
 
     void addMeshDefinition(std::shared_ptr<MeshDefinition> meshdef);
 
+    //!~ add shear rate [PROCF2024]
+    virtual void setSR(Scalar shear_rate)
+        {
+        m_SR = shear_rate;
+        }
+    //~
 
     protected:
+        Scalar m_SR; //~ add shear rate [PROCF2024]
     //! Helper class to perform the communication tasks related to bonded groups
     template<class group_data> class GroupCommunicator
         {

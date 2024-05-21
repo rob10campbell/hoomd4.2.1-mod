@@ -20,8 +20,8 @@ namespace hoomd
  * \param sysdef System definition
  * \param deltaT Fundamental integration timestep
  */
-mpcd::Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT)
-    : IntegratorTwoStep(sysdef, deltaT)
+mpcd::Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, std::shared_ptr<Variant> vinf) //~ add vinf [PROCF2024]
+    : IntegratorTwoStep(sysdef, deltaT, vinf) //~ add vinf [PROCF2024]
     {
     m_exec_conf->msg->notice(5) << "Constructing MPCD Integrator" << std::endl;
     }
@@ -191,7 +191,7 @@ void mpcd::detail::export_Integrator(pybind11::module& m)
     pybind11::class_<mpcd::Integrator,
                      hoomd::md::IntegratorTwoStep,
                      std::shared_ptr<mpcd::Integrator>>(m, "Integrator")
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, std::shared_ptr<Variant>>()) //~ add vinf [PROCF2024]
         .def("setCollisionMethod", &mpcd::Integrator::setCollisionMethod)
         .def("removeCollisionMethod", &mpcd::Integrator::removeCollisionMethod)
         .def("setStreamingMethod", &mpcd::Integrator::setStreamingMethod)

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [PROCF2024] ##########
 
 #include "TwoStepBD.h"
 #include "hoomd/HOOMDMath.h"
@@ -83,8 +83,12 @@ void TwoStepBD::integrateStepOne(uint64_t timestep)
                                    access_mode::read);
 
     const BoxDim& box = m_pdata->getBox();
-
+    const BoxDim& box_global = m_pdata->getGlobalBox(); //~ box_dims [PROCF2024]
     uint16_t seed = m_sysdef->getSeed();
+    //~ add shear rate [PROCF2024]
+    Scalar shear_rate = this->m_SR;
+    //std::cout << shear_rate << std::endl;
+    //~
 
     // perform the first half step
     // r(t+deltaT) = r(t) + (Fc(t) + Fr)*deltaT/gamma
@@ -120,18 +124,24 @@ void TwoStepBD::integrateStepOne(uint64_t timestep)
         if (D < 3)
             Fr_z = Scalar(0.0);
 
+        Scalar vinf = shear_rate * h_pos.data[j].y / box_global.getL().y; //~ add vinf [PROCF2024]
+
         // update position
-        h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma;
+        h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma + vinf * m_deltaT; //~ add vinf in flow direction [PROCF2024]
         h_pos.data[j].y += (h_net_force.data[j].y + Fr_y) * m_deltaT / gamma;
         h_pos.data[j].z += (h_net_force.data[j].z + Fr_z) * m_deltaT / gamma;
 
         // particles may have been moved slightly outside the box by the above steps, wrap them back
         // into place
+        //~ and update velocity if crossing y-boundary [PROCF2024]
+        int img0 = h_image.data[j].y; //~ get y-image [PROCF2024]
         box.wrap(h_pos.data[j], h_image.data[j]);
+        img0 -= h_image.data[j].y; //~ update with current velocity [PROCF2024]
+        vinf += (img0 * shear_rate); //~ update velocity [PROCF2024]
 
         if (m_noiseless_t)
             {
-            h_vel.data[j].x = h_net_force.data[j].x / gamma;
+            h_vel.data[j].x = h_net_force.data[j].x / gamma + vinf; //~ add vinf [PROCF2024]
             h_vel.data[j].y = h_net_force.data[j].y / gamma;
             if (D > 2)
                 h_vel.data[j].z = h_net_force.data[j].z / gamma;

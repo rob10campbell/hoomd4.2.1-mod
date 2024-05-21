@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [PROCF2024] ##########
 
 #ifndef __HOOMD_MPI_H__
 #define __HOOMD_MPI_H__
@@ -85,6 +85,15 @@ template<class Archive> void serialize(Archive& ar, uint3& u, const unsigned int
     ar& u.z;
     }
 
+//!~ serialization of uint4 (for shear rate) [PROCF2024]
+template<class Archive> void serialize(Archive& ar, uint4& u, const unsigned int version)
+    {
+        ar& u.x;
+            ar& u.y;
+                ar& u.z;
+                    ar& u.w;
+                        }
+//~
 
 //! serialization of uchar3
 template<class Archive> void serialize(Archive& ar, uchar3& u, const unsigned int version)
