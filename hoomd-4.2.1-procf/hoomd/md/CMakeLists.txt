@@ -108,6 +108,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairExpandedMie.h
                 EvaluatorPairMoliere.h
                 EvaluatorPairMorse.h
+                EvaluatorPairMorseRepulse.h #[PROCF2023]
                 EvaluatorPairOPP.h
                 EvaluatorPairFourier.h
                 EvaluatorPairReactionField.h
@@ -452,7 +453,7 @@ foreach(_evaluator ${_external_evaluators})
     endif()
 endforeach()
 
-set(_wall_evaluators LJ Yukawa ForceShiftedLJ Mie Gauss Morse)
+set(_wall_evaluators LJ Yukawa ForceShiftedLJ Mie Gauss Morse) #add MorseRepulse if you want it to be a wall evaluator? [PROCF2024]
 
 foreach(_evaluator ${_wall_evaluators})
     configure_file(export_PotentialExternalWall.cc.inc
@@ -508,6 +509,7 @@ set(_pair_evaluators Buckingham
                      Yukawa
                      Ewald
                      Morse
+                     MorseRepulse #[PROCF2023]
                      ConservativeDPD
                      Moliere
                      ZBL

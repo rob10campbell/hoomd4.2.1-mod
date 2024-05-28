@@ -9,6 +9,7 @@ File lists are formatted as: `folder/`; file
 * [Shear Rate](/changelog.md#shear-rate)
 * [Bond tracking](/changelog.md#bond-tracking)
 * [Walls](/changelog.md#walls)
+* [Morse with Repulsion](/changelog.md#morse-with-repulsion)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential)
 
 ## Core Modifications
@@ -103,6 +104,17 @@ Wall options: flat or converging diverging (Josh)
 		* [ ] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity, wall amp freq and bounceback**
 		* [ ] TwoStepConstantVolume.h **wall amp and freq**
 
+
+## Morse with Repulsion
+Adding two repulsive options to Morse
+- **MorseRepulse**: Add the option for using two different repulsive potentials in combination with the Brownian Morse potential: Electrostatic repulsion (a la DLVO) or Yukawa repulsion. 
+ * [x] `hoomd/`
+	* [x] `md/`
+		* [x] CMakeLists.txt : **set new file (EvaluatorPairMorseRepulse.h)**
+		* [x] **[ADD NEW FILE]** EvaluatorPairMorseRepulse.h (the Morse potential with Electrostatic or Yukawa repulsion)
+		* [x] `pair`
+			* [x] \_\_init\_\_.py **call MorseRepulse**
+			* [x] pair.py : **call MorseRepulse**
 		
 ## Asakura-Oosawa Potential 
 Adding AO Potential (might be incorrect calc?) (Rob)

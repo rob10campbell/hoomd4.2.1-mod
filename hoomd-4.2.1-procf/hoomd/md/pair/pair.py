@@ -2015,3 +2015,99 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         self._bond_calc = value
 ##~
 
+##~ add MorseRepulse [PROCF2023]
+class MorseRepulse(Pair):
+    r"""Morse pair force with repulsion.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    `Morse` computes the Morse pair force on every particle in the simulation
+    state:
+
+    .. math::
+        U(r) = D_0 \left[ \exp \left(-2\alpha\left(
+            r-r_0\right)\right) -2\exp \left(-\alpha\left(r-r_0\right)
+            \right) \right]
+
+    and adds one of two repulsions potentials: Electrostatics (a la DLVO) or Yukawa:
+
+    .. math::
+        U_e(r) = Z \frac{ (a_i a_j)}{r_0} \exp \left( -kappa_e \left(r - r_0\right) \right)
+
+    .. math:: 
+        U_y(r) = \varepsilon \frac{ \exp \left( -\kappa r \right) }{r} \f]    
+
+    NOTE: The added repulsion will decrease the depth of the attractive potential well. If you want to achieve the 
+          same attraction as in a pure Morse case with the addition of repulsion, then you must adjust the parameters
+          to be sure the potential energy curve has the correct form
+
+
+    Example::
+
+        nl = nlist.Cell()
+        morse = pair.MorseRepulse(default_r_cut=3.0, nlist=nl)
+        morse.params[('A', 'A')] = dict(D0=12.0, alpha=20, Erep=True, Z=2.0, kappa_e=8.0, Yrep=False, epsilon=22, kappa_y=2, a_i=1.0, a_j=1.0)
+        morse.r_cut[('A', 'B')] = 3.0
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``D0`` (`float`, **required**) - depth of the potential at its
+          minimum :math:`D_0` :math:`[\mathrm{energy}]`
+        * ``alpha`` (`float`, **required**) - the width of the potential well
+          :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
+        * ``Erep`` (`bool`, **required**) - boolean on/off for Electrostic repulsion
+        * ``Z`` (`float`, **required**) - (scaled) surface charge 
+          :math:`Z` :math:`[\mathrm{energy}]`
+        * ``kappa_e`` (`float`, **required**) - Debye (screening) length
+          :math:`\kapppa_e` :math:`[\mathrm{length}^{-1}]`
+        * ``Yrep`` (`bool`, **required**) - boolean on/off for Yukawa repulsion
+        * ``epsilon`` (`float`, **required**) - Yukawa energy 
+          :math:`varepsilon` :math:`[\mathrm{energy}]`
+        * ``kappa_y`` (`float`, **required**) - Yukawa scaling factor 
+          :math:`\kapppa_y` :math:`[\mathrm{length}^{-1}]`
+        * ``a_i`` (`float`, **required**) - particle i radius
+          :math:`a_i` :math:`[\mathrm{length}]`
+        * ``a_j`` (`float`, **required**) - particle j radius
+          :math:`a_j` :math:`[\mathrm{length}]`
+        * ``f_contact`` (`float`, **required**) - magnitude of the contact force  
+          (typically 100-10,000) :math:`f_contact` :math:`[\mathrm{force}]`
+
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``, ``"shift"``, or ``"xplor"``.
+
+        Type: `str`
+    """
+
+    _cpp_class_name = "PotentialPairMorseRepulse"
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'): 
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float, 
+                              alpha=float, 
+                              Erep=bool, 
+                              Z=float, 
+                              kappa_e=float, 
+                              Yrep=bool, 
+                              epsilon=float, 
+                              kappa_y=float, 
+                              a_i=float, 
+                              a_j=float, 
+                              f_contact=float, 
+                              len_keys=2))
+        self._add_typeparam(params)
+
+##~
+
