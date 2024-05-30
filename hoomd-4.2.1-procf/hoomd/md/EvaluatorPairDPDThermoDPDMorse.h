@@ -258,6 +258,17 @@ class EvaluatorPairDPDThermoDPDMorse
         {
         m_T = Temp;
         }
+        
+    //! don't need diameter
+    DEVICE static bool needsDiameter()
+        {
+        return false;
+        }
+    //! Accept the optional diameter values
+    /*! \param di Diameter of particle i
+        \param dj Diameter of particle j
+    */
+    DEVICE void setDiameter(Scalar di, Scalar dj) { }
 
     //! DPDMorse doesn't use charge
     DEVICE static bool needsCharge()

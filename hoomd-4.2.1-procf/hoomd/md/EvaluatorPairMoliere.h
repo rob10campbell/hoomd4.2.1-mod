@@ -95,6 +95,17 @@ class EvaluatorPairMoliere
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
+        
+    //! don't need diameter
+    DEVICE static bool needsDiameter()
+        {
+        return false;
+        }
+    //! Accept the optional diameter values
+    /*! \param di Diameter of particle i
+        \param dj Diameter of particle j
+    */
+    DEVICE void setDiameter(Scalar di, Scalar dj) { }
 
     //! Moliere potential does not use particles charges
     DEVICE static bool needsCharge()
