@@ -23,16 +23,15 @@
 
 ### **In EvaluatorPairMorse**
 
-1: replace the radsum = contact with radsum = Scalar(0.5)*di + Scalar(0.5)*dj <br>
-2: add contact force <br>
-3: add contact force boolean flag <br>
-4: add scaled-D0 boolean flag <br>
-5: replace poly parameter with boolean flag
+1: add contact force <br>
+2: add contact force boolean flag <br>
+3: add scaled-D0 boolean flag <br>
+4: replace poly parameter with boolean flag
 
 
 ### **In EvaluatorPairDPDThermoDPDMorse**
 
-1: replace the `radsum = contact` with `radsum = Scalar(0.5)*di + Scalar(0.5)*dj` <br> 
+1: replace the `radsum = contact` with `radsum = 0.5 * (diameter_i + diameter_j);`
 3: [optional] add contact force boolean flag <br>
 4: add scaled-D0 boolean flag <br>
 5: replace poly parameter with boolean flag <br>
