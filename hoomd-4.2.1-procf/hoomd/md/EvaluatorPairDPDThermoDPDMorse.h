@@ -467,12 +467,12 @@ class EvaluatorPairDPDThermoDPDMorse
         		 {
     	         cont_divr = f_contact * (Scalar(1.0) - r) * pow((Scalar(0.50)*radsum),3) * rinv;
     	         }
-	       // if no Contact force provided, calculate as if Morse potential with D0=10kT [SASHA, WIP]
+	       // if no Contact force provided, calculate as Morse potential [SASHA, WIP]
 	         else
     	         {
 	         Scalar Exp_factor = fast::exp(-alpha * (r - r0));
-    	         cons_divr = Scalar(2.0) * Scalar(10.0) * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
-    	         // pair_eng = Scalar(10.0) * Exp_factor * (Exp_factor - Scalar(2.0));
+    	         cons_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
+    	         pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
     	         }
 	         }
 
