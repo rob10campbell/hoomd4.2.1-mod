@@ -259,7 +259,7 @@ class EvaluatorPairDPDThermoDPDMorse
         m_T = Temp;
         }
     
-    //[PROCF2023]
+    //~ add diameter [PROCF2023]
     DEVICE static bool needsDiameter()
         {
         return true;
@@ -273,6 +273,7 @@ class EvaluatorPairDPDThermoDPDMorse
         diameter_i = di;
         diameter_j = dj;
         }
+    //~1
 
     //! DPDMorse doesn't use charge
     DEVICE static bool needsCharge()
@@ -469,6 +470,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	       // if no Contact force provided, calculate as if Morse potential with D0=10kT [SASHA, WIP]
 	         else
     	         {
+	         Scalar Exp_factor = fast::exp(-alpha * (r - r0));
     	         cons_divr = Scalar(2.0) * Scalar(10.0) * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
     	         // pair_eng = Scalar(10.0) * Exp_factor * (Exp_factor - Scalar(2.0));
     	         }
@@ -607,6 +609,8 @@ class EvaluatorPairDPDThermoDPDMorse
     unsigned int typej;  //!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     // parameters for potential extracted from the params by constructor
+    Scalar diameter_i;  //!< the diameter of particle i [PROCF2023]
+    Scalar diameter_j;  //!< the diameter of particle j [PROCF2023]
     Scalar A0;		 //!< the conservative force scaling parameter
     Scalar gamma;        //!< the viscous dissipation parameter
     Scalar D0;           //!< the depth of the Morse potential well
@@ -618,8 +622,6 @@ class EvaluatorPairDPDThermoDPDMorse
     Scalar a2;		 //!< the radius of particle j
     Scalar rcut;	 //!< the cut-off radius for particle interaction
     Scalar poly;	 //!< the polydispersity of the system (percent as scalar, ex: 0.05)
-    Scalar diameter_i;  //!< the diameter of particle i [PROCF2023]
-    Scalar diameter_j;  //!< the diameter of particle j [PROCF2023]
     uint16_t m_seed;     //!< User set seed for thermostat PRNG
     unsigned int m_i;    //!< index of first particle (should it be tag?).  For use in PRNG
     unsigned int m_j;    //!< index of second particle (should it be tag?). For use in PRNG

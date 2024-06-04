@@ -106,12 +106,13 @@ class EvaluatorPairMorse
         \param _params Per type pair parameters of this potential
     */
     DEVICE EvaluatorPairMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add contact and pair_typeIDs [PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), poly(_params.poly) //~ add contact dist, poly param, and f_contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), f_contact(_params.f_contact), poly(_params.poly) //~ add contact dist, poly param, and f_contact [PROCF2023]
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
-        
+
+    //~ add diameter [PROCF2023] 
     DEVICE static bool needsDiameter()
         {
         return true;
@@ -125,6 +126,7 @@ class EvaluatorPairMorse
         diameter_i = di;
         diameter_j = dj;
         }
+    //~
 
     //! Morse doesn't use charge
     DEVICE static bool needsCharge()
@@ -149,12 +151,12 @@ class EvaluatorPairMorse
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
         //~ Add radsum [PROCF2023] 
-        Scalar radsum = r0;
+        Scalar radsum = 0.5 * (diameter_i + diameter_j); 
         //~ update values if polydispersity != 0 [PROCF2023]
         if (poly != 0.0)
           {
           //~ set radsum = contact 
-          radsum = 0.5 * (diameter_i + diameter_j); 
+          //radsum = 0.5 * (diameter_i + diameter_j); 
           //~ Scale attraction strength by particle size
           //D0 = D0 * (0.5*radsum);
           }   
@@ -172,22 +174,26 @@ class EvaluatorPairMorse
             {
                 //~ if particles overlap (r < radsum) apply contact force
                 if(r < radsum)force_divr = f_contact * (Scalar(1.0) - (r-radsum)) * pow((Scalar(0.50)*radsum),3) / r;
-                
-    
+
                 else{
                     //~ calculate force as normal
                     force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
+
                     //~ but still include contact force within 0.001 dist of colloid-colloid contact 
                     Scalar Del_max = Scalar(0.001); //~ 0.001 or 0.01
                     if(r<(radsum+Del_max))force_divr += f_contact * pow((Scalar(1.0) - (r-radsum)/Del_max), 3) * pow((Scalar(0.50)*radsum),3) / r;
-                } 
+                    } 
             
             }
+
             else {
                 //~ calculate force as normal
                 force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
-            }
+                 }
+            //~
+
             pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
+            //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [PROCF2023]
             
 
             if (energy_shift)
@@ -235,12 +241,13 @@ class EvaluatorPairMorse
     unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
     unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
+    Scalar diameter_i;//!<~ add diameter_i [PROCF2023]
+    Scalar diameter_j;//!i<~ add diameter_j [PROCF2023]
     Scalar D0;     //!< Depth of the Morse potential at its minimum
     Scalar alpha;  //!< Controls width of the potential well
     Scalar r0;     //!< Offset, i.e., position of the potential minimum
+    Scalar f_contact; //!< Contact force magnitude, for resolving overlap [PROCF2023]
     Scalar poly;   //!< the polydispersity of the system (percent as scalar, ex: 0.05)
-    Scalar diameter_i;
-    Scalar diameter_j;
     };
 
     } // end namespace md
