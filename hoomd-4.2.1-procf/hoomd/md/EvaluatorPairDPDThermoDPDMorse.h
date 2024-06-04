@@ -224,7 +224,7 @@ class EvaluatorPairDPDThermoDPDMorse
         \param _params Per type pair parameters of this potential
     */
     DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeIDs [PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), //~ add contact [PROCF2023]
+        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq),  diameter_i(0), diameter_j(0), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), //~ add contact, diameters [PROCF2023]
 	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), poly(_params.poly) // add poly [PROCF2023]
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
@@ -258,17 +258,21 @@ class EvaluatorPairDPDThermoDPDMorse
         {
         m_T = Temp;
         }
-        
-    //! don't need diameter
+    
+    //[PROCF2023]
     DEVICE static bool needsDiameter()
         {
-        return false;
+        return true;
         }
     //! Accept the optional diameter values
     /*! \param di Diameter of particle i
         \param dj Diameter of particle j
     */
-    DEVICE void setDiameter(Scalar di, Scalar dj) { }
+    DEVICE void setDiameter(Scalar di, Scalar dj)
+        {
+        diameter_i = di;
+        diameter_j = dj;
+        }
 
     //! DPDMorse doesn't use charge
     DEVICE static bool needsCharge()
@@ -297,15 +301,15 @@ class EvaluatorPairDPDThermoDPDMorse
         Scalar radsum = a1 + a2;
         if (poly != 0.0)
           {
-          radsum = contact;
+          radsum = 0.5 * (diameter_i + diameter_j);
           //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
           if (typei == 0 && typej == 0)
             { 
-            radsum = contact - 1.0; 
+            radsum = (0.5 * (diameter_i + diameter_j)) - 1.0; 
             }
           else if (typei == 0 || typej == 0)
             {
-            radsum = contact - 0.5;
+            radsum = (0.5 * (diameter_i + diameter_j)) - 0.5;
             }
           //~ Scale attraction strength by particle size
           //D0 = D0 * (0.5*radsum);
@@ -386,15 +390,15 @@ class EvaluatorPairDPDThermoDPDMorse
         Scalar radsum = a1 + a2;
         if (poly != 0.0)
           {
-          radsum = contact;
+          radsum = 0.5 * (diameter_i + diameter_j);
           //~ ASSUMING SOLVENTS HAVE R_S=0.5, update the contact distance to treat them as R_S=0.0 
           if (typei == 0 && typej == 0)
             { 
-            radsum = contact - 1.0; 
+            radsum = (0.5 * (diameter_i + diameter_j)) - 1.0; 
             }
           else if (typei == 0 || typej == 0)
             {
-            radsum = contact - 0.5;
+            radsum = (0.5 * (diameter_i + diameter_j)) - 0.5;
             }
           //~ Scale attraction strength by particle size
           //D0 = D0 * (0.5*radsum);
@@ -457,8 +461,17 @@ class EvaluatorPairDPDThermoDPDMorse
 	      // if particles overlap
 	      if(r <= Scalar(0.0))
 	         {
-		 // resolve overlap with Contact force
-	         cont_divr = f_contact * (Scalar(1.0) - r) * pow((Scalar(0.50)*radsum),3) * rinv;
+		 // resolve overlap with Contact force, if contact force provided [SASHA, WIP]
+    		 if (f_contact != 0.0)
+        		 {
+    	         cont_divr = f_contact * (Scalar(1.0) - r) * pow((Scalar(0.50)*radsum),3) * rinv;
+    	         }
+	       // if no Contact force provided, calculate as if Morse potential with D0=10kT [SASHA, WIP]
+	         else
+    	         {
+    	         cons_divr = Scalar(2.0) * Scalar(10.0) * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
+    	         // pair_eng = Scalar(10.0) * Exp_factor * (Exp_factor - Scalar(2.0));
+    	         }
 	         }
 
 	      // if no overlap
@@ -486,7 +499,7 @@ class EvaluatorPairDPDThermoDPDMorse
 		 // if there is NOT a Morse potential given in the simulation
 	         else 
 	            {
-		    // use conservativde force
+		    // use conservative force
 	            cons_divr = A0 * w_factor * rinv;
 	            pair_eng = A0 * (rcut - r) - Scalar(1.0/2.0) * A0 * rcutinv * (rcut * rcut - r*r);
 	            }
@@ -605,6 +618,8 @@ class EvaluatorPairDPDThermoDPDMorse
     Scalar a2;		 //!< the radius of particle j
     Scalar rcut;	 //!< the cut-off radius for particle interaction
     Scalar poly;	 //!< the polydispersity of the system (percent as scalar, ex: 0.05)
+    Scalar diameter_i;  //!< the diameter of particle i [PROCF2023]
+    Scalar diameter_j;  //!< the diameter of particle j [PROCF2023]
     uint16_t m_seed;     //!< User set seed for thermostat PRNG
     unsigned int m_i;    //!< index of first particle (should it be tag?).  For use in PRNG
     unsigned int m_j;    //!< index of second particle (should it be tag?). For use in PRNG
