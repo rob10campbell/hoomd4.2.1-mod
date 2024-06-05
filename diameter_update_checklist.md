@@ -4,53 +4,37 @@
 
 ### **In all evaluators:**
 
-1: label the "use diameter" section "[PROCF2023]" (see EvaluatorPairYukawa.h for example)
-
-```c++
-    //!~ don't need diameter [PROCF2023]
-    DEVICE static bool needsDiameter()
-        {
-        return false;
-        }
-    //! Accept the optional diameter values
-    /*! \param di Diameter of particle i
-        \param dj Diameter of particle j
-    */
-    DEVICE void setDiameter(Scalar di, Scalar dj) { }
-    //~ [PROCF2023]
-```
-
-2: remove "contact" (but keep typeid)
+- [x] label the "use diameter" section "[PROCF2023]" (see EvaluatorPairYukawa.h for example)
+- [x] remove "contact" (but keep typeid)
 
 
 ### **In EvaluatorPairMorse**
 
-1: add contact force <br>
-2: add contact force boolean flag <br>
-3: add scaled-D0 boolean flag <br>
-4: replace poly parameter with boolean flag
+- [x] add contact force
+- [x] f_contact=0 reverts to Morse built-in repulsion
+- [x] add scaled_D0 boolean flag
+- [x] mono and poly both use the real diameters in the system (not provided a1,a2) 
+- [ ] [optional] remove a1 and a2?
 
 
 ### **In EvaluatorPairDPDThermoDPDMorse**
 
-1: replace the `radsum = contact` with `radsum = 0.5 * (diameter_i + diameter_j);`
-3: [optional] add contact force boolean flag <br>
-4: add scaled-D0 boolean flag <br>
-5: replace poly parameter with boolean flag <br>
-6: [optional] remove a1 and a2?
+- [x] replace the `radsum = contact` with `radsum = 0.5 * (diameter_i + diameter_j);`
+- [x] f_contact=0 reverts to Morse built-in repulsion
+- [x] add scaled_D0 boolean flag
+- [x] mono and poly both use the real diameters in the system (not provided a1,a2) 
+- [ ] [optional] remove a1 and a2?
 
 
 ### **In PotentialPair.h, PotentialPairDPDThermo.h, and PotentialPairAlchemical.h**
 
-1: remove contact <br>
-2: remove on-off poly param
+- [x] remove contact distance calc
+= [x] remove on-off poly param
 
 
 ### **In pair.py**
-1: remove on-off poly param and poly parameter, and replace with boolean flag <br>
-2: add on/off contact force flag <br>
-3: add on/off scaled-D0 flag <br>
-4: [optional] remove a1 and a2?
+- [x] remove on-off poly param and poly parameter, and replace with optional scaled_D0 boolean flag
+- [ ] [optional] remove a1 and a2?
 
 
 ## **File List** (x when changed)
