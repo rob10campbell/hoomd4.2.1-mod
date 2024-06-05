@@ -82,7 +82,7 @@ namespace md
     \a eta is placed in \a params.eta, \a f_contact is placed in \a params.f_contact, 
     \a a1 is placed in \a params.a1, \a a2 is placed in \a params.a2, 
     \a rcut is placed in \a params.rcut
-    and \a scale_D0 is placed in \a params.scale_D0
+    and \a scaled_D0 is placed in \a params.scaled_D0
 
 
     The thermostat potential EvaluatorPairDPDThermoMorse::evalForceEnergyThermo evaluates includes 
@@ -141,7 +141,7 @@ namespace md
     \a eta is placed in \a params.eta, \a f_contact is placed in \a params.f_contact, 
     \a a1 is placed in \a params.a1, \a a2 is placed in \a params.a2, 
     \a rcut is placed in \a params.rcut
-    and \a scale_D0 is placed in \a params.scale_D0
+    and \a scaled_D0 is placed in \a params.scaled_D0
 
     These are related to the standard lj parameters sigma and epsilon by:
     - \a A0 = \f$ A \f$
@@ -164,7 +164,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	Scalar a1;
 	Scalar a2;
 	Scalar rcut;
-	bool scale_D0;
+	bool scaled_D0;
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -175,9 +175,9 @@ class EvaluatorPairDPDThermoDPDMorse
         void set_memory_hints() const { }
 #endif
 #ifndef __HIPCC__
-        param_type() : A0(0), gamma(0), D0(0), alpha(0), r0(0), eta(0), f_contact(0), a1(0), a2(0), rcut(0), scale_D0(false) { }
+        param_type() : A0(0), gamma(0), D0(0), alpha(0), r0(0), eta(0), f_contact(0), a1(0), a2(0), rcut(0), scaled_D0(false) { }
 
-        param_type(pybind11::dict v, bool managed = false, bool scale_D0 = false)
+        param_type(pybind11::dict v, bool managed = false, bool scaled_D0 = false)
             {
 	    A0 = v["A0"].cast<Scalar>();
 	    gamma = v["gamma"].cast<Scalar>();
@@ -189,7 +189,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	    a1 = v["a1"].cast<Scalar>();
 	    a2 = v["a2"].cast<Scalar>();
 	    rcut = v["rcut"].cast<Scalar>();
-	    this->scale_D0 = scale_D0;
+	    this->scaled_D0 = scaled_D0;
             }
 
         pybind11::dict asDict()
@@ -205,7 +205,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	    v["a1"] = a1;
 	    v["a2"] = a2;
 	    v["rcut"] = rcut;
-	    v["scale_D0"] = scale_D0;
+	    v["scaled_D0"] = scaled_D0;
             return v;
             }
 #endif
@@ -224,7 +224,7 @@ class EvaluatorPairDPDThermoDPDMorse
     */
     DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add pair_typeIDs [PROCF2023]
         : rsq(_rsq), rcutsq(_rcutsq),  diameter_i(0), diameter_j(0), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), 
-	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), scale_D0(_params.scale_D0) // add scale_D0 [PROCF2023]
+	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), scaled_D0(_params.scaled_D0) // add scaled_D0 [PROCF2023]
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023]  
@@ -311,7 +311,7 @@ class EvaluatorPairDPDThermoDPDMorse
           }
 
         //~ Scale attraction strength by particle size
-        if (scale_D0)
+        if (scaled_D0)
           {
           D0 = D0 * (0.5*radsum);
           }   
@@ -401,7 +401,7 @@ class EvaluatorPairDPDThermoDPDMorse
           }
 
         //~ Scale attraction strength by particle size
-        if (scale_D0)
+        if (scaled_D0)
           {
           D0 = D0 * (0.5*radsum);
           }
@@ -621,7 +621,7 @@ class EvaluatorPairDPDThermoDPDMorse
     Scalar a1;		 //!< the radius of particle i
     Scalar a2;		 //!< the radius of particle j
     Scalar rcut;	 //!< the cut-off radius for particle interaction
-    bool scale_D0;	 //!< on/off bool for scaling D0 by particle size 
+    bool scaled_D0;	 //!< on/off bool for scaling D0 by particle size 
     uint16_t m_seed;     //!< User set seed for thermostat PRNG
     unsigned int m_i;    //!< index of first particle (should it be tag?).  For use in PRNG
     unsigned int m_j;    //!< index of second particle (should it be tag?). For use in PRNG

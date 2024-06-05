@@ -73,7 +73,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False, poly=0.0): ##~ default bond_calc to False, default poly to zero [PROCF2023]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [PROCF2023]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -96,18 +96,11 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         self.mode = mode
         self.nlist = nlist
         self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [PROCF2023]
-        self._poly = poly ##~ Store poly value as an instance variable [PROCF2023]
 
     ##~ add a property to access _bond_calc instance variable
     @property
     def bond_calc(self):
         return self._bond_calc
-    ##~
-
-    ##~ add a property to access _poly instance variable
-    @property
-    def poly(self):
-        return self._poly
     ##~
 
     def compute_energy(self, tags1, tags2):
@@ -166,9 +159,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
 
         ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [PROCF2023]
         if "PotentialPairDPDThermo" in self._cpp_class_name:
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self._poly)
-        #elif "PotentialPairMorse" in self._cpp_class_name:
-        #    self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._poly)
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
         else: 
             self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
         ##~ 
@@ -659,7 +650,7 @@ class Morse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
-        poly (float): The percentage of polydispersity (ex: 0.05) [PROCF2023]
+        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
 
     `Morse` computes the Morse pair force on every particle in the simulation
     state:
@@ -686,8 +677,8 @@ class Morse(Pair):
           :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
         * ``r0`` (`float`, **required**) - position of the minimum
           :math:`r_0` :math:`[\mathrm{length}]`
-        * ``poly`` (float) - the percentage of polydispersity (ex: 0.05) [PROCF2023]
-          :math: `poly` :math: `[percent]` [PROCF2023]
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [PROCF2023]
+          :math: `scaled_D0` :math: `[true/false]` [PROCF2023]
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -700,12 +691,17 @@ class Morse(Pair):
     """
 
     _cpp_class_name = "PotentialPairMorse"
+    _default_scaled_D0 = False ##~ add scaled_D0 [PROCF2024]
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
+        ##~ add scaled_D0 [PROCF2023]
+        if scaled_D0 is None:
+            scaled_D0 = self._default_scaled_D0
+        ##~
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, poly=float, len_keys=2)) ##~ add f_contact and poly [PROCF2023]
+            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [PROCF2023]
         self._add_typeparam(params)
 
 class DPD(Pair):
@@ -1916,7 +1912,7 @@ class DPDMorse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
         bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
-        poly (float): The percentage of polydispersity (ex: 0.05)
+        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
 
     `DPDMorse` computes the Morse pair force, semi-hard potential contact force, and short-range lubrication (squeezing) force approximation  on every particle in the simulation
     state:
@@ -1938,7 +1934,7 @@ class DPDMorse(Pair):
 
     Example::
         nl = nlist.Tree()
-        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True, poly=0.05)
+        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True)
          morse.params[('A','A')] = dict(A0=25.0, gamma=45, D0=0, alpha=3.0, r0=0, eta=1.1, f_contact=0.0, a1=0.0, a2=0.0, rcut=1.0)
         morse.r_cut[('A', 'B')] = 1.0
 
@@ -1963,6 +1959,8 @@ class DPDMorse(Pair):
           :math:`a2` :math:`[\mathrm{length}]`
         * ``rcut`` (`float`, **required**) - the surface-surface cut-off radius
           :math:`rcut` :math:`[\mathrm{length}]`
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [PROCF2023]
+          :math: `scaled_D0` :math: `[true/false]` [PROCF2023]
 
 Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -1975,14 +1973,18 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     """
     _cpp_class_name = "PotentialPairDPDThermoDPDMorse"
     _accepted_modes = ("none",)
+    _default_scaled_D0 = False
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, poly=0.0):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
                          mode='none')
+        ##~ add scaled_D0 [PROCF2023]
+        if scaled_D0 is None:
+            scaled_D0 = self._default_scaled_D0
+        ##~
         self._bond_calc = bond_calc
-        self._poly = poly
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(A0=float,
@@ -1995,7 +1997,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                               a1=float,
                               a2=float,
                               rcut=float,
-                              poly=float,
+                              scaled_D0=bool(scaled_D0),
                               len_keys=2))
         self._add_typeparam(params)
         param_dict = ParameterDict(kT=hoomd.variant.Variant)
@@ -2028,19 +2030,4 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         """
         self._bond_calc = value
 
-    @property
-    def poly(self):
-        """
-        Getter method for the polydispersity property.
-        """
-        return self._poly
-
-    @poly.setter
-    def poly(self, value):
-        """
-        Setter method for the polydispersity property.
-        """
-        self._poly = value
-
 ##~
-

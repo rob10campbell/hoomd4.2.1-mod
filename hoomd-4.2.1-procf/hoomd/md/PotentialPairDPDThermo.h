@@ -53,7 +53,7 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     //! Construct the pair potential
     PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<NeighborList> nlist,
-                           bool bond_calc, Scalar poly); //~ add bond_calc and polydispersity [PROCF2023]
+                           bool bond_calc); //~ add bond_calc [PROCF2023]
     //! Destructor
     virtual ~PotentialPairDPDThermo() {};
 
@@ -74,17 +74,6 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 	}
     //~
 
-    //~ Set and get the polydispersity value
-    void setPoly(Scalar poly)
-        {
-        m_poly = poly;
-        }
-    Scalar getPoly()
-        {
-        return m_poly;
-        }
-    //~
-
     //~ add Lifetime [PROCF2023] 
     std::shared_ptr<Lifetime> LTIME;
     //~
@@ -99,8 +88,6 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 
     bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [PROCF2023]
 
-    Scalar m_poly;                  //~!< polydispersity value [PROCF2023]
-
     //! Actually compute the forces (overwrites PotentialPair::computeForces())
     virtual void computeForces(uint64_t timestep);
     };
@@ -111,8 +98,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 template<class evaluator>
 PotentialPairDPDThermo<evaluator>::PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                                                           std::shared_ptr<NeighborList> nlist,
-                                                          bool bond_calc, Scalar poly) //~ add bond_calc and polydispersity [PROCF2023]
-    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc), m_poly(poly) //~ add bond_calc and polydispersity [PROCF2023]
+                                                          bool bond_calc) //~ add bond_calc [PROCF2023]
+    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc) //~ add bond_calc [PROCF2023]
     {
     //~ add bond_calc flag [PROCF2023]
     if(m_bond_calc)
@@ -255,13 +242,9 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             assert(typej < this->m_pdata->getNTypes());
 
             //~ store the typeIDs of the current pair [PROCF2023]
-            //~ the value is only stored if there is polydispersity 
             unsigned int pair_typeids[2] = {0, 0};
-            if (m_poly != 0.0) 
-              {
-              pair_typeids[0] = typei;
-              pair_typeids[1] = typej;
-              }
+            pair_typeids[0] = typei;
+            pair_typeids[1] = typej;
             //~
 
             // apply periodic boundary conditions
@@ -455,10 +438,9 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
     pybind11::class_<PotentialPairDPDThermo<T>,
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool, Scalar>()) //~ add bool for bond_calc and Scalar for poly [PROCF2023]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>()) //~ add bool for bond_calc [PROCF2023]
         .def_property("bond_calc",  
 		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [PROCF2023]
-        .def_property("poly", &PotentialPairDPDThermo<T>::getPoly, &PotentialPairDPDThermo<T>::setPoly)  //~ add polydispersity [PROCF2023]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
     }
 
