@@ -56,38 +56,38 @@
 ## **File List** (x when changed)
 
 * [ ] `hoomd/`
-    * [ ] `example_plugins/`
-        * [ ] `pair_plugin/`
-            * [ ] EvaluatorPairExample.h : **pass diameter and typeIDs**
+    * [x] `example_plugins/`
+        * [x] `pair_plugin/`
+            * [x] EvaluatorPairExample.h : **pass diameter and typeIDs**
     * [ ] `md/`
-        * [ ] EvaluatorPairBuckingham.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairDLVO.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairDPDThermoDPD.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairBuckingham.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairDLVO.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairDPDThermoDPD.h : **pass diameter and typeIDs**
         * [ ] EvaluatorPairDPDThermoDPDMorse.h : **pass diameter and typeIDs, poly param, poly defaults to mono**
-        * [ ] EvaluatorPairDPDThermoLJ.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairEwald.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairExpandedGaussian.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairExpandedLJ.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairExpandedMie.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairForceShiftedLJ.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairFourier.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairGauss.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairLJ.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairLJ0804.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairLJ1208.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairLJGauss.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairMie.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairMoliere.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairMorse.h : **pass diameter and typeIDs, poly param**
-        * [ ] EvaluatorPairOPP.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairReactionField.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairTWF.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairTable.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairYukawa.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorPairZBL.h : **pass diameter and typeIDs**
-        * [ ] EvaluatorWalls.h : **set diameter and typeIDs to zero, pass diameter and typeIDs**
+        * [x] EvaluatorPairDPDThermoLJ.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairEwald.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairExpandedGaussian.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairExpandedLJ.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairExpandedMie.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairForceShiftedLJ.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairFourier.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairGauss.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairLJ.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairLJ0804.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairLJ1208.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairLJGauss.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairMie.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairMoliere.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairMorse.h : **pass diameter and typeIDs, poly param**
+        * [x] EvaluatorPairOPP.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairReactionField.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairTWF.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairTable.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairYukawa.h : **pass diameter and typeIDs**
+        * [x] EvaluatorPairZBL.h : **pass diameter and typeIDs**
+        * [x] EvaluatorWalls.h : **pass diameter and typeIDs**
         * [ ] `pair/`
             * [ ] pair.py : **change on/off params: poly param [PotentialPairDPDThermo], poly param [Morse, DPDMorse], contact force [Morse], scaled D0 [Morse, DPDMorse]**
-        * [ ] PotentialPair.h : **track diameter and typeIDs**
-        * [ ] PotentialPairAlchemical.h : ~**track contact dist**~
+        * [x] PotentialPair.h : **track diameter and typeIDs**
+        * [x] PotentialPairAlchemical.h : **track typeIDs**
         * [ ] PotentialPairDPDThermo.h : **track diameter, on/off poly param**

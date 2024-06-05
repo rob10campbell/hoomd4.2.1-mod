@@ -270,15 +270,6 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
-            //~ the calculation is only used if there is polydispersity
-            Scalar contact = 0.0;
-            if (m_poly != 0.0) 
-              {
-              contact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
-              }
-            //~
-
             // calculate the drag term r \dot v
             Scalar rdotv = dot(dx, dv);
 
@@ -304,7 +295,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             Scalar cont_divr = Scalar(0.0);
 	    //~
             Scalar pair_eng = Scalar(0.0);  
-            evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeids for polydispersity [PROCF2023] 
+            evaluator eval(rsq, pair_typeids, rcutsq, param); //~ add pair_typeids for polydispersity [PROCF2023] 
 
             // Special Potential Pair DPD Requirements
             const Scalar currentTemp = m_T->operator()(timestep);

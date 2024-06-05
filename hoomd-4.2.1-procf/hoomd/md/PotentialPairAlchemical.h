@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #pragma once
 
 #include <bitset>
@@ -388,10 +390,6 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
-            Scalar contact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
-            //~
-
             // get parameters for this type pair
             unsigned int typpair_idx = m_typpair_idx(typei, typej);
             const auto& param = m_params[typpair_idx];
@@ -415,7 +413,7 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, contact, pair_typeids, rcutsq, param); //~ add contact and pair_typeIDs [PROCF2023]
+            evaluator eval(rsq, pair_typeids, rcutsq, param); //~ add pair_typeIDs [PROCF2023]
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 

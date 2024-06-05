@@ -218,13 +218,12 @@ class EvaluatorPairDPDThermoDPDMorse
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
-        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeIDs [PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq),  diameter_i(0), diameter_j(0), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), //~ add contact, diameters [PROCF2023]
+    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add pair_typeIDs [PROCF2023]
+        : rsq(_rsq), rcutsq(_rcutsq),  diameter_i(0), diameter_j(0), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), 
 	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), poly(_params.poly) // add poly [PROCF2023]
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
@@ -273,7 +272,7 @@ class EvaluatorPairDPDThermoDPDMorse
         diameter_i = di;
         diameter_j = dj;
         }
-    //~1
+    //~
 
     //! DPDMorse doesn't use charge
     DEVICE static bool needsCharge()
@@ -603,7 +602,6 @@ class EvaluatorPairDPDThermoDPDMorse
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
-    Scalar contact;      //!< Stored contact-distance from the constructor [PROCF2023]
     unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
     unsigned int typei;  //!<~ Stored typeID of particle i from the constructor [PROCF2023]
     unsigned int typej;  //!<~ Stored typeID of particle j from the constructor [PROCF2023]

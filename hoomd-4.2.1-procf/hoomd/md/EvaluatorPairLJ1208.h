@@ -105,13 +105,12 @@ class EvaluatorPairLJ1208
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
-        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairLJ1208(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeIDs [PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), //~ add contact [PROCF2023]
+    DEVICE EvaluatorPairLJ1208(Scalar _rsq, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add pair_typeIDs [PROCF2023]
+        : rsq(_rsq), rcutsq(_rcutsq),
           lj1(_params.epsilon_x_4 * _params.sigma_4 * _params.sigma_4 * _params.sigma_4),
           lj2(_params.epsilon_x_4 * _params.sigma_4 * _params.sigma_4)
         {
@@ -119,7 +118,7 @@ class EvaluatorPairLJ1208
         typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
 
-    //! don't need diameter
+    //!~ add diameter [PROCF2023] 
     DEVICE static bool needsDiameter()
         {
         return false;
@@ -129,7 +128,8 @@ class EvaluatorPairLJ1208
         \param dj Diameter of particle j
     */
     DEVICE void setDiameter(Scalar di, Scalar dj) { }
-    
+    //~
+ 
     //! LJ doesn't use charge
     DEVICE static bool needsCharge()
         {
@@ -203,7 +203,6 @@ class EvaluatorPairLJ1208
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
     unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
     unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]

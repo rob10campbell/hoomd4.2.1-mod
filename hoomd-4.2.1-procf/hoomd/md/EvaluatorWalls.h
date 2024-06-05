@@ -147,6 +147,22 @@ template<class evaluator> class EvaluatorWalls
         return evaluator::needsCharge();
         }
 
+    //~ add diameter [PROCF2023]
+    //! Test if evaluator needs Diameter
+    DEVICE static bool needsDiameter()
+        {
+        return evaluator::needsDiameter();
+        }
+
+    //! Accept the optional diameter value
+    /*! \param di Diameter of particle i
+     */
+    DEVICE void setDiameter(Scalar diameter)
+        {
+        di = diameter;
+        }
+    //~
+
     //! Declares additional virial contributions are needed for the external field
     DEVICE static bool requestFieldVirialTerm()
         {
@@ -166,13 +182,16 @@ template<class evaluator> class EvaluatorWalls
     DEVICE inline void callEvaluator(Scalar3& F, Scalar& energy, const Scalar3 drv)
         {
         Scalar rsq = dot(drv, drv);
-        Scalar contact = 0.0; //~ set contact to 0.0, NO PARTICLE SIZE CONSIDERED [PROCF2023]
         unsigned int pair_typeids[2] = {0,0}; //~ set typeIDs to 0, not needed [PROCF2023]
 
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
-        evaluator eval(rsq, contact, pair_typeids, m_params.rcutsq, m_params.params); //~ add contact and pair_typeIDs [PROCF2023]
+        evaluator eval(rsq, pair_typeids, m_params.rcutsq, m_params.params); //~ add pair_typeIDs [PROCF2023]
+        //~ add diameter [PROCF2023]
+        if (evaluator::needsDiameter())
+            eval.setDiameter(di, Scalar(0.0));
+        //~
         if (evaluator::needsCharge())
             eval.setCharge(qi, Scalar(0.0));
 
@@ -206,10 +225,13 @@ template<class evaluator> class EvaluatorWalls
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
-        Scalar contact = 0.0; //~ set contact to 0.0, NO PARTICLE SIZE CONSIDERED [PROCF2023]
         unsigned int pair_typeids[2] = {0,0}; //~ set typeIDs to 0, not needed [PROCF2023]
 
-        evaluator eval(rextrapsq, contact, pair_typeids, m_params.rcutsq, m_params.params); //~ add contact and pair_typeIDs [PROCF2023]
+        evaluator eval(rextrapsq, pair_typeids, m_params.rcutsq, m_params.params); //~ add pair_typeIDs [PROCF2023]
+        //~ add diameter [PROCF2023]
+        if (evaluator::needsDiameter())
+            eval.setDiameter(di, Scalar(0.0));
+        //~
         if (evaluator::needsCharge())
             eval.setCharge(qi, Scalar(0.0));
 
@@ -384,6 +406,7 @@ template<class evaluator> class EvaluatorWalls
     Scalar3 m_pos;             //!< particle position
     const field_type& m_field; //!< contains all information about the walls.
     param_type m_params;
+    Scalar di;                 //!<~ add diameter [PROCF2023]
     Scalar qi;
     };
 

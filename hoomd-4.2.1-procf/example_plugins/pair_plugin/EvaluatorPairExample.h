@@ -79,18 +79,17 @@ class EvaluatorPairExample
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
-        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairExample(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add contact and pair_typeids[PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), k(_params.k), sigma(_params.sigma) //~ add contact [PROCF2023]
+    DEVICE EvaluatorPairExample(Scalar _rsq, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add pair_typeids[PROCF2023]
+        : rsq(_rsq), rcutsq(_rcutsq), k(_params.k), sigma(_params.sigma) 
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023]
         }
 
-    //! Morse doesn't use diameter
+    //!~ add diameter [PROCF2023] 
     DEVICE static bool needsDiameter()
         {
         return false;
@@ -100,6 +99,7 @@ class EvaluatorPairExample
         \param dj Diameter of particle j
     */
     DEVICE void setDiameter(Scalar di, Scalar dj) { }
+    //~ 
     
     //! Example doesn't use charge
     DEVICE static bool needsCharge()
@@ -177,7 +177,6 @@ class EvaluatorPairExample
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     unsigned int pair_typeids[2];//!< Stored pair typeIDs from the constructor [PROCF2023]
     unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
     unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]

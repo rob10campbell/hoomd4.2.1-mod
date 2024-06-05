@@ -98,22 +98,21 @@ class EvaluatorPairMie
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
-        \param _contact the sum of the interacting particle radii [PROCF2023]
         \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _n First, larger exponent that captures hard-core repulsion
         \param -m Second, smaller exponent that captures attraction
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairMie(Scalar _rsq, Scalar _contact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add contact and pair_typeIDs [PROCF2023]
-        : rsq(_rsq), contact(_contact), rcutsq(_rcutsq), mie1(_params.m1), mie2(_params.m2), mie3(_params.m3), //~add contact [PROCF2023]
+    DEVICE EvaluatorPairMie(Scalar _rsq, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add pair_typeIDs [PROCF2023]
+        : rsq(_rsq), rcutsq(_rcutsq), mie1(_params.m1), mie2(_params.m2), mie3(_params.m3), 
           mie4(_params.m4)
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
         typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
         
-    //! don't need diameter
+    //!~ add diameter [PROCF2023] 
     DEVICE static bool needsDiameter()
         {
         return false;
@@ -123,6 +122,7 @@ class EvaluatorPairMie
         \param dj Diameter of particle j
     */
     DEVICE void setDiameter(Scalar di, Scalar dj) { }
+    //~
 
     //! Mie doesn't use charge
     DEVICE static bool needsCharge()
@@ -195,7 +195,6 @@ class EvaluatorPairMie
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar contact;//!< Stored contact-distance from the constructor [PROCF2023]
     unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
     unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
     unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
