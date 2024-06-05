@@ -35,6 +35,7 @@ rho = 3 # number density (per unit volume)
 # General parameters
 KT = 0.1 # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
+scaled_D0 = False
 kappa = 30 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa
 
 eta0 = 0.3 # background viscosity
@@ -61,7 +62,7 @@ r_sc1_cut = (r_c**3 + R_C1**3) ** (1/3)
 ## Checks for existing equilibrium files. If none are found, brings the 
 ## initial random distribution of particles to thermal equilibrium. 
 
-if os.path.exists('Gelation-poly-DPD.gsd'):
+if os.path.exists('Gelation-yly-DPD.gsd'):
   print("Gelation file already exists. No new files created.")
 else:
   print("Polydisperse DPD equilibrium state is continuing to be brought to quasi-steady state gelation")
@@ -90,24 +91,24 @@ else:
   nl = hoomd.md.nlist.Tree(buffer=0.05);
 
   # define DPD Morse force (attraction) interactions
-  morse = hoomd.md.pair.DPDMorse(nlist=nl, kT=KT, default_r_cut=1.0 * r_c, bond_calc=True, poly=poly)
+  morse = hoomd.md.pair.DPDMorse(nlist=nl, kT=KT, default_r_cut=1.0 * r_c, bond_calc=False)
 
   # solvent-solvent: soft particles (allow deformation/overlap)
   morse.params[('A','A')] = dict(A0=25.0 * KT / r_c, gamma=gamma, 
     D0=0, alpha=kappa, r0=r0, eta=0.0, f_contact=0.0, 
-    a1=0.0, a2=0.0, rcut=r_c, poly=0.0) # force calc
+    a1=0.0, a2=0.0, rcut=r_c) # force calc
   morse.r_cut[('A','A')] = r_c # used to assemble nl
 
   # solvent-colloid: soft solvent particles (allow deformation/overlap)
   morse.params[('A','B')] = dict(A0=25.0 * KT / r_sc1_cut, gamma=gamma, 
     D0=0, alpha=kappa, r0=r0, eta=0.0, f_contact=0.0, 
-    a1=0.0, a2=R_C1, rcut=r_sc1_cut - (0.0 + R_C1), poly=0.0+poly_C) # force calc
+    a1=0.0, a2=R_C1, rcut=r_sc1_cut - (0.0 + R_C1)) # force calc
   morse.r_cut[('A','B')] = r_sc1_cut # used to assemble nl
 
   # colloid-colloid: hard particles (no deformation/overlap)
   morse.params[('B','B')] = dict(A0=0.0, gamma=gamma, 
     D0=D0, alpha=kappa, r0=r0, eta=eta0, f_contact=f_contact, 
-    a1=R_C1, a2=R_C1, rcut=r_c, poly=poly_C) # force calc
+    a1=R_C1, a2=R_C1, rcut=r_c, scaled_D0=scaled_D0) # force calc
   morse.r_cut[('B','B')] = (r_c + R_C1 + R_C1) # used to assemble nl
 
   # choose integration method for the end of each timestep

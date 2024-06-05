@@ -33,6 +33,7 @@ poly = 0.05 # standard deviation in size (AKA % polydispersity)
 rho = 3.0 # number density (per unit volume)
 KT = 0.1; # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
+scaled_D0 = False
 kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa
 
 N_time_steps = 10000 #1500000 # number of time steps
@@ -87,7 +88,7 @@ else:
   morse = hoomd.md.pair.Morse(nlist=nl, default_r_cut=1.0 * r_c)
 
   # colloid-colloid: hard particles (no deformation/overlap)
-  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), f_contact=f_contact, poly=poly)	
+  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), f_contact=f_contact, scaled_D0=scaled_D0)	
   morse.r_cut[('A','A')] = r_c+(R_C1+R_C1) # used to assemble nl
 
   # choose integration method for the end of each timestep

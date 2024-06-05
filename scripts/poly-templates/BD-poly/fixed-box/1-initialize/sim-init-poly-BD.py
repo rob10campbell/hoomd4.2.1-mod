@@ -40,7 +40,7 @@ V_total = L_X * L_Y * L_Z # total volume of simulation box (cube)
 R_C1 = 1  # 1st type colloid particle radius
 V_C1 = (4./3.) * math.pi * R_C1 ** 3 # 1st type colloid particle volume (1 particle)
 m_C1 = V_C1 * rho # 1st type colloid particle mass
-V_Colloids_type1 = percent_C1 * phi * V_total # total volume of type 1 colloids
+V_Colloids_type1 = phi * V_total # total volume of type 1 colloids
 N_C1 = round(V_Colloids_type1 / V_C1) # number of 1st type of colloid particles (INT)
 
 # colloids totals NOTE: ASSUMES 1 colloid type

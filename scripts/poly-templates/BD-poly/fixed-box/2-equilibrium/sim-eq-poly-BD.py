@@ -85,7 +85,7 @@ else:
   morse = hoomd.md.pair.Morse(nlist=nl, default_r_cut=1.0 * r_c)
 
   # colloid-colloid: hard particles (no deformation/overlap)
-  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), f_contact=f_contact, poly=poly)	
+  morse.params[('A','A')] = dict(D0=D0, alpha=kappa, r0=(R_C1+R_C1), f_contact=f_contact)	
   morse.r_cut[('A','A')] = r_c+(R_C1+R_C1) # used to assemble nl
 
   # choose integration method for the end of each timestep
