@@ -46,7 +46,7 @@ New way to add shear rate for regular particles, that works for both DPD and BD 
                 * [x] IntegrationMethodTwoStep.cc : **shear rate (SR)**
                 * [x] IntegratorTwoStep.cc : **flow velocity (vinf)**
                 * [x] IntegratorTwoStep.h : **flow velocity (vinf), shear rate (SR)**
-                * [x] integrate.py : **flow velocity (vinf)**
+                * [x] integrate.py : **flow velocity (vinf) and default to 0**
                 * [x] PotentialPairDPDThermo.h **shear rate (SR)**
                 * [x] `test/`
                         * [x] test_communication.cc : **dummy flow velocity (vinf)** 

@@ -283,7 +283,7 @@ class Integrator(_DynamicIntegrator):
 
     def __init__(self,
                  dt,
-                 vinf, ##~ add vinf [PROCF2024]
+                 vinf=hoomd.variant.Constant(0), ##~ add vinf and default to 0[PROCF2024]
                  integrate_rotational_dof=False,
                  forces=None,
                  constraints=None,
