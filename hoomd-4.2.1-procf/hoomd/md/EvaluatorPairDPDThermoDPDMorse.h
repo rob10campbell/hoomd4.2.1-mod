@@ -463,17 +463,30 @@ class EvaluatorPairDPDThermoDPDMorse
 	      // if particles overlap
 	      if(r <= Scalar(0.0))
 	         {
-		 // resolve overlap with Contact force, if contact force provided [SASHA, WIP]
+		 // resolve overlap with CONTACT FORCE, if a contact force is provided [PROCF2023]
     		 if (f_contact != 0.0)
         		 {
     	         cont_divr = f_contact * (Scalar(1.0) - r) * pow((Scalar(0.50)*radsum),3) * rinv;
     	         }
-	       // if no Contact force provided, calculate as Morse potential [SASHA, WIP]
+	         // if no contact force provided, resolve overlap with Morse force [PROCF2023]
 	         else
     	         {
-	         Scalar Exp_factor = fast::exp(-alpha * (r - r0));
-    	         cons_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
-    	         pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
+    	         // if D0 is provided, use this to calculate Morse repulsion [PROCF2023]
+    	         if (D0 != 0.0)
+        	         {
+        	         Scalar Exp_factor = fast::exp(-alpha * (r - r0));
+        	         cons_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
+        	         pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
+        	         }
+    	         // if D0 equals 0 and there's no contact force, calculate repulsion as if a Morse potential exists
+    	         // here, A0 is used in place of D0 [PROCF2023]
+    	         else
+        	         {
+        	         Scalar Exp_factor = fast::exp(-alpha * (r - r0));
+        	         cons_divr = Scalar(2.0) * A0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
+        	         //pair potential will equal 0, as D0=0 [PROCF2023]
+        	         pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
+        	         }
     	         }
 	         }
 
