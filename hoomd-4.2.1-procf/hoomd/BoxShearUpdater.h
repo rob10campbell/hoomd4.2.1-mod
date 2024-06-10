@@ -46,9 +46,10 @@ class PYBIND11_EXPORT BoxShearUpdater : public Updater
     /// Constructor
     BoxShearUpdater(std::shared_ptr<SystemDefinition> sysdef,
                      std::shared_ptr<Trigger> trigger,
-                     std::shared_ptr<Variant> erate,
+                     std::shared_ptr<Variant> vinf,
                      Scalar deltaT,
-                     bool flip);
+                     bool flip,
+                     std::shared_ptr<ParticleGroup> group);
 
     /// Destructor
     virtual ~BoxShearUpdater();
@@ -60,24 +61,30 @@ class PYBIND11_EXPORT BoxShearUpdater : public Updater
     virtual bool getFlip() const{return m_flip;}
 
     /// Set the variant for interpolation
-    void setRate(std::shared_ptr<Variant> erate)
+    void setRate(std::shared_ptr<Variant> vinf)
         {
-        m_erate = erate;
+        m_vinf = vinf;
         }
 
     /// Get the variant for interpolation
-    std::shared_ptr<Variant> getRate()
+    std::shared_ptr<Variant> getVinf()
         {
-        return m_erate;
+        return m_vinf;
         }
 
     /// Update box interpolation based on provided timestep
     virtual void update(uint64_t timestep);
 
+    protected:
+#ifdef ENABLE_MPI
+    std::shared_ptr<Communicator> m_comm;
+#endif
+
     private:
-    std::shared_ptr<Variant> m_erate;     //!< Variant that interpolates between boxes
+    std::shared_ptr<Variant> m_vinf;     //!< Variant that interpolates between boxes
     Scalar m_deltaT;
     bool m_flip;
+    std::shared_ptr<ParticleGroup> m_group;
     };
 
 namespace detail

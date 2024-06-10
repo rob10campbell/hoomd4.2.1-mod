@@ -15,23 +15,27 @@ from hoomd.operation import Updater
 from hoomd.data.parameterdicts import ParameterDict
 from hoomd.variant import Variant, Constant
 from hoomd import _hoomd
+from hoomd.filter import ParticleFilter, All
 from hoomd.trigger import Periodic
 
 
 class BoxShear(Updater):
 
-    def __init__(self, trigger, erate, deltaT, flip):
-        params = ParameterDict(erate=Variant,
+    def __init__(self, trigger, vinf, deltaT, flip, filter=All()):
+        params = ParameterDict(vinf=Variant,
                                deltaT = float,
-                               flip=bool)
-        params['erate'] = erate
+                               flip=bool,
+                               filter=ParticleFilter)
+        params['vinf'] = vinf
         params['trigger'] = trigger
         params['deltaT'] = deltaT
         params['flip'] = flip
+        params['filter'] = filter
         self._param_dict.update(params)
         super().__init__(trigger)
 
     def _attach_hook(self):
+        group = self._simulation.state._get_group(self.filter)
         self._cpp_obj = _hoomd.BoxShearUpdater(
-            self._simulation.state._cpp_sys_def, self.trigger, self.erate, self.deltaT, self.flip)
+            self._simulation.state._cpp_sys_def, self.trigger, self.vinf, self.deltaT, self.flip, group)
         super()._attach_hook()
