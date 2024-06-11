@@ -2075,7 +2075,7 @@ class MorseRepulse(Pair):
 
         nl = nlist.Cell()
         morse = pair.MorseRepulse(default_r_cut=3.0, nlist=nl)
-        morse.params[('A', 'A')] = dict(D0=12.0, alpha=20, Erep=True, Z=2.0, kappa_e=8.0, Yrep=False, epsilon=22, kappa_y=2, a_i=1.0, a_j=1.0)
+        morse.params[('A', 'A')] = dict(D0=12.0, alpha=20, Erep=True, Z=2.0, kappa_e=8.0, Yrep=False, epsilon=22, kappa_y=2, r0=0)
         morse.r_cut[('A', 'B')] = 3.0
 
     .. py:attribute:: params
@@ -2096,10 +2096,8 @@ class MorseRepulse(Pair):
           :math:`varepsilon` :math:`[\mathrm{energy}]`
         * ``kappa_y`` (`float`, **required**) - Yukawa scaling factor 
           :math:`\kapppa_y` :math:`[\mathrm{length}^{-1}]`
-        * ``a_i`` (`float`, **required**) - particle i radius
-          :math:`a_i` :math:`[\mathrm{length}]`
-        * ``a_j`` (`float`, **required**) - particle j radius
-          :math:`a_j` :math:`[\mathrm{length}]`
+        * ``r0`` (`float`, **required**) - position of the minimum
+          :math:`r_0` :math:`[\mathrm{length}]`
         * ``f_contact`` (`float`, **required**) - magnitude of the contact force  
           (typically 100-10,000) :math:`f_contact` :math:`[\mathrm{force}]`
 
@@ -2128,8 +2126,7 @@ class MorseRepulse(Pair):
                               Yrep=bool, 
                               epsilon=float, 
                               kappa_y=float, 
-                              a_i=float, 
-                              a_j=float, 
+                              r0=float,
                               f_contact=float, 
                               len_keys=2))
         self._add_typeparam(params)
