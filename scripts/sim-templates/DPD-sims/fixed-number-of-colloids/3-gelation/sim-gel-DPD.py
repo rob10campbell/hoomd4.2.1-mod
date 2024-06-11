@@ -74,6 +74,7 @@ else:
   groupA = hoomd.filter.Type(['A'])
   groupB = hoomd.filter.Type(['B'])
   all_ = hoomd.filter.Type(['A','B'])
+  all_colloids = hoomd.filter.Type(['B'])
 
   # don't want to thermalize the system after equilibrium because
   # we are tracking velocity during gelation
@@ -129,6 +130,15 @@ else:
   # save outputs
   sim.operations.writers.append(gsd_writer)
   gsd_writer.logger = logger
+
+  # also save colloids ONLY for smaller file-size
+  # NOTE: you MUST save all particles to use the output to run another sim (gel, shear, etc.)
+  gsd_writer_colloids = hoomd.write.GSD(trigger=period, filename="Gelation_Colloids-DPD.gsd", 
+    filter=all_colloids, mode='wb', dynamic=['property','momentum','attribute'])
+  gsd_writer_colloids.write_diameter = True
+  #gsd_writer_colloids.maximum_write_buffer_size = 1e8 # max 100 million bytes
+  sim.operations.writers.append(gsd_writer_colloids)
+  gsd_writer_colloids.logger = logger
 
   # run simulation!
   # (and write the initial state (e.g. the last frame of Equilibrium) in this file!)
