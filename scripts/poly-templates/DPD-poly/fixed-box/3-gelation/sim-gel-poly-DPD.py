@@ -35,7 +35,7 @@ rho = 3 # number density (per unit volume)
 # General parameters
 KT = 0.1 # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
-scaled_D0 = False
+scaled_D0 = False # choose whether to scale Morse by particle size (Asakura-Oosawa-style depletion physics)
 kappa = 30 # range of attraction (4 (long range)- 30 (short range)), distance in DPD units is approx 3/kappa
 
 eta0 = 0.3 # background viscosity

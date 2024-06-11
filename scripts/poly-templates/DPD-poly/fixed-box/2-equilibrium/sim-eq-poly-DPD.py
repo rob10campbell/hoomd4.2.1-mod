@@ -106,7 +106,7 @@ else:
   morse.r_cut[('A','B')] = r_sc1_cut # used to assemble nl
 
   # colloid-colloid: hard particles (no deformation/overlap)
-  morse.params[('B','B')] = dict(A0=0.0, gamma=gamma, 
+  morse.params[('B','B')] = dict(A0=25.0 * KT / r_c, gamma=gamma, 
     D0=D0, alpha=kappa, r0=r0, eta=eta0, f_contact=f_contact, 
     a1=R_C1, a2=R_C1, rcut=r_c) # force calc
   morse.r_cut[('B','B')] = (r_c + R_C1 + R_C1) # used to assemble nl

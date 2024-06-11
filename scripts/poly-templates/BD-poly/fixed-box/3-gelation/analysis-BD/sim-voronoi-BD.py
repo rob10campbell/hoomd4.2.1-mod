@@ -35,7 +35,7 @@ import os
 """ INPUT PARAMETERS """
 ##########################
 # path to sim data
-filename = '../Gelation-BD.gsd'
+filename = '../Gelation-poly-BD.gsd'
 
 # filepath to folder where data files will be created
 data_outpath = 'data'

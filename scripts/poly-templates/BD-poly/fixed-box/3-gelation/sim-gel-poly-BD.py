@@ -33,7 +33,7 @@ poly = 0.05 # standard deviation in size (AKA % polydispersity)
 rho = 3.0 # number density (per unit volume)
 KT = 0.1; # system temperature
 D0 = 12.0 * KT # attraction strength (gels at >=4kT)
-scaled_D0 = False
+scaled_D0 = False # choose whether to scale Morse by particle size (Asakura-Oosawa-style depletion physics)
 kappa = 30.0 # range of attraction (4 (long range)- 30 (short range)), distance in BD units is approx 3/kappa
 
 N_time_steps = 10000 #1500000 # number of time steps

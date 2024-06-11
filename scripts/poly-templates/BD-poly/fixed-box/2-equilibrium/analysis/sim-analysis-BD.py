@@ -12,7 +12,7 @@ import gsd.hoomd
 import math
 
 ######### INPUT PARAMETERS
-filepath = '../Equilibrium-BD.gsd'
+filepath = '../Equilibrium-poly-BD.gsd'
 
 ######### DEFINE SIM CHECKS
 ## extract thermodynamic properties 
