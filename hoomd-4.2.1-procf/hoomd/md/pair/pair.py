@@ -1912,7 +1912,9 @@ class DPDMorse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
         bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
-        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
+        scaled_D0 (bool): defauly value for on/off class attribute used to scale D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
+        a1 (float): default value for a1; NOTE: this is legacy code from before polydispersity, a1 is NO LONGER USED [PROCF2023]
+        a2 (float): default value for a2; NOTE: this is legacy code from before polydispersity, a2 is NO LONGER USED [PROCF2023]
 
     `DPDMorse` computes the Morse pair force, semi-hard potential contact force, and short-range lubrication (squeezing) force approximation  on every particle in the simulation
     state:
@@ -1953,9 +1955,9 @@ class DPDMorse(Pair):
         * ``eta`` (`float` **required**) - the background viscosity (viscosity of the background fluid)
           :math:`eta` :math:`[\mathrm{viscosity}]`
         * ``f_contact`` (`float`, **required**) - the contact force scaling parameter
-        * ``a1`` (`float`, **required**) - the radius of particle i
+        * ``a1`` (`float`, **required**) - the radius of particle i NOTE: legacy parameter, a1 is now pulled from constructor [PROCF2023]
           :math:`a1` :math:`[\mathrm{length}]`
-        * ``a2`` (`float`, **required**) - the radius of particle j
+        * ``a2`` (`float`, **required**) - the radius of particle j NOTE: legacy parameter, a1 is now pulled from constructor [PROCF2023]
           :math:`a2` :math:`[\mathrm{length}]`
         * ``rcut`` (`float`, **required**) - the surface-surface cut-off radius
           :math:`rcut` :math:`[\mathrm{length}]`
@@ -1974,15 +1976,21 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _cpp_class_name = "PotentialPairDPDThermoDPDMorse"
     _accepted_modes = ("none",)
     _default_scaled_D0 = False
+    _default_a1 = 0.0
+    _default_a2 = 0.0
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
                          mode='none')
-        ##~ add scaled_D0 [PROCF2023]
+        ##~ add scaled_D0, default a1, default a2 [PROCF2023]
         if scaled_D0 is None:
             scaled_D0 = self._default_scaled_D0
+        if a1 is None:
+            a1 = self._default_a1
+        if a2 is None:
+            a2 = self._default_a2
         ##~
         self._bond_calc = bond_calc
         params = TypeParameter(
@@ -1994,8 +2002,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                               r0=float,
                               eta=float,
                               f_contact=float,
-                              a1=float,
-                              a2=float,
+                              a1=float(a1),
+                              a2=float(a2),
                               rcut=float,
                               scaled_D0=bool(scaled_D0),
                               len_keys=2))

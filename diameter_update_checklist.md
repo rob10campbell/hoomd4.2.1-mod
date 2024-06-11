@@ -43,6 +43,7 @@
 - **radcontact**: passes the radsum from PotentialPairDPDThermo to DPDMorse; must be added to all Evaluator files but not used elsewhere (for some reason diameter did not work for the DPDMorse Evaluator)
 - **diameter**: adds diameter back (removed by HOOMD-blue devs between hoomdv3 and hoomdv4)
 - **typeIDs**: tracks particle typeID, used to reset solvent radius to zero in DPD force calcs
+- **a1 and a2 deprecated**: default values for a1 and a2 are provided. This means you can still run old scripts that specified a1 and a2 as a DPDMorse parameter in Python; however, these values are NOT used in the code anymore. Radii are read from the simulation GSD file.
 
 * [x] `hoomd/`
     * [x] `example_plugins/`
@@ -76,7 +77,7 @@
         * [x] EvaluatorPairZBL.h : **radcontact, diameter, typeIDs**
         * [x] EvaluatorWalls.h : **radcontact, diameter, typeIDs**
         * [x] `pair/`
-            * [x] pair.py : **optional scaled_D0 [Morse, DPDMorse]**
+            * [x] pair.py : **optional scaled_D0 [Morse, DPDMorse], a1 and a2 deprecated**
         * [x] PotentialPair.h : **radcontact, track diameter, typeIDs**
         * [x] PotentialPairAlchemical.h : **radcontact, typeIDs**
         * [x] PotentialPairDPDThermo.h : **radcontact, diameter, typeIDs**
