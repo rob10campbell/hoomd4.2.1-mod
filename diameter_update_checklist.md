@@ -38,44 +38,45 @@
 
 
 ## **File List** (x when changed)
-- **scaled_D0**: scaled D0 by particles size ((radius_i + radius_j)/2) for AO-style multimodal depletion potential; activated by an optional boolean (true/false) flag
-- **f_contact=0**: removes contact force (and uses built-in Morse repulsion) when f_contact = 0
+- **scaled_D0**: scale D0 by particles size ((radius_i + radius_j)/2) for AO-style multimodal depletion potential; activated by an optional boolean (true/false) flag
+- **f_contact=0**: when f_contact = 0, removes contact force (and uses built-in Morse repulsion, or DPD Conservative Force if D0=0)
+- **radcontact**: passes the radsum from PotentialPairDPDThermo to DPDMorse; must be added to all Evaluator files but not used elsewhere (for some reason diameter did not work for the DPDMorse Evaluator)
 - **diameter**: adds diameter back (removed by HOOMD-blue devs between hoomdv3 and hoomdv4)
-- **typeIDs**: tracks particle typeID to reset solvent radius to zero as needed in DPD force calcs
+- **typeIDs**: tracks particle typeID, used to reset solvent radius to zero in DPD force calcs
 
 * [x] `hoomd/`
     * [x] `example_plugins/`
         * [x] `pair_plugin/`
-            * [x] EvaluatorPairExample.h : **diameter, typeIDs**
+            * [x] EvaluatorPairExample.h : **radcontact, diameter, typeIDs**
     * [x] `md/`
-        * [x] EvaluatorPairBuckingham.h : **diameter, typeIDs**
-        * [x] EvaluatorPairDLVO.h : **diameter, typeIDs**
-        * [x] EvaluatorPairDPDThermoDPD.h : **diameter, typeIDs**
-        * [x] EvaluatorPairDPDThermoDPDMorse.h : **diameter, typeIDs, f_contact=0, scaled_D0**
-        * [x] EvaluatorPairDPDThermoLJ.h : **diameter, typeIDs**
-        * [x] EvaluatorPairEwald.h : **diameter, typeIDs**
-        * [x] EvaluatorPairExpandedGaussian.h : **diameter, typeIDs**
-        * [x] EvaluatorPairExpandedLJ.h : **diameter, typeIDs**
-        * [x] EvaluatorPairExpandedMie.h : **diameter, typeIDs**
-        * [x] EvaluatorPairForceShiftedLJ.h : **diameter, typeIDs**
-        * [x] EvaluatorPairFourier.h : **diameter, typeIDs**
-        * [x] EvaluatorPairGauss.h : **diameter, typeIDs**
-        * [x] EvaluatorPairLJ.h : **diameter, typeIDs**
-        * [x] EvaluatorPairLJ0804.h : **diameter, typeIDs**
-        * [x] EvaluatorPairLJ1208.h : **diameter, typeIDs**
-        * [x] EvaluatorPairLJGauss.h : **diameter, typeIDs**
-        * [x] EvaluatorPairMie.h : **diameter, typeIDs**
-        * [x] EvaluatorPairMoliere.h : **diameter, typeIDs**
-        * [ ] EvaluatorPairMorse.h : **diameter, typeIDs, f_contact=0, scaled_D0**
-        * [x] EvaluatorPairOPP.h : **diameter, typeIDs**
-        * [x] EvaluatorPairReactionField.h : **diameter, typeIDs**
-        * [x] EvaluatorPairTWF.h : **diameter, typeIDs**
-        * [x] EvaluatorPairTable.h : **diameter, typeIDs**
-        * [x] EvaluatorPairYukawa.h : **diameter, typeIDs**
-        * [x] EvaluatorPairZBL.h : **diameter, typeIDs**
-        * [x] EvaluatorWalls.h : **diameter, typeIDs**
+        * [x] EvaluatorPairBuckingham.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairDLVO.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairDPDThermoDPD.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairDPDThermoDPDMorse.h : **radcontact, diameter, typeIDs, f_contact=0, scaled_D0**
+        * [x] EvaluatorPairDPDThermoLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairEwald.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairExpandedGaussian.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairExpandedLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairExpandedMie.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairForceShiftedLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairFourier.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairGauss.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJ0804.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJ1208.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJGauss.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairMie.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairMoliere.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairMorse.h : **radcontact, diameter, typeIDs, f_contact=0, scaled_D0**
+        * [x] EvaluatorPairOPP.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairReactionField.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairTWF.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairTable.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairYukawa.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairZBL.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorWalls.h : **radcontact, diameter, typeIDs**
         * [x] `pair/`
             * [x] pair.py : **optional scaled_D0 [Morse, DPDMorse]**
-        * [x] PotentialPair.h : **track diameter, typeIDs**
-        * [x] PotentialPairAlchemical.h : **typeIDs**
-        * [x] PotentialPairDPDThermo.h : **diameter, typeIDs**
+        * [x] PotentialPair.h : **radcontact, track diameter, typeIDs**
+        * [x] PotentialPairAlchemical.h : **radcontact, typeIDs**
+        * [x] PotentialPairDPDThermo.h : **radcontact, diameter, typeIDs**
