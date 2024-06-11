@@ -206,15 +206,15 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
             Scalar r = fast::sqrt(rsq);
             Scalar Exp_factor = fast::exp(-alpha * (r - radsum));
 
-            //~ add contact force [PROCF2023]
             //~ check if contact force is provided [PROCF2023]
             if (f_contact != 0.0)
                 {
                 //~ if particles overlap (r < radsum) apply contact force
                 if(r < radsum)force_divr = f_contact * (Scalar(1.0) - (r-radsum)) * pow((Scalar(0.50)*radsum),3) / r;
 
+                //~ if particles do not overlap
                 else{
-                    //~ calculate force as normal
+                    //~ calculate Morse force as normal
                     force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
 
                     //~ but still include contact force within 0.001 dist of colloid-colloid contact 
@@ -224,45 +224,40 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
 
                 }
 
-                else{
-                    //~ calculate force as normal
-                    force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
+            //if f_contact=0.0
+            else{
+                //~ calculate force as normal (use Morse repulsion)
+                force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r;
+                }
+
+            //~ add repulsion
+            if (Erep) {
+                // add electrostatic repulsion to the force divided by r in force_divr
+                Scalar rcutinv = fast::rsqrt(rcutsq);
+                Scalar rcut = Scalar(1.0) / rcutinv;
+                if (r < rcut && kappa_e != 0)
+                    {
+                    Scalar radprod = a_i * a_j; 
+                    Scalar rmds = r - radsum;
+                    Scalar radsuminv = Scalar(1.0) / radsum;
+
+                    Scalar exp_val_e = fast::exp(-kappa_e * rmds);
+
+                    Scalar forcerep_divr = kappa_e * radprod * radsuminv * Z * exp_val_e / r;
+                    force_divr += forcerep_divr;
+                    pair_eng += r * forcerep_divr / kappa_e;
                     }
+                }
 
-                //~ add repulsion
-                if (Erep) {
-                    // add electrostatic repulsion to the force divided by r in force_divr
-                    Scalar rcutinv = fast::rsqrt(rcutsq);
-                    Scalar rcut = Scalar(1.0) / rcutinv;
-                    if (r < rcut && kappa_e != 0)
-                        {
-                        Scalar radprod = a_i * a_j; 
-                        Scalar rmds = r - radsum;
-                        Scalar radsuminv = Scalar(1.0) / radsum;
-
-                        Scalar exp_val_e = fast::exp(-kappa_e * rmds);
-
-                        Scalar forcerep_divr = kappa_e * radprod * radsuminv * Z * exp_val_e / r;
-                        force_divr += forcerep_divr;
-                        pair_eng += r * forcerep_divr / kappa_e;
-                        }
-                    }
-
-                if (Yrep) {            
-                  Scalar rinv = fast::rsqrt(rsq);
-                  Scalar r2inv = Scalar(1.0) / rsq;
-                  Scalar exp_val_y = fast::exp(-kappa_y * r);
+            if (Yrep) {            
+                Scalar rinv = fast::rsqrt(rsq);
+                Scalar r2inv = Scalar(1.0) / rsq;
+                Scalar exp_val_y = fast::exp(-kappa_y * r);
             
-                  force_divr += epsilon * exp_val_y * r2inv * (rinv + kappa_y);
-                  pair_eng += epsilon * exp_val_y * rinv;
-                  }
+                force_divr += epsilon * exp_val_y * r2inv * (rinv + kappa_y);
+                pair_eng += epsilon * exp_val_y * rinv;
+                }
 
-                //~ but still include contact force within 0.001 dist of colloid-colloid contact 
-                Scalar Del_max = Scalar(0.001); //~ 0.001 or 0.01
-                if(r<(radsum+Del_max))force_divr += f_contact * pow((Scalar(1.0) - (r-radsum)/Del_max), 3) * pow((Scalar(0.50)*radsum),3) / r;
-
-                } 
-            //~ 
 
             pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
             //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [PROCF2023]
@@ -324,7 +319,7 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
     bool Yrep;        //!<~ Yukawa on/off bool [PROCF2024]
     Scalar epsilon;   //!<~ Yukawa energy factor [PROCF2024]
     Scalar kappa_y;   //!<~ Yukawa scaling factor [PROCF2024]
-    //~Scalar r0;     //!< Offset, i.e., position of the potential minimum //~ comment out [PROCF2024]
+    Scalar r0;     //!< Offset, i.e., position of the potential minimum //~ comment out [PROCF2024]
     Scalar f_contact; //!< Contact force magnitude, for resolving overlap [PROCF2023]
     bool scaled_D0;   //!<~ on/off bool for scaling D0 by particle size [PROCF2023]
     };
