@@ -182,12 +182,13 @@ template<class evaluator> class EvaluatorWalls
     DEVICE inline void callEvaluator(Scalar3& F, Scalar& energy, const Scalar3 drv)
         {
         Scalar rsq = dot(drv, drv);
+        Scalar radcontact = 0.0; //~ set contact to 0.0 [PROCF2023]
         unsigned int pair_typeids[2] = {0,0}; //~ set typeIDs to 0, not needed [PROCF2023]
 
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
-        evaluator eval(rsq, pair_typeids, m_params.rcutsq, m_params.params); //~ add pair_typeIDs [PROCF2023]
+        evaluator eval(rsq, radcontact, pair_typeids, m_params.rcutsq, m_params.params); //~ add radcontact, pair_typeIDs [PROCF2023]
         //~ add diameter [PROCF2023]
         if (evaluator::needsDiameter())
             eval.setDiameter(di, Scalar(0.0));
@@ -225,9 +226,10 @@ template<class evaluator> class EvaluatorWalls
         // compute the force and potential energy
         Scalar force_divr = Scalar(0.0);
         Scalar pair_eng = Scalar(0.0);
+        Scalar radcontact = 0.0; //~ set contact to 0.0 [PROCF2023]
         unsigned int pair_typeids[2] = {0,0}; //~ set typeIDs to 0, not needed [PROCF2023]
 
-        evaluator eval(rextrapsq, pair_typeids, m_params.rcutsq, m_params.params); //~ add pair_typeIDs [PROCF2023]
+        evaluator eval(rextrapsq, radcontact, pair_typeids, m_params.rcutsq, m_params.params); //~ add radcontact, pair_typeIDs [PROCF2023]
         //~ add diameter [PROCF2023]
         if (evaluator::needsDiameter())
             eval.setDiameter(di, Scalar(0.0));

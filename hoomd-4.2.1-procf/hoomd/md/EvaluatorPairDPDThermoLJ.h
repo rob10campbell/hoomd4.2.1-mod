@@ -122,12 +122,13 @@ class EvaluatorPairDPDThermoLJ
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _radcontact the sum of the interacting particle radii [PROCF2023] 
         \param _pair_typeids the typeIDs of the interacting particles [PROCF2023] 
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoLJ(Scalar _rsq, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add pair_typeIDs [PROCF2023]
-        : rsq(_rsq), rcutsq(_rcutsq), lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6), 
+    DEVICE EvaluatorPairDPDThermoLJ(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radcontact, pair_typeIDs [PROCF2023]
+        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), lj1(_params.epsilon_x_4 * _params.sigma_6 * _params.sigma_6), //~ add radcontact [PROCF2023] 
           lj2(_params.epsilon_x_4 * _params.sigma_6), gamma(_params.gamma)
         {
         typei = _pair_typeids[0]; //~ add typei [PROCF2023]
@@ -332,6 +333,7 @@ class EvaluatorPairDPDThermoLJ
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
+    Scalar radcontact;   //!<~ Stored contact-distance from the constructor [PROCF2023]
     unsigned int pair_typeids;    //!< Stored pair typeIDs from the constructor [PROCF2023] 
     unsigned int typei;           //!<~ Stored typeID of particle i from the constructor [PROCF2023]
     unsigned int typej;           //!<~ Stored typeID of particle j from the constructor [PROCF2023]

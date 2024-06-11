@@ -390,6 +390,10 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+            //~
+
             // get parameters for this type pair
             unsigned int typpair_idx = m_typpair_idx(typei, typej);
             const auto& param = m_params[typpair_idx];
@@ -413,7 +417,7 @@ void PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::compute
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, pair_typeids, rcutsq, param); //~ add pair_typeIDs [PROCF2023]
+            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [PROCF2023]
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 
