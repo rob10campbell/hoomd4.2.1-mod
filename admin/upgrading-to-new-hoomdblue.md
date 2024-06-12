@@ -32,7 +32,7 @@ curl -Lo hoomd-v4.2.1.tar.gz https://github.com/glotzerlab/hoomd-blue/releases/d
 tar -xvf hoomd-v4.2.1.tar.gz   
 ```
 
-5. Rename this file to add the "-props" extension so it will never be ignored by the .gitignore file AND you always know what version you last updated (e.g. hoomd-v4.2.1 -> hoomd-v4.2.1-props)
+5. Rename this file to add the "-procf" extension so it will never be ignored by the .gitignore file AND you always know what version you last updated (e.g. hoomd-v4.2.1 -> hoomd-v4.2.1-procf)
 
 5. You can now copy our changes into the new version, make any additional modifications needed to keep them working, and update all the install/update and template scripts accordingly!
 <br>
@@ -53,7 +53,7 @@ grep hoomd-v4.2.1 .git/*
 rm -r [path-to-.git/].git/
 ```
 
-5. Copy the "hoomd-v4.2.1" folder from the "unlinked-hoomd" directory into your new git repo direcotry, and rename it "hoomd-v4.2.1-props" (if the folder name ends in 4.2.1 it will be ignored by git)
+5. Copy the "hoomd-v4.2.1" folder from the "unlinked-hoomd" directory into your new git repo direcotry, and rename it "hoomd-v4.2.1-procf" (if the folder name ends in 4.2.1 it will be ignored by git)
 
 
 6. Push the new files to the Github. You should have normal folders containing all the hoomd-blue files for the version you want to modify! If any of the folders have a white arrow on them and cannot be openned... then you are still linked to the original hoomd-blue github and need to remove more .git files to delink it... sorry.
@@ -65,7 +65,7 @@ rm -r [path-to-.git/].git/
 
 You may need to make changes to this repository to add new features for everyone or to create an entirely new version for yourself.
 
-1. [Jump to advice for adding changes for everyone](admin/adding-changes.md#how-to-add-changes)
+1. [Jump to advice for adding changes for everyone](adding-changes.md#how-to-add-changes)
 2. Continue reading about making a copy
 
 ### How to Make a Copy
@@ -93,15 +93,15 @@ rm -r hoomd-v4.2.1/hoomd
 ```
 Use a copy of this repository's hoomd subfolder instead
 ```bash
-cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-props/hoomd /hoomd-v4.2.1/hoomd
+cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-procf/hoomd /hoomd-v4.2.1/hoomd
 ```
-Rename the folder with the "-props" extension
+Rename the folder with the "-procf" extension
 ```bash
-mv hoomd-v4.2.1/ hoomd-v4.2.1-props
+mv hoomd-v4.2.1/ hoomd-v4.2.1-procf
 ```
 And, optionally, add back the sphinx-doc folder
 ```bash
-cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-props/sphinx-doc /hoomd-v4.2.1-props/sphinx-doc
+cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-procf/sphinx-doc /hoomd-v4.2.1-procf/sphinx-doc
 ```
 <br>
 

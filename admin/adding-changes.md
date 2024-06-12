@@ -32,15 +32,15 @@ rm -r hoomd-v4.2.1/hoomd
 ```
 Use a copy of this repository's hoomd subfolder instead
 ```bash
-cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-props/hoomd /hoomd-v4.2.1/hoomd
+cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-procf/hoomd /hoomd-v4.2.1/hoomd
 ```
-Rename the folder with the "-props" extension
+Rename the folder with the "-procf" extension
 ```bash
-mv hoomd-v4.2.1/ hoomd-v4.2.1-props
+mv hoomd-v4.2.1/ hoomd-v4.2.1-procf
 ```
 And, optionally, add back the sphinx-doc folder
 ```bash
-cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-props/sphinx-doc /hoomd-v4.2.1-props/sphinx-doc
+cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-procf/sphinx-doc /hoomd-v4.2.1-procf/sphinx-doc
 ```
 <br>
 
