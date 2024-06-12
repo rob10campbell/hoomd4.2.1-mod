@@ -5,13 +5,15 @@ If the box next to a filename is NOT checked, that means the modifications have 
 
 File lists are formatted as: `folder/`; file
 
-* [Core Mods](/changelog.md#core-modifications)
-* [Shear Rate](/changelog.md#shear-rate)
-* [Polydispersity](/changelog.md#polydispersity)
-* [Bond tracking](/changelog.md#bond-tracking)
-* [Walls](/changelog.md#walls)
-* [Morse with Repulsion](/changelog.md#morse-with-repulsion)
-* [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential)
+* [Core Mods](/changelog.md#core-modifications) : Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
+* [Shear Rate](/changelog.md#shear-rate) : Add shear rate for regular particles (does nor include rigid bodies) (Deepak)
+* [Polydispersity](/changelog.md#polydispersity) : Track and use particle radii for surface-surface distance (h_ij) calculations, option to scale D0 by particle size to mimic size-dependent depletion (Rob)
+* [On/Off Contact Force](/changelog.md#on-off-contact-force) : Add the ability to remove contact force and replace it with Morse repulsion (Sasha)
+* [Bond tracking](/changelog.md#bond-tracking) : Track bond formation and breaking (Nabi, Deepak, and Rob)
+* [Walls](/changelog.md#walls) : Wall options: flat or converging diverging (Josh)
+* [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
+* [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential) : Add AO Potential (might be incorrect calc?) (Rob)
+
 
 ## Core Modifications
 Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
@@ -42,6 +44,7 @@ Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
 		* [x] PotentialPairDPDThermo.h : **virial_ind**
 	* [x] ParticleData.cc : **virial_ind**
 	* [x] ParticleData.h : **virial_ind**
+
 
 ## Shear Rate 
 Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
@@ -82,51 +85,62 @@ Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
 	* [x] `update/`
 		* [x] box_resize.py : **shear rate (SR)**
 
+
 ## Polydispersity
 Track and use polydisperse particle radii for surface-surface distance (h_ij) calculations, and scale D0 by particle size to mimic size-dependent attraction in depletion gels (Rob)
-*NOTE: poly param is optional for DPD sims but* REQUIRED *for BD sims*
-- **track contact dist and typeIDs**: Track particle size and typeID information for each interacting particle pair
-- **pass contact dist and typeIDs**: When evaluating forces between two particles, pass the contact distance (i.e. sum of particle radii) and the particle typeIDs to all the Evaluators, so that information is available for polydisperse h_ij calcualtion, if needed
-- **poly param**: add a polydispersity parameter to trigger radii-dependent force calculations in EvaluatorPairMorse.h and EvaluatorPairDPDThermoDPDMorse.h
-- **on/off poly param**: set the default behavior to match original HOOMD-blue code without polydiserpsity (poly param is optional for DPD)
-- **set contact dist and typeIDs to zero**: for some tests and Evaluators, it is necessary to force these values to be zero, since we are not providing them
+- **scaled_D0**: scale D0 by particles size ((radius_i + radius_j)/2) for AO-style multimodal depletion potential; activated by an optional boolean (true/false) flag
+- **radcontact**: passes the radsum from PotentialPairDPDThermo to DPDMorse; must be added to all Evaluator files but not used elsewhere (for some reason diameter did not work for the DPDMorse Evaluator)
+- **diameter**: adds diameter back (removed by HOOMD-blue devs between hoomdv3 and hoomdv4)
+- **typeIDs**: tracks particle typeID, used to reset solvent radius to zero in DPD force calcs
+- **a1 and a2 deprecated**: default values for a1 and a2 are provided. This means you can run new scripts without a1 and a2, and you can still run old scripts that specified a1 and a2 as a DPDMorse parameter in Python; however, a1 and a2 values are NOT used in the code anymore. Radii are always read from the simulation GSD file.
 
 * [x] `hoomd/`
-	* [x] `example_plugins/`
-		* [x] `pair_plugin/`
-			* [x] EvaluatorPairExample.h : **pass contact dist and typeIDs**
+    * [x] `example_plugins/`
+        * [x] `pair_plugin/`
+            * [x] EvaluatorPairExample.h : **radcontact, diameter, typeIDs**
+    * [x] `md/`
+        * [x] EvaluatorPairBuckingham.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairDLVO.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairDPDThermoDPD.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairDPDThermoDPDMorse.h : **radcontact, diameter, typeIDs, scaled_D0**
+        * [x] EvaluatorPairDPDThermoLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairEwald.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairExpandedGaussian.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairExpandedLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairExpandedMie.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairForceShiftedLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairFourier.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairGauss.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJ.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJ0804.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJ1208.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairLJGauss.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairMie.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairMoliere.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairMorse.h : **radcontact, diameter, typeIDs, scaled_D0**
+        * [x] EvaluatorPairOPP.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairReactionField.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairTWF.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairTable.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairYukawa.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorPairZBL.h : **radcontact, diameter, typeIDs**
+        * [x] EvaluatorWalls.h : **radcontact, diameter, typeIDs**
+        * [x] `pair/`
+            * [x] pair.py : **optional scaled_D0 [Morse, DPDMorse], a1 and a2 deprecated**
+        * [x] PotentialPair.h : **radcontact, track diameter, typeIDs**
+        * [x] PotentialPairAlchemical.h : **radcontact, typeIDs**
+        * [x] PotentialPairDPDThermo.h : **radcontact, diameter, typeIDs**
+
+
+## On-Off Contact Force
+Add the ability to remove contact force and replace it with Morse repulsion (Sasha)
+- **f_contact=0**: when f_contact = 0, removes contact force (and uses built-in Morse repulsion, or DPD Conservative Force if D0=0)
+
+* [x] `hoomd/`
 	* [x] `md/`
-		* [x] EvaluatorPairBuckingham.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairDLVO.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairDPDThermoDPD.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairDPDThermoDPDMorse.h : **pass contact dist and typeIDs, poly param, poly defaults to mono**
-		* [x] EvaluatorPairDPDThermoLJ.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairEwald.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairExpandedGaussian.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairExpandedLJ.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairExpandedMie.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairForceShiftedLJ.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairFourier.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairGauss.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairLJ.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairLJ0804.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairLJ1208.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairLJGauss.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairMie.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairMoliere.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairMorse.h : **pass contact dist and typeIDs, poly param**
-		* [x] EvaluatorPairOPP.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairReactionField.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairTWF.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairTable.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairYukawa.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorPairZBL.h : **pass contact dist and typeIDs**
-		* [x] EvaluatorWalls.h : **set contact dist and typeIDs to zero, pass contact dist and typeIDs**
-		* [x] `pair/`
-			* [x] pair.py : **on/off poly param [PotentialPairDPDThermo], poly param [Morse, DPDMorse]**
-		* [x] PotentialPair.h : **track contact dist and typeIDs**
-		* [x] PotentialPairAlchemical.h : **track contact dist**
-		* [x] PotentialPairDPDThermo.h : **track contact dist, on/off poly param**
+        	* [x] EvaluatorPairDPDThermoDPDMorse.h : **f_contact=0**
+        	* [x] EvaluatorPairMorse.h : **f_contact=0**
+
 
 ## Bond Tracking
 Track bond formation and breaking (Nabi, Deepak, and Rob)
@@ -140,6 +154,7 @@ Track bond formation and breaking (Nabi, Deepak, and Rob)
 		* [x] `pair`
 			* [x] pair.py : **add bond_calc flag to Pair and DPDMorse**
 		* [x] PotentialPairDPDThermo.h : **Lifetime, bond_calc, get particle diameter (for bond calc)**
+
 
 ## Walls
 Wall options: flat or converging diverging (Josh)
@@ -162,6 +177,7 @@ Adding two repulsive options to Morse
 		* [x] `pair`
 			* [x] \_\_init\_\_.py **call MorseRepulse**
 			* [x] pair.py : **call MorseRepulse**
+
 		
 ## Asakura-Oosawa Potential 
 Adding AO Potential (might be incorrect calc?) (Rob)

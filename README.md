@@ -1,12 +1,4 @@
-# hoomd4.2.1-mod : poly-uniformD0 branch
-
-**THIS BRANCH IS FOR POLYDISPERSE SIMULATIONS** <br>
-Polydisperse parameters are optional for DPD, but *REQUIRED* for BD sims. If the params can be made optional for BD sims, then these mods will be merged with the main branch.<br>
-See [template scripts](/scripts/poly-templates) for parameters you need to add in Python to be able to use polydiserpsity
-
-***NOTE**: These modifications DO NOT scale D0 by particle size, to mimic uniform attraction in protein gels and other non-depletion systems. The D0 scaling is commented out in EvaluatorPairMorse.h (line 139) and EvaluatorPairDPDThermoDPDMorse.h (lines 300 and 389)*
-
------------------------------
+# hoomd4.2.1-mod
 
 This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the PRO-CF group. It also includes: 
 * [Installation instructions](/README.md#installation)
@@ -16,11 +8,10 @@ This repository contains the modified version of HOOMD-blue v4.2 used for colloi
 * A [Changelog](/changelog.md) summarizing what was changed, and a full list of the files that were changed
 
 Additional branches are available, tho they may be incomplete:
-- branch "polydispersity": modifications for non-uniform particle sizes
 - branch "hoomd4.2_w_wall": modifications for flat and sinusoidal walls
-- branch "no_shear": clean version without shear or bond-tracking
+- branch "no_shear": clean version of original DPDMorse and virial_ind tracking without shear, bond-tracking, or other mods.
 
-[Last Updated: January 2024]
+[Last Updated: June 2024]
 
 Contact: Rob Campbell (campbell.r@northeastern.edu)
 
@@ -28,13 +19,14 @@ Contact: Rob Campbell (campbell.r@northeastern.edu)
 For any questions, or to help with modifications, contact Rob.
 
 To-Do:
-- [ ] add bond tracking to BD/Langevin sims?
-- [ ] shear does not work in BD/Langevin (thermostat issues)
-- [ ] copy in wall mods
-- [ ] test compile wall mods
-- [ ] test DPD initialization, equilibrium, and gelation w/ walls
-- [ ] test BD/Langevin sims w/ walls
-- [ ] remove AO from README or add AO mods
+- [ ] fix bond trackign to work correctly @Paniz @Rob
+	- [ ] and add bond tracking to BD/Langevin sims?
+- [ ] copy in wall mods @Josh @Rob
+	- [ ] test compile wall mods
+	- [ ] test DPD initialization, equilibrium, and gelation w/ walls
+	- [ ] test BD/Langevin sims w/ walls
+- [ ] add bond contraints @Paniz
+- [ ] remove AO from README or add AO mods @Rob
 -----------------
 
 ## Installation
