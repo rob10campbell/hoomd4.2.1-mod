@@ -4,7 +4,7 @@ You may need to make changes to this repository to add new features for everyone
 
 Here are some tips and best-practices for integrating new changes into hoomd4.2.1-mod:
 
-1. [Jump to advice for adding changes for everyone](/README.md#how-to-add-changes)
+1. [Jump to advice for adding changes for everyone](/admin/adding-changes.md#how-to-add-changes)
 2. Continue reading about making a personal copy
 
 ### How to Make a Copy

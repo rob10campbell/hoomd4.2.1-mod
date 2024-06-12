@@ -4,7 +4,7 @@ This repository was created to hold a modified version of HOOMD-blue v4.2.1 for 
 
 Jump to:
 
-* [How to upgrade to a new HOOMD-blue version](/admin/README.md#how-to-upgrade-to-a-new-hoomd-blue-version)
+* [How to upgrade to a new HOOMD-blue version](/admin/upgrading-to-new-hoomdblue.md#how-to-upgrade-to-a-new-hoomd-blue-version)
 * Tools for [comparing different HOOMD-blue versions](/admin/comparing-versions) 
 
 
@@ -65,7 +65,7 @@ rm -r [path-to-.git/].git/
 
 You may need to make changes to this repository to add new features for everyone or to create an entirely new version for yourself.
 
-1. [Jump to advice for adding changes for everyone](/README.md#how-to-add-changes)
+1. [Jump to advice for adding changes for everyone](admin/adding-changes.md#how-to-add-changes)
 2. Continue reading about making a copy
 
 ### How to Make a Copy
