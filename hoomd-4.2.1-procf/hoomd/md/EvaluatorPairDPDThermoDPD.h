@@ -133,12 +133,16 @@ class EvaluatorPairDPDThermoDPD
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _radcontact the sum of the interacting particle radii [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023] 
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoDPD(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), a(_params.A), gamma(_params.gamma)
+    DEVICE EvaluatorPairDPDThermoDPD(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add radcontact, pair_typeIDs [PROCF2023]
+        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), a(_params.A), gamma(_params.gamma) //~ add radcontact [PROCF2023]
         {
+        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
+        typej = _pair_typeids[1]; //~ add typej [PROCF2023]
         }
 
     //! Set i and j, (particle tags), and the timestep
@@ -168,6 +172,18 @@ class EvaluatorPairDPDThermoDPD
         {
         m_T = Temp;
         }
+    
+    //!~ add diameter [PROCF2023]
+    DEVICE static bool needsDiameter()
+        {
+        return false;
+        }
+    //! Accept the optional diameter values
+    /*! \param di Diameter of particle i
+        \param dj Diameter of particle j
+    */
+    DEVICE void setDiameter(Scalar di, Scalar dj) { }
+    //~
 
     //! Yukawa doesn't use charge
     DEVICE static bool needsCharge()
@@ -340,6 +356,10 @@ class EvaluatorPairDPDThermoDPD
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
+    Scalar radcontact;       //!< Stored contact-distance from the constructor [PROCF2023]
+    unsigned int pair_typeids;    //!< Stored pair typeIDs from the constructor [PROCF2023]
+    unsigned int typei;           //!<~ Stored typeID of particle i from the constructor [PROCF2023]
+    unsigned int typej;           //!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     Scalar a;            //!< a parameter for potential extracted from params by constructor
     Scalar gamma;        //!< gamma parameter for potential extracted from params by constructor

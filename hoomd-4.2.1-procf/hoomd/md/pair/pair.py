@@ -648,8 +648,9 @@ class Morse(Pair):
     Args:
         nlist (hoomd.md.nlist.NeighborList): Neighbor list.
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
-        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`.
+        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
+        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
 
     `Morse` computes the Morse pair force on every particle in the simulation
     state:
@@ -676,6 +677,8 @@ class Morse(Pair):
           :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
         * ``r0`` (`float`, **required**) - position of the minimum
           :math:`r_0` :math:`[\mathrm{length}]`
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [PROCF2023]
+          :math: `scaled_D0` :math: `[true/false]` [PROCF2023]
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -688,14 +691,18 @@ class Morse(Pair):
     """
 
     _cpp_class_name = "PotentialPairMorse"
+    _default_scaled_D0 = False ##~ add scaled_D0 [PROCF2024]
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'): 
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
+        ##~ add scaled_D0 [PROCF2023]
+        if scaled_D0 is None:
+            scaled_D0 = self._default_scaled_D0
+        ##~
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, len_keys=2)) ##~ add f_contact [PROCF2023]
+            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [PROCF2023]
         self._add_typeparam(params)
-
 
 class DPD(Pair):
     r"""Dissipative Particle Dynamics.
@@ -1905,6 +1912,9 @@ class DPDMorse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
         bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
+        scaled_D0 (bool): defauly value for on/off class attribute used to scale D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
+        a1 (float): default value for a1; NOTE: this is legacy code from before polydispersity, a1 is NO LONGER USED [PROCF2023]
+        a2 (float): default value for a2; NOTE: this is legacy code from before polydispersity, a2 is NO LONGER USED [PROCF2023]
 
     `DPDMorse` computes the Morse pair force, semi-hard potential contact force, and short-range lubrication (squeezing) force approximation  on every particle in the simulation
     state:
@@ -1945,12 +1955,14 @@ class DPDMorse(Pair):
         * ``eta`` (`float` **required**) - the background viscosity (viscosity of the background fluid)
           :math:`eta` :math:`[\mathrm{viscosity}]`
         * ``f_contact`` (`float`, **required**) - the contact force scaling parameter
-        * ``a1`` (`float`, **required**) - the radius of particle i
+        * ``a1`` (`float`, **required**) - the radius of particle i NOTE: legacy parameter, a1 is now pulled from constructor [PROCF2023]
           :math:`a1` :math:`[\mathrm{length}]`
-        * ``a2`` (`float`, **required**) - the radius of particle j
+        * ``a2`` (`float`, **required**) - the radius of particle j NOTE: legacy parameter, a1 is now pulled from constructor [PROCF2023]
           :math:`a2` :math:`[\mathrm{length}]`
         * ``rcut`` (`float`, **required**) - the surface-surface cut-off radius
           :math:`rcut` :math:`[\mathrm{length}]`
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [PROCF2023]
+          :math: `scaled_D0` :math: `[true/false]` [PROCF2023]
 
 Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -1963,12 +1975,23 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     """
     _cpp_class_name = "PotentialPairDPDThermoDPDMorse"
     _accepted_modes = ("none",)
+    _default_scaled_D0 = False
+    _default_a1 = 0.0
+    _default_a2 = 0.0
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
                          mode='none')
+        ##~ add scaled_D0, default a1, default a2 [PROCF2023]
+        if scaled_D0 is None:
+            scaled_D0 = self._default_scaled_D0
+        if a1 is None:
+            a1 = self._default_a1
+        if a2 is None:
+            a2 = self._default_a2
+        ##~
         self._bond_calc = bond_calc
         params = TypeParameter(
             'params', 'particle_types',
@@ -1979,9 +2002,10 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                               r0=float,
                               eta=float,
                               f_contact=float,
-                              a1=float,
-                              a2=float,
+                              a1=float(a1),
+                              a2=float(a2),
                               rcut=float,
+                              scaled_D0=bool(scaled_D0),
                               len_keys=2))
         self._add_typeparam(params)
         param_dict = ParameterDict(kT=hoomd.variant.Variant)
@@ -2014,6 +2038,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         """
         self._bond_calc = value
 ##~
+
 
 ##~ add MorseRepulse [PROCF2023]
 class MorseRepulse(Pair):
@@ -2050,7 +2075,7 @@ class MorseRepulse(Pair):
 
         nl = nlist.Cell()
         morse = pair.MorseRepulse(default_r_cut=3.0, nlist=nl)
-        morse.params[('A', 'A')] = dict(D0=12.0, alpha=20, Erep=True, Z=2.0, kappa_e=8.0, Yrep=False, epsilon=22, kappa_y=2, a_i=1.0, a_j=1.0)
+        morse.params[('A', 'A')] = dict(D0=12.0, alpha=20, Erep=True, Z=2.0, kappa_e=8.0, Yrep=False, epsilon=22, kappa_y=2, r0=0)
         morse.r_cut[('A', 'B')] = 3.0
 
     .. py:attribute:: params
@@ -2071,10 +2096,8 @@ class MorseRepulse(Pair):
           :math:`varepsilon` :math:`[\mathrm{energy}]`
         * ``kappa_y`` (`float`, **required**) - Yukawa scaling factor 
           :math:`\kapppa_y` :math:`[\mathrm{length}^{-1}]`
-        * ``a_i`` (`float`, **required**) - particle i radius
-          :math:`a_i` :math:`[\mathrm{length}]`
-        * ``a_j`` (`float`, **required**) - particle j radius
-          :math:`a_j` :math:`[\mathrm{length}]`
+        * ``r0`` (`float`, **required**) - position of the minimum
+          :math:`r_0` :math:`[\mathrm{length}]`
         * ``f_contact`` (`float`, **required**) - magnitude of the contact force  
           (typically 100-10,000) :math:`f_contact` :math:`[\mathrm{force}]`
 
@@ -2103,11 +2126,9 @@ class MorseRepulse(Pair):
                               Yrep=bool, 
                               epsilon=float, 
                               kappa_y=float, 
-                              a_i=float, 
-                              a_j=float, 
+                              r0=float,
                               f_contact=float, 
                               len_keys=2))
         self._add_typeparam(params)
 
 ##~
-

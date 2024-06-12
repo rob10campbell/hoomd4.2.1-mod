@@ -8,11 +8,10 @@ This repository contains the modified version of HOOMD-blue v4.2 used for colloi
 * A [Changelog](/changelog.md) summarizing what was changed, and a full list of the files that were changed
 
 Additional branches are available, tho they may be incomplete:
-- branch "polydispersity": modifications for non-uniform particle sizes
 - branch "hoomd4.2_w_wall": modifications for flat and sinusoidal walls
-- branch "no_shear": clean version without shear or bond-tracking
+- branch "no_shear": clean version of original DPDMorse and virial_ind tracking without shear, bond-tracking, or other mods.
 
-[Last Updated: January 2024]
+[Last Updated: June 2024]
 
 Contact: Rob Campbell (campbell.r@northeastern.edu)
 
@@ -20,13 +19,14 @@ Contact: Rob Campbell (campbell.r@northeastern.edu)
 For any questions, or to help with modifications, contact Rob.
 
 To-Do:
-- [ ] add bond tracking to BD/Langevin sims?
-- [ ] shear does not work in BD/Langevin (thermostat issues)
-- [ ] copy in wall mods
-- [ ] test compile wall mods
-- [ ] test DPD initialization, equilibrium, and gelation w/ walls
-- [ ] test BD/Langevin sims w/ walls
-- [ ] remove AO from README or add AO mods
+- [ ] fix bond trackign to work correctly @Paniz @Rob
+	- [ ] and add bond tracking to BD/Langevin sims?
+- [ ] copy in wall mods @Josh @Rob
+	- [ ] test compile wall mods
+	- [ ] test DPD initialization, equilibrium, and gelation w/ walls
+	- [ ] test BD/Langevin sims w/ walls
+- [ ] add bond contraints @Paniz
+- [ ] remove AO from README or add AO mods @Rob
 -----------------
 
 ## Installation

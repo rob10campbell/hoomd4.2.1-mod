@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+
 #ifndef __PAIR_EVALUATOR_YUKAWA_H__
 #define __PAIR_EVALUATOR_YUKAWA_H__
 
@@ -97,13 +99,29 @@ class EvaluatorPairYukawa
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
+        \param _radcontact the sum of the interacting particle radii [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairYukawa(Scalar _rsq, Scalar _rcutsq, const param_type& _params)
-        : rsq(_rsq), rcutsq(_rcutsq), epsilon(_params.epsilon), kappa(_params.kappa)
+    DEVICE EvaluatorPairYukawa(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add radcontact, pair_typeIDs [PROCF2023]
+        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), epsilon(_params.epsilon), kappa(_params.kappa) //~ add radcontact [PROCF2023]
         {
+        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
+        typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
         }
+        
+    //!~ add diameter [PROCF2023]
+    DEVICE static bool needsDiameter()
+        {
+        return false;
+        }
+    //! Accept the optional diameter values
+    /*! \param di Diameter of particle i
+        \param dj Diameter of particle j
+    */
+    DEVICE void setDiameter(Scalar di, Scalar dj) { }
+    //~ 
 
     //! Yukawa doesn't use charge
     DEVICE static bool needsCharge()
@@ -178,6 +196,10 @@ class EvaluatorPairYukawa
 
     protected:
     Scalar rsq;     //!< Stored rsq from the constructor
+    Scalar radcontact;//!< Stored contact-distance from the constructor [PROCF2023]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
+    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
+    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
     Scalar rcutsq;  //!< Stored rcutsq from the constructor
     Scalar epsilon; //!< epsilon parameter extracted from the params passed to the constructor
     Scalar kappa;   //!< kappa parameter extracted from the params passed to the constructor
