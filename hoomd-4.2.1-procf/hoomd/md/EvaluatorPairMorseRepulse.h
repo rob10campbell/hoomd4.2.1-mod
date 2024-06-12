@@ -237,7 +237,7 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
                 Scalar rcut = Scalar(1.0) / rcutinv;
                 if (r < rcut && kappa_e != 0)
                     {
-                    Scalar radprod = a_i * a_j; 
+                    Scalar radprod = (Scalar(0.5)*diameter_i) * (Scalar(0.5)*diameter_j); 
                     Scalar rmds = r - radsum;
                     Scalar radsuminv = Scalar(1.0) / radsum;
 
