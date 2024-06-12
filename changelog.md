@@ -174,6 +174,7 @@ Adding two repulsive options to Morse
 	* [x] `md/`
 		* [x] CMakeLists.txt : **set new file (EvaluatorPairMorseRepulse.h)**
 		* [x] **[ADD NEW FILE]** EvaluatorPairMorseRepulse.h (the Morse potential with Electrostatic or Yukawa repulsion)
+		* [x] module-md.cc : **add void/export for DPDMorseRepulse()** 
 		* [x] `pair`
 			* [x] \_\_init\_\_.py **call MorseRepulse**
 			* [x] pair.py : **call MorseRepulse**
