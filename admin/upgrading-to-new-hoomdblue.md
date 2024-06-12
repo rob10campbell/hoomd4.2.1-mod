@@ -55,53 +55,6 @@ rm -r [path-to-.git/].git/
 
 5. Copy the "hoomd-v4.2.1" folder from the "unlinked-hoomd" directory into your new git repo direcotry, and rename it "hoomd-v4.2.1-procf" (if the folder name ends in 4.2.1 it will be ignored by git)
 
-
 6. Push the new files to the Github. You should have normal folders containing all the hoomd-blue files for the version you want to modify! If any of the folders have a white arrow on them and cannot be openned... then you are still linked to the original hoomd-blue github and need to remove more .git files to delink it... sorry.
 
 7. Now copy all your changes file-by-file from the old version to the latest version, paying attention to any larger level syntax changes that may have been implemented by the HOOMD-blue team.
-<br>
-<br>
-## How to Make Changes
-
-You may need to make changes to this repository to add new features for everyone or to create an entirely new version for yourself.
-
-1. [Jump to advice for adding changes for everyone](adding-changes.md#how-to-add-changes)
-2. Continue reading about making a copy
-
-### How to Make a Copy
-
-There are **two ways** to make your own, independent copy of this repositorywithout starting completely from scratch (as described above): 
-
-1. Fork this repository! This will also copy the version history and retain links to this version. To create a fork: [Read about forks in the Github Docs](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
-2. Create a completely separate copy that is not linked to this repository. 
-
-To create a copy that is not linked to this repository:
-
-Download the basic version of HOOMD-blue as a tarball. Tarballs are available as GitHub release assets, as described on the [HOOMD-blue docs](https://hoomd-blue.readthedocs.io/en/stable/building.html#obtain-the-source). On the page for the version you want to install, copy the Download link and use it to curl the tar file.
-```bash
-curl -Lo hoomd-v4.2.1.tar.gz [link-to-tar, ex:https://github.com/glotzerlab/hoomd-blue/releases/download/v4.2.1/hoomd-v4.2.1.tar.gz]
-tar -xvf hoomd-v4.2.1.tar.gz
-rm hoomd-v4.2.1.tar.gz
-```
-If you are backing up to a new GitHub repository you may also need to remove the sphinx-doc folder
-```bash
-rm -r hoomd-v4.2.1/sphinx-doc
-```
-Delete the hoomd subfolder
-```bash
-rm -r hoomd-v4.2.1/hoomd
-```
-Use a copy of this repository's hoomd subfolder instead
-```bash
-cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-procf/hoomd /hoomd-v4.2.1/hoomd
-```
-Rename the folder with the "-procf" extension
-```bash
-mv hoomd-v4.2.1/ hoomd-v4.2.1-procf
-```
-And, optionally, add back the sphinx-doc folder
-```bash
-cp -r [path-to-hoomd4.2.1-mod]/hoomd-v4.2.1-procf/sphinx-doc /hoomd-v4.2.1-procf/sphinx-doc
-```
-<br>
-
