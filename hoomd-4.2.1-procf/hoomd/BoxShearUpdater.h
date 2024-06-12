@@ -61,7 +61,7 @@ class PYBIND11_EXPORT BoxShearUpdater : public Updater
     virtual bool getFlip() const{return m_flip;}
 
     /// Set the variant for interpolation
-    void setRate(std::shared_ptr<Variant> vinf)
+    void setVinf(std::shared_ptr<Variant> vinf)
         {
         m_vinf = vinf;
         }
