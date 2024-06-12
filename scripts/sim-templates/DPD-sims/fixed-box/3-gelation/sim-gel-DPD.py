@@ -89,19 +89,19 @@ else:
   # solvent-solvent: soft particles (allow deformation/overlap)
   morse.params[('A','A')] = dict(A0=25.0 * KT / r_c, gamma=gamma, 
     D0=0, alpha=kappa, r0=r0, eta=0.0, f_contact=0.0, 
-    a1=0.0, a2=0.0, rcut=r_c) # force calc
+    rcut=r_c) # force calc
   morse.r_cut[('A','A')] = r_c # used to assemble nl
 
   # solvent-colloid: soft particles (allow deformation/overlap)
   morse.params[('A','B')] = dict(A0=25.0 * KT / r_cut_sc, gamma=gamma, 
-    D0=0, alpha=kappa, r0=r0, eta=0.0, f_contact=0.0, a1=0.0, a2=R_C1, 
+    D0=0, alpha=kappa, r0=r0, eta=0.0, f_contact=0.0, 
     rcut=r_cut_sc - (0 + R_C1)) # force calc
   morse.r_cut[('A','B')] = r_cut_sc # used to assemble nl
 
   # colloid-colloid: hard particles (no deformation/overlap)
   morse.params[('B','B')] = dict(A0=0.0, gamma=gamma, 
     D0=D0, alpha=kappa, r0=r0, eta=eta0, f_contact=f_contact, 
-    a1=R_C1, a2=R_C1, rcut=r_c) # force calc
+    rcut=r_c) # force calc
   morse.r_cut[('B','B')] = (r_c + 2.0 * R_C1) # used to assemble nl
 
   # choose integration method for the end of each timestep
@@ -130,15 +130,6 @@ else:
   # save outputs
   sim.operations.writers.append(gsd_writer)
   gsd_writer.logger = logger
-
-  # also save colloids ONLY for smaller file-size
-  # NOTE: you MUST save all particles to use the output to run another sim (gel, shear, etc.)
-  gsd_writer_colloids = hoomd.write.GSD(trigger=period, filename="Gelation_Colloids-DPD.gsd", 
-    filter=all_colloids, mode='wb', dynamic=['property','momentum','attribute'])
-  gsd_writer_colloids.write_diameter = True
-  #gsd_writer_colloids.maximum_write_buffer_size = 1e8 # max 100 million bytes
-  sim.operations.writers.append(gsd_writer_colloids)
-  gsd_writer_colloids.logger = logger
 
   # run simulation!
   # (and write the initial state (e.g. the last frame of Equilibrium) in this file!)
