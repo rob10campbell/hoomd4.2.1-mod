@@ -144,6 +144,7 @@ from .pair import (
     Yukawa,
     Ewald,
     Morse,
+    MorseRepulse, #[PROCF2023]
     DPD,
     DPDConservative,
     DPDLJ,

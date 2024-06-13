@@ -161,6 +161,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                                    access_location::host,
                                    access_mode::read);
     //~
+
     //~ access particle charges [PROCF2024]
     ArrayHandle<Scalar> h_charge(this->m_pdata->getCharges(),
                                    access_location::host,
@@ -249,11 +250,26 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < this->m_pdata->getNTypes());
 
+            //~ store the typeIDs of the current pair [PROCF2023]
+            unsigned int pair_typeids[2] = {0, 0};
+            pair_typeids[0] = typei;
+            pair_typeids[1] = typej;
+            //~
+
             // apply periodic boundary conditions
             dx = box.minImage(dx);
 
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
+
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            //~ the calculation is only used if there is polydispersity
+            Scalar radcontact = 0.0;
+            {
+            radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+            }
+            //std::cout << "contact = " << radcontact << std::endl;
+            //~
 
             // calculate the drag term r \dot v
             Scalar rdotv = dot(dx, dv);
@@ -279,8 +295,8 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             Scalar sq_divr = Scalar(0.0);
             Scalar cont_divr = Scalar(0.0);
 	    //~
-            Scalar pair_eng = Scalar(0.0);
-            evaluator eval(rsq, rcutsq, param);
+            Scalar pair_eng = Scalar(0.0);  
+            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeids for polydispersity [PROCF2023] 
 
             // Special Potential Pair DPD Requirements
             const Scalar currentTemp = m_T->operator()(timestep);
@@ -296,10 +312,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 	    //~ add bond_calc [PROCF2023]
 	    if(m_bond_calc)
 		{
-           	if(typei && typej)
+           	if(typei && typej) // if both are NOT zero (solvents are type zero)
                	    {
    	       	    Scalar rsq_root = fast::sqrt(rsq) - Scalar(0.5)*(h_diameter.data[i]+h_diameter.data[j]);
-   	            if(rsq_root < Scalar(0.10))
+   	            if(rsq_root < Scalar(0.10)) // assumes the cut-off is 0.1
    	                {
    	                unsigned int var1 = tagi - this->LTIME->num_solvent;
    	                unsigned int var2 = tagj - this->LTIME->num_solvent;
@@ -408,7 +424,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     if(m_bond_calc)
 	{
     	this->LTIME->updatebondtime(timestep);
-    	if(timestep%10000 == 0)
+    	if(timestep%10000 == 0) // assumes the recording period is 10000
 	    {
             this->LTIME->writeBondtime();
 	    }

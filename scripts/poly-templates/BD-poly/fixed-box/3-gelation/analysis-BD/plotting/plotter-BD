@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#SBATCH -J plot
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH -t 1:00:00
+#SBATCH -o %A-plt.out
+#SBATCH -e %A-plt.err
+
+module purge
+module load python/3.8.1
+source # path to software, for example: /work/props/Rob/software/hoomd4.2.1-mod/hoomdmod4.2.1-venv/bin/activate 
+
+# run the plot file
+python plot-kT-BD.py
+python plot-shearstress-BD.py
+python plot-Zavg-BD.py
+python plot-Zdist-BD.py
+python plot-msd-BD.py
+python plot-gofr-BD.py
+python plot-pcf-BD.py
+python plot-sofq-and-gofr-BD.py
+python plot-ndf-BD.py
+python plot-ndf-v-binsize-BD.py
+python plot-poresize-BD.py
+python plot-voronoi-dist-BD.py
+python plot-voronoi-mean-and-sd-BD.py 
+python plot-voronoi-skew-BD.py
+python plot-voronoi-kurtosis-BD.py
+python plot-lcc-BD.py
