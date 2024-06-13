@@ -11,6 +11,7 @@ File lists are formatted as: `folder/`; file
 * [On/Off Contact Force](/changelog.md#on-off-contact-force) : Add the ability to remove contact force and replace it with Morse repulsion (Sasha)
 * [Bond tracking](/changelog.md#bond-tracking) : Track bond formation and breaking (Nabi, Deepak, and Rob)
 * [Walls](/changelog.md#walls) : Wall options: flat or converging diverging (Josh)
+* [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential) : Add AO Potential (might be incorrect calc?) (Rob)
 
@@ -48,42 +49,58 @@ Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
 
 ## Shear Rate 
 Adding shear rate for regular particles (does not include rigid bodies) (Deepak)
-- **shear rate (SR)**: Add a new class for controlling the shear rate (SR) when shearing a system for DPDMorse and Morse Brownian sims (BD and Langevin integration); however this does not apply to rigid bodies
-- **Tree modifications**: Modify the Tree Neighboring List method to remove auto-updates without SR
-- **y-boundary velocity**: Modify the way that a particle's velocity is updated when it crosses a y-boundary so that it takes into account the effect of the applied shear rate (as described in the [background reading on shearing](/background-reading/4-Shearing-4pg.pdf)
+- **flow velocity** add the flow velocity for calculating shear rate
+- **y-boundary velocity** update velocity when wrapping particles across the Y boundary (gradient direction)
+- **shear rate** add the shear rate variable
+- **iostream** import package for Variant class
+- **Oscillatory** create variant class for t_ramp oscillatory shear (legacy)
+- **Sinusoidal** create variant class for sinusoidal oscillation (legacy)
+- **Cosinusoidal** create variant class for cosinusoidal oscillation (use this one)
+- **BoxShear** and **box_shear.py** new classes for shearing
+- **virialxyi_ind** track xyi component of virial separately in Brownian shear sims
 
 * [x] `hoomd/`
-	* [x] BoxResizeUpdater.cc : **shear rate (SR)**
-	* [x] BoxResizeUpdater.h : **shear rate (SR), y-boundary velocity**
+	* [x] BoxResizeUpdater.h : **flow velocity (vinf, cur_vel)**
+	* [x] BoxResizeUpdater.cc : **flow velocity (vinf, cur_vel), y-boundary velocity**
+	* [x] **[ADD NEW FILE]** BoxShearUpdater.h
+	* [x] **[ADD NEW FILE]** BoxShearUpdater.cc
 	* [x] Communicator.cc : **shear rate (SR), y-boundary velocity**
 	* [x] Communicator.h : **shear rate (SR)**
-	* [x] ForceCompute.h : **shear rate (SR), virial_ind** 
+	* [x] ForceCompute.h : **shear rate (SR)**
 	* [x] HOOMDMPI.h : **shear rate (SR)** (add uint4)
-	* [x] Integrator.cc : **shear rate (SR)**
-	* [x] Integrator.h : **shear rate (SR)**
+	* [x] CmakeList.txt : **add BoxShearUpdater.h, BoxShearUpdater.cc**
+	* [x] Integrator.h : **flow velocity (vinf), shear rate (SR)**
+	* [x] Integrator.cc : **flow velocity (vinf), shear rate (SR), Box_Dim**
+	* [x] module.cc : **BoxShear**
 	* [x] `md/`
-		* [x] FIREEnergyMinimizer.cc : **shear rate (SR)**
-		* [x] FIREEnergyMinimizer.h : **shear rate (SR)**
-		* [x] integrate.py : **shear rate (SR), shear rate = 0 as default**
-		* [x] IntegrationMethodTwoStep.cc : **shear rate (SR)**
+		* [x] FIREEnergyMinimizer.cc : **flow velocity (vinf)**
+		* [x] FIREEnergyMinimizer.h : **flow velocity (vinf)**
 		* [x] IntegrationMethodTwoStep.h : **shear rate (SR)**
-		* [x] IntegratorTwoStep.cc : **shear rate (SR)**
-		* [x] IntegratorTwoStep.h : **shear rate (SR)**
-		* [x] NeighborListTree.cc : **modifications for using our boundaries with MPI**
-		* [x] PotentialPairDPDThermo.h : **get box size/periodic, shear rate (SR)**
-  		* [x] `test/`
-			* [x] test_communication.cc **shear rate (SR)**
-			* [x] test_fire_energy_minimizer.cc **shear rate (SR)** 
-		* [x] TwoStepBD.cc **shear rate (SR)**
-		* [x] TwoStepConstantVolume.cc : **shear rate (SR), y-boundary velocity**
-		* [x] TwoStepLangevin.cc **shear rate (SR)**
+		* [x] IntegrationMethodTwoStep.cc : **shear rate (SR)**
+		* [x] IntegratorTwoStep.cc : **flow velocity (vinf)**
+		* [x] IntegratorTwoStep.h : **flow velocity (vinf), shear rate (SR)**
+		* [x] integrate.py : **flow velocity (vinf) and default to 0**
+		* [x] PotentialPair.h : **virialxyi_ind**
+		* [x] PotentialPairDPDThermo.h **shear rate (SR), virialxyi_ind**
+                * [x] `test/`
+			* [x] test_communication.cc : **dummy flow velocity (vinf)**
+			* [x] test_fire_energy_minimizer.cc : **dummy flow velocity (vinf)**
+		* [x] TwoStepBD.cc : **flow velocity (vinf, cur_vel), y-boundary velocity**
+		* [x] TwoStepConstantVolume.cc : **box dims, shear rate (SR)**
+		* [x] TwoStepLangevin.cc : **flow velocity (vinf), shear rate (SR)**
 	* [x] `mpcd/`
-		* [x] Integrator.cc : **shear rate (SR)**
-		* [x] Integrator.h : **shear rate (SR)**
-  	* [x] `test/`
-		* [x] test_system.cc **shear rate (SR)** 
+		* [x] Integrator.h : **flow velocity (vinf)**
+		* [x] Integrator.cc : **flow velocity (vinf)**
+	* [x] `test/`
+		* [x] test_system.cc : **dummy flow velocity (vinf)**
 	* [x] `update/`
-		* [x] box_resize.py : **shear rate (SR)**
+		* [x] CmakeList.txt : **add box_shear.py**
+		* [x] \_\_init\_\_.py : **add BoxShear**
+		* [x] **[ADD NEW FILE]** box_shear.py
+		* [x] box_resize.py : **flow velocity (vinf)**
+	* [x] Variant.h : **iostream, Oscillatory, Sinusoidal, Cosinusoidal**
+	* [x] Variant.cc : **Oscillatory, Sinusoidal, Cosinusoidal**
+	* [x] variant.py : **Oscillatory, Sinusoidal, Cosinusoidal**
 
 
 ## Polydispersity
@@ -155,6 +172,12 @@ Track bond formation and breaking (Nabi, Deepak, and Rob)
 			* [x] pair.py : **add bond_calc flag to Pair and DPDMorse**
 		* [x] PotentialPairDPDThermo.h : **Lifetime, bond_calc, get particle diameter (for bond calc)**
 
+
+## Pressure-driven flow
+- **charge** make sure charge is available for body force
+* [x] `hoomd/`
+	* [x] `md/`
+		* [x] PotentialPairDPDThermo.h : **charge**
 
 ## Walls
 Wall options: flat or converging diverging (Josh)
