@@ -40,9 +40,8 @@ gamma = 6.0*np.pi*eta0*R_C1 # BD stock friction coefficient
 
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
-if(snap.communicator.rank == 0): # if this is the start of the simulation
-  if r_c < (3/kappa):
-    print('WARNING: r_c is less than range of attraction. Increase r_c')
+if r_c < (3/kappa):
+  print('WARNING: r_c is less than range of attraction. Increase r_c')
 f_contact = 100 # magnitude of contact force (usually 100 or 1000)
 
 # shear flow details
@@ -94,12 +93,11 @@ seed_value = 42
 # Checks for existing shear flow files. If none exist, begins shearing 
 # from the gelation state
 
-if(snap.communicator.rank == 0): # if this is the start of the simulation
-  if os.path.exists('Shear-BD.gsd'):
-    print('Shear flow file already exists. No new files created.')
-    exit()
-  else:
-    print('Shearing the Brownian Dynamics simulation with '+shear_style+' shear')
+if os.path.exists('Shear-BD.gsd'):
+  print('Shear flow file already exists. No new files created.')
+  exit()
+else:
+  print('Shearing the Brownian Dynamics simulation with '+shear_style+' shear')
 
 ## Create a CPU simulation
 device = hoomd.device.CPU()
@@ -108,6 +106,9 @@ sim = hoomd.Simulation(device=device, seed=seed_value)
 # reset timestep to zero and start simulation from the GSD file
 sim.timestep=0
 sim.create_state_from_gsd(filename='../3-gelation/Gelation-BD.gsd')
+
+# get snapshot to ensure parameters only print only 
+snap = sim.state.get_snapshot()
 
 # assign particle types to groups
 # (in case we want to integrate over subpopulations only,
@@ -182,7 +183,7 @@ if(snap.communicator.rank == 0): # if this is the start of the simulation
 
   if shear_style == 'constant':
    print(shear_style+' shear')
-   print('shear rate, SR: '+str(round(shear_rate,2))
+   print('shear rate, SR: '+str(round(shear_rate,2)))
    print('t_ramp:', str(t_ramp))
    print('dt_Integration:', str(dt_Integration))
    print('frames per strain:', str(frames_per_strain))
@@ -194,7 +195,7 @@ if(snap.communicator.rank == 0): # if this is the start of the simulation
    print(shear_style+' shear')
    print('Amplitude: '+str(Amp,3))
    print('omega: '+str(omega,3))
-   print('shear rate, SR: '+str(round(shear_rate,2))
+   print('shear rate, SR: '+str(round(shear_rate,2)))
    print('t_ramp:', str(t_ramp))
    print('dt_Integration:', str(dt_Integration))
    print('frames per strain:', str(frames_per_strain))

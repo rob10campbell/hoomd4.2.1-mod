@@ -36,6 +36,7 @@ data_outpath = 'data'
 ## For the noaffinity calculation
 affine_ref_filepath = "../../3-gelation/Gelation-DPD.gsd"
 ## calculate DPDtimes for your sim
+frames_per_strain = 50
 if shear_style = 'constant'
   dt_Integration = 1e-4
   theta = 1.0

@@ -40,9 +40,8 @@ gamma = 45 # DPD controlling parameter for viscous resistance (dissipative force
 
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
-if(snap.communicator.rank == 0): # if this is the start of the simulation
-  if r_c < (3/kappa):
-    print('WARNING: r_c is less than range of attraction. Increase r_c')
+if r_c < (3/kappa):
+  print('WARNING: r_c is less than range of attraction. Increase r_c')
 r0 = 0.0 # minimum inter-particle distance
 f_contact = 10000.0 # magnitude of contact force (usually 100 or 1000)
 bond_calc = False # do you want to track what bonds form and break? True=yes, False=no
@@ -100,12 +99,11 @@ seed_value = 42
 # Checks for existing shear flow files. If none exist, begins shearing 
 # from the gelation state
 
-if(snap.communicator.rank == 0): # if this is the start of the simulation
-  if os.path.exists('Shear-DPD.gsd'):
-    print('Shear flow file already exists. No new files created.')
-    exit()
-  else:
-    print('Shearing the DPD simulation with '+shear_style+' shear')
+if os.path.exists('Shear-DPD.gsd'):
+  print('Shear flow file already exists. No new files created.')
+  exit()
+else:
+  print('Shearing the DPD simulation with '+shear_style+' shear')
 
 ## Create a CPU simulation
 device = hoomd.device.CPU()
@@ -138,6 +136,9 @@ if init_velocity == True:
       snap.particles.velocity[i][0] += v_x
   # apply the linear velocity profile to the initial simulation state
   sim.state.set_snapshot(snap)
+else:
+  # get snapshot to ensure parameters only print only 
+  snap = sim.state.get_snapshot()
 
 # set shear style Variant class
 # Constant | value
