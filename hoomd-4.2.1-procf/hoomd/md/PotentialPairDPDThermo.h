@@ -212,7 +212,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         for (unsigned int l = 0; l < 6; l++)
             viriali[l] = 0.0;
         //~ initialize virialxyi_ind to zero [PROCF2024]
-        //Scalar virialxyi_ind = 0.0;
+        Scalar virialxyi_ind = 0.0;
         //~
         //~ initialize the current virial_ind to zero [PROCF2023]
         Scalar viriali_ind[5];
@@ -341,7 +341,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                 pair_virial[5] = Scalar(0.5) * dx.z * dx.z * force_divr_cons;
 
                 //~ compute virialxyi_ind [PROCF2024]
-                //virialxyi_ind += Scalar(0.5) * force_divr_cons * dx.x * dx.y;
+                virialxyi_ind += Scalar(0.5) * force_divr_cons * dx.x * dx.y;
                 //~
 
                 //~ compute the virial_ind [PROCF2023]
@@ -377,7 +377,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                     for (unsigned int l = 0; l < 6; l++)
                         h_virial.data[l * this->m_virial_pitch + mem_idx] += pair_virial[l];
                     //~ add virialxyi_ind [PROCF2024]
-                    //h_virial_ind.data[0 * this->m_virial_ind_pitch + mem_idx] += Scalar(0.5) * force_divr_cons * dx.x * dx.y;
+                    h_virial_ind.data[0 * this->m_virial_ind_pitch + mem_idx] += Scalar(0.5) * force_divr_cons * dx.x * dx.y;
                     //~
                     //~ add virial_ind [PROCF2023] 
                     for (unsigned int l = 0; l < 5; l++)
@@ -396,7 +396,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         for (unsigned int l = 0; l < 6; l++)
             h_virial.data[l * this->m_virial_pitch + mem_idx] += viriali[l];
         //~ add virialxyi_ind [PROCF2024]
-        //h_virial_ind.data[0 * this->m_virial_ind_pitch + mem_idx] += virialxyi_ind;
+        h_virial_ind.data[0 * this->m_virial_ind_pitch + mem_idx] += virialxyi_ind;
         //~
         //~ add virial_ind [PROCF2023] 
         for (unsigned int l = 0; l < 5; l++)
