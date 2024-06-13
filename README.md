@@ -19,13 +19,13 @@ Contact: Rob Campbell (campbell.r@northeastern.edu)
 For any questions, or to help with modifications, contact Rob.
 
 To-Do:
-- [ ] fix bond trackign to work correctly @Paniz @Rob
+- [ ] fix bond trackign to work correctly @Rob
 	- [ ] and add bond tracking to BD/Langevin sims?
 - [ ] copy in wall mods @Josh @Rob
 	- [ ] test compile wall mods
 	- [ ] test DPD initialization, equilibrium, and gelation w/ walls
 	- [ ] test BD/Langevin sims w/ walls
-- [ ] add bond contraints @Paniz
+- [ ] add bond contraints and associated bond tracking @Paniz
 - [ ] remove AO from README or add AO mods @Rob
 -----------------
 
