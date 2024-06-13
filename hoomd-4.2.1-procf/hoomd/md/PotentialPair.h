@@ -609,9 +609,9 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     //~ add diameter [PROCF2024]
-    //ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
-    //                               access_location::host,
-    //                               access_mode::read);
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
     //~
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
 
@@ -650,9 +650,9 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         assert(typei < m_pdata->getNTypes());
 
         //~ access diameter (if needed) [PROCF2024]
-        //Scalar di = Scalar(0.0);
-        //if (evaluator::needsDiameter())
-        //    di = h_diameter.data[i];
+        Scalar di = Scalar(0.0);
+        if (evaluator::needsDiameter())
+            di = h_diameter.data[i];
         //~
 
         // access charge (if needed)
@@ -689,9 +689,9 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             assert(typej < m_pdata->getNTypes());
 
             //~ access diameter (if needed) [PROCF2024]
-            //Scalar dj = Scalar(0.0);
-            //if (evaluator::needsDiameter())
-            //    dj = h_diameter.data[j];
+            Scalar dj = Scalar(0.0);
+            if (evaluator::needsDiameter())
+                dj = h_diameter.data[j];
             //~
 
             // access charge (if needed)
@@ -730,8 +730,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             Scalar pair_eng = Scalar(0.0);
             evaluator eval(rsq, rcutsq, param);
             //~ set diameter (if needed) [PROCF2024]
-            //if (evaluator::needsDiameter())
-            //    eval.setDiameter(di, dj);
+            if (evaluator::needsDiameter())
+                eval.setDiameter(di, dj);
             //~
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
@@ -841,8 +841,8 @@ CommFlags PotentialPair<evaluator>::getRequestedCommFlags(uint64_t timestep)
         flags[comm_flag::charge] = 1;
 
     //~ add diameter [PROCF2024]
-    //if (evaluator::needsDiameter())
-    //    flags[comm_flag::diameter] = 1;
+    if (evaluator::needsDiameter())
+        flags[comm_flag::diameter] = 1;
     //~
 
 
@@ -906,9 +906,9 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
                                       access_location::host,
                                       access_mode::read);
     //~ add diameter [PROCF2024]
-    //ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
-    //                               access_location::host,
-    //                               access_mode::read);
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
     //~
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
 
@@ -931,9 +931,9 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
         assert(typei < m_pdata->getNTypes());
 
         //~ access diameter (if needed)
-        //Scalar di = Scalar(0.0);
-        //if (evaluator::needsDiameter())
-        //    di = h_diameter.data[i];
+        Scalar di = Scalar(0.0);
+        if (evaluator::needsDiameter())
+            di = h_diameter.data[i];
         //~
 
         // access charge (if needed)
@@ -957,9 +957,9 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             assert(typej < m_pdata->getNTypes());
 
             //~ access diameter (if needed)
-            //Scalar dj = Scalar(0.0);
-            //if (evaluator::needsDiameter())
-            //    dj = h_diameter.data[j];
+            Scalar dj = Scalar(0.0);
+            if (evaluator::needsDiameter())
+                dj = h_diameter.data[j];
             //~
 
             // access charge (if needed)
@@ -998,8 +998,8 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             Scalar pair_eng = Scalar(0.0);
             evaluator eval(rsq, rcutsq, param);
             //~ add diameter [PROCF2024]
-            //if (evaluator::needsDiameter())
-            //    eval.setDiameter(di, dj);
+            if (evaluator::needsDiameter())
+                eval.setDiameter(di, dj);
             //~
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);

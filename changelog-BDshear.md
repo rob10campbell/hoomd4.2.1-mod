@@ -8,12 +8,11 @@ File lists are formatted as: `folder/`; file
 
 * [Shear Rate BD](/changelog.md#shear-rate-BD)
 
-## virial_ind BD
-* [ ] `hoomd/`
-        * [ ] `md/`
-                * [ ] PotentialPair.h : **virialxyi_ind, diameter**
-                * [ ] PotentialPairDPDThermo.h : **virialxyi_ind, charge**
-                * [ ] TwoStepLangevin.cc : **diameter**
+## virial_xyi_ind BD
+* [x] `hoomd/`
+        * [x] `md/`
+                * [x] PotentialPair.h : **virialxyi_ind, diameter**
+                * [x] PotentialPairDPDThermo.h : **virialxyi_ind, charge**
 
 ## Shear Rate BD
 New way to add shear rate for regular particles, that works for both DPD and BD (does not include rigid bodies) (Deepak)
