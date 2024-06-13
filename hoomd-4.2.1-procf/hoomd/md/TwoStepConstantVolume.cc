@@ -34,8 +34,8 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
         //const BoxDim box1 = m_pdata->getGlobalBox();
         //Scalar L_Z = box1.getL().z;
         const BoxDim& box = m_pdata->getBox();
-        Scalar3 L2 = box.getL();
-        uchar3 per_ = box.getPeriodic();
+        //Scalar3 L2 = box.getL();
+        //uchar3 per_ = box.getPeriodic();
         Scalar shear_rate = this->m_SR; 
         //~
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
