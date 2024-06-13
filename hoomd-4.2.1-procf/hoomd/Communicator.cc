@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [PROCF2023] [PROCF2024] ##########
 
 /*! \file Communicator.cc
     \brief Implements the Communicator class
@@ -1304,7 +1304,7 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
     initializeNeighborArrays();
 
     /* create a type for pdata_element */
-    //~ increase 14->15 in this block [PROCF2023]
+    //~ increase 14->15 (for virial_ind) in this block (no added blocklength)
     const int nitems = 15;
     int blocklengths[15] = {4, 4, 3, 1, 1, 3, 1, 4, 4, 3, 1, 4, 4, 6};
     MPI_Datatype types[15] = {MPI_HOOMD_SCALAR,
@@ -1319,11 +1319,11 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
                               MPI_HOOMD_SCALAR,
                               MPI_UNSIGNED,
                               MPI_HOOMD_SCALAR,
-                              MPI_HOOMD_SCALAR,
-                              MPI_HOOMD_SCALAR, //~ add scalar for SR [PROCF2023]
+                              MPI_HOOMD_SCALAR, 
+                              MPI_HOOMD_SCALAR, //~ add virial_ind [PROCF2024] 
                               MPI_HOOMD_SCALAR};
     MPI_Aint offsets[15]; 
-   //~
+    //~
 
     offsets[0] = offsetof(detail::pdata_element, pos);
     offsets[1] = offsetof(detail::pdata_element, vel);
@@ -1724,18 +1724,17 @@ void Communicator::migrateParticles()
         MPI_Waitall(2, &m_reqs.front(), &m_stats.front());
 
         // wrap received particles across a global boundary back into global box
-        //~ [PROCF2023] and use SR to update velocity for particles wrapped across y-boundaries
+        //~ and update velocity when crossing y-boundary [PROCF2024]
         const BoxDim shifted_box = getShiftedBox();
         for (unsigned int idx = 0; idx < n_recv_ptls; idx++)
             {
             detail::pdata_element& p = m_recvbuf[idx];
             Scalar4& postype = p.pos;
             int3& image = p.image;
-
-            int img0 = image.y; //~ get old y-velocity [PROCF2023]
+            int img0 = image.y; //~ get y-image for velocity [PROCF2024]
             shifted_box.wrap(postype, image);
-            img0 -= image.y; //~ subtract new y-velocity [PROCF2023]
-            p.vel.x += (img0 * m_SR); //~ add shear rate [PROCF2023]
+            img0 -= image.y; //~ use current velocity to update [PROCF2024]
+            p.vel.x += (img0 * m_SR); //~ calulate new velocity [PROCF2024]
             }
 
         // remove particles that were sent and fill particle data with received particles
@@ -2339,11 +2338,11 @@ void Communicator::exchangeGhosts()
             ArrayHandle<int3> h_image(m_pdata->getImages(),
                                       access_location::host,
                                       access_mode::readwrite);
-            //~ scale velocity when particles cross the y-boundary [PROCF2023]
+            //~ get velocity [PROCF2024]
             ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                        access_location::host,
                                        access_mode::readwrite);
-	    //~
+            //~
 
 
             const BoxDim shifted_box = getShiftedBox();
@@ -2353,12 +2352,12 @@ void Communicator::exchangeGhosts()
                 Scalar4& pos = h_pos.data[idx];
 
                 // wrap particles received across a global boundary
-                //~ [PROCF2023] and update velocity of particles that cross the y-boundary
-                int3& img = h_image.data[idx];
-                int img0 = img.y; //~ get old y-velocity [PROCF2023]
+                //~ and update velocity of particles that cross the y-boundary [PROCF2024]
+                int3& img = h_image.data[idx]; //~ get image data [PROCF2024]
+                int img0 = img.y; //~ get y-image for velocity [PROCF2024]
                 shifted_box.wrap(pos, img);
-                img0 -= img.y; //~ subtract new y-velocity [PROCF2023]
-                h_vel.data[idx].x += (img0 * m_SR); //~ add shear rate [PROCF2023]
+                img0 -= img.y; //~ use current velocity to modify [PROCF2024]
+                h_vel.data[idx].x += (img0 * m_SR); //~ update velocity [PROCF2024]
                 }
             }
 
@@ -2857,16 +2856,17 @@ void Communicator::beginUpdateGhosts(uint64_t timestep)
             }
 
         // wrap particle positions (only if copying positions)
+        //~ and update the velocity for particles wrapped across y-boundary [PROCF2024]
         if (flags[comm_flag::position])
             {
             ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
                                        access_location::host,
                                        access_mode::readwrite);
-	    //~ scale velocity when particles cross the y-boundary [PROCF2023]
+            //~ get velocity [PROCF2024]
             ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                        access_location::host,
                                        access_mode::readwrite);
-	    //~
+            //~
 
             const BoxDim shifted_box = getShiftedBox();
             for (unsigned int idx = start_idx; idx < start_idx + m_num_recv_ghosts[dir]; idx++)
@@ -2874,11 +2874,10 @@ void Communicator::beginUpdateGhosts(uint64_t timestep)
                 Scalar4& pos = h_pos.data[idx];
 
                 // wrap particles received across a global boundary
-                //~ [PROCF2023] and update velocity of particles crossing the y-boundary
                 int3 img = make_int3(0, 0, 0);
                 shifted_box.wrap(pos, img);
-                int img0 = img.y; //~ get new y-velocity [PROCF2023]
-                h_vel.data[idx].x -= (img0 * m_SR); //~ add shear rate (what was previously 2 steps is 1 here) [PROCF2023]
+                int img0 = img.y; //~ get y-image for velocity [PROCF2024]
+                h_vel.data[idx].x -= (img0 * m_SR); //~ update velocity [PROCF2024]
                 }
             }
 
@@ -2889,7 +2888,7 @@ void Communicator::updateNetForce(uint64_t timestep)
     {
     CommFlags flags = getFlags();
     if (!flags[comm_flag::net_force] && !flags[comm_flag::reverse_net_force]
-        && !flags[comm_flag::net_torque] && !flags[comm_flag::net_virial])
+        && !flags[comm_flag::net_torque] && !flags[comm_flag::net_virial] && !flags[comm_flag::net_virial_ind]) //~ add virial_ind
         return;
 
     // we have a current m_copy_ghosts list which contain the indices of particles

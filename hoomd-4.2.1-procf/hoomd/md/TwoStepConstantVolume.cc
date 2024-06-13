@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [PROCF2024] ##########
 
 #include "TwoStepConstantVolume.h"
 #include "hoomd/VectorMath.h"
@@ -30,6 +30,14 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
                                    access_location::host,
                                    access_mode::readwrite);
 
+        //~ box dim and shear rate [PROCF2024]
+        //const BoxDim box1 = m_pdata->getGlobalBox();
+        //Scalar L_Z = box1.getL().z;
+        const BoxDim& box = m_pdata->getBox();
+        Scalar3 L2 = box.getL();
+        uchar3 per_ = box.getPeriodic();
+        Scalar shear_rate = this->m_SR; 
+        //~
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
             {
             unsigned int j = m_group->getMemberIndex(group_idx);
@@ -63,26 +71,47 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
             h_pos.data[j].x = pos.x;
             h_pos.data[j].y = pos.y;
             h_pos.data[j].z = pos.z;
+
+            //~ shear wall tests? [PROCF2024]
+            /*if(shear_rate != Scalar(0.0) && (int)per_.y){
+                if (abs(h_pos.data[j].y) > Scalar(0.5)*L2.y){
+                    if(h_pos.data[j].y > Scalar(0.0)) h_pos.data[j].x -= shear_rate*m_deltaT;
+                    else h_pos.data[j].x += shear_rate*m_deltaT;
+                    }
+                 }*/
+
+            /*if (abs(h_pos.data[j].z)>(Scalar(0.5)*L_Z))
+               {
+               Scalar Dist_to_wall = abs(h_pos.data[j].z) - Scalar(0.5) * L_Z;
+               h_vel.data[j].z = - h_vel.data[j].z;
+               if(h_pos.data[j].z > 0)
+                   h_pos.data[j].z -= Scalar(2.0) * Dist_to_wall;
+               else
+                   h_pos.data[j].z += Scalar(2.0) * Dist_to_wall;
+               }*/
+            //~
+
             }
 
         // particles may have been moved slightly outside the box by the above steps, wrap them back
         // into place
-        const BoxDim& box = m_pdata->getBox();
+        //const BoxDim& box = m_pdata->getBox(); //~ comment out this line, now set before loop [PROCFw024]
 
         ArrayHandle<int3> h_image(m_pdata->getImages(),
                                   access_location::host,
                                   access_mode::readwrite);
 
-        Scalar shear_rate = this->m_SR; //~ add shear rate [PROCF2023]
+        //Scalar shear_rate = this->m_SR; //~ add shear rate, but moved this to before loop [PROCF2024]
 
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
             {
             unsigned int j = m_group->getMemberIndex(group_idx);
             // wrap the particles around the box
-	    int img0 = h_image.data[j].y; //~ get old y-velocity [PROCF2023]
+            //~ and update velocity when crossing y-boundary [PROCF2024]
+            int img0 = h_image.data[j].y; //~ get y-image [PROCF2024]
             box.wrap(h_pos.data[j], h_image.data[j]);
-	img0 -= h_image.data[j].y; //~ subtract new y-velocity [PROCF2023]
-	h_vel.data[j].x += (img0 * shear_rate); //~ add shear rate [PROCF2023]
+            img0 -= h_image.data[j].y; //~ adjust image [PROCF2024]
+            h_vel.data[j].x += (img0 * shear_rate); //~ update velocity [PROCF2024]
             }
         }
 

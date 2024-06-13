@@ -18,4 +18,10 @@ This folder contains example scripts for simulations in the PRO-CF Colloids Team
 		- pore size distribiution (PSD), AKA void size distribution
 		- Voronoi volumes (distribution and statistical analysis)
 		- largest connected component (LCC) and basic network science properties
-	* Shearing sims include analysis scripts for correcting values from particles under shear.
+3. [poly-templates](/scripts/poly-templates): template scripts for polydisperse colloidal simulations using [Brownian Dynamics](/scripts/poly-templates/BD-poly/fixed-box) or [Dissipative Particle Dynamics (DPD)](/scripts/poly-templates/DPD-poly/fixed-box) and a fixed-box. 
+4. [shear-templates](/scripts/shear-templates): template scripts for shear simulations using Brownian Dynamics or Dissipative Particle Dynamics (DPD). 
+	* Include analysis scripts for:
+		- correcting DPD temperature and pressure values for colloids parunder shear
+		- velocity profile
+		- affinity of the motion (affine vs. non-affine)
+		- fabric tensor

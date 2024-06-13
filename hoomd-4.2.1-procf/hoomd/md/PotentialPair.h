@@ -3,6 +3,7 @@
 
 // ########## Modified by PRO-CF //~ [PROCF2023] ##########
 
+
 #ifndef __POTENTIAL_PAIR_H__
 #define __POTENTIAL_PAIR_H__
 
@@ -621,6 +622,9 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     // force arrays
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
+    //~ add virialxyi_ind [PROCF2024]
+    ArrayHandle<Scalar> h_virial_ind(m_virial_ind, access_location::host, access_mode::overwrite);
+    //~
 
     const BoxDim box = m_pdata->getGlobalBox();
     ArrayHandle<Scalar> h_ronsq(m_ronsq, access_location::host, access_mode::read);
@@ -632,6 +636,12 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     // need to start from a zero force, energy and virial
     memset((void*)h_force.data, 0, sizeof(Scalar4) * m_force.getNumElements());
     memset((void*)h_virial.data, 0, sizeof(Scalar) * m_virial.getNumElements());
+    memset((void*)h_virial_ind.data, 0, sizeof(Scalar) * m_virial_ind.getNumElements()); //~ add virialxyi_ind [PROCF2024]
+
+    //~ print shear rate [PROCF2024]
+    //Scalar shear_rate = this->m_SR;
+    //    //std::cout << shear_rate << std::endl;
+    //~
 
     // for each particle
     for (int i = 0; i < (int)m_pdata->getN(); i++)
@@ -663,6 +673,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         Scalar virialyyi = 0.0;
         Scalar virialyzi = 0.0;
         Scalar virialzzi = 0.0;
+        Scalar virialxyi_ind = 0.0; //~ add virialxyi_ind [PROCF2024]
 
         // loop over all of the neighbors of this particle
         const size_t myHead = h_head_list.data[i];
@@ -729,6 +740,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
+
             evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [PROCF2023]
             //~ add diameter (if needed) removed in v4, readded [PROCF2023]
             if (evaluator::needsDiameter())
@@ -783,6 +795,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     virialyyi += force_div2r * dx.y * dx.y;
                     virialyzi += force_div2r * dx.y * dx.z;
                     virialzzi += force_div2r * dx.z * dx.z;
+                    virialxyi_ind += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [PROCF2024]
                     }
 
                 // add the force to particle j if we are using the third law (MEM TRANSFER: 10
@@ -802,6 +815,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                         h_virial.data[3 * m_virial_pitch + mem_idx] += force_div2r * dx.y * dx.y;
                         h_virial.data[4 * m_virial_pitch + mem_idx] += force_div2r * dx.y * dx.z;
                         h_virial.data[5 * m_virial_pitch + mem_idx] += force_div2r * dx.z * dx.z;
+                        h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [PROCF2024]
                         }
                     }
                 }
@@ -821,6 +835,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             h_virial.data[3 * m_virial_pitch + mem_idx] += virialyyi;
             h_virial.data[4 * m_virial_pitch + mem_idx] += virialyzi;
             h_virial.data[5 * m_virial_pitch + mem_idx] += virialzzi;
+            h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += virialxyi_ind; //~ add virialxyi_ind [PROCF2024]
             }
         }
 
@@ -1001,6 +1016,7 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
+
             evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [PROCF2023]
             //~ add diameter (if needed), removed in v4 but re-added [PROCF2023]
             if (evaluator::needsDiameter())
