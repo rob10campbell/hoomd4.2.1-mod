@@ -13,7 +13,7 @@
 ##
 ## For other analyses, use the standard analysis module and analysis scripts
 """
-## (Rob Campbell)
+## (Dr. Deepak Mangal, Rob Campbell)
 
 
 import numpy as np
