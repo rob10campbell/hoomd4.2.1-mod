@@ -6,7 +6,7 @@ If the box next to a filename is NOT checked, that means the modifications have 
 File lists are formatted as: `folder/`; file
 
 * [Core Mods](/changelog.md#core-modifications) : Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
-* [Shear Rate](/changelog.md#shear-rate) : Add shear rate for regular particles (does nor include rigid bodies) (Deepak)
+* [Shear Rate](/changelog.md#shear-rate) : Add shear rate for regular particles (does not include rigid bodies) (Deepak)
 * [Polydispersity](/changelog.md#polydispersity) : Track and use particle radii for surface-surface distance (h_ij) calculations, option to scale D0 by particle size to mimic size-dependent depletion (Rob)
 * [On/Off Contact Force](/changelog.md#on-off-contact-force) : Add the ability to remove contact force and replace it with Morse repulsion (Sasha)
 * [Bond tracking](/changelog.md#bond-tracking) : Track bond formation and breaking (Nabi, Deepak, and Rob)
@@ -47,7 +47,7 @@ Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
 
 
 ## Shear Rate 
-Adding shear rate for regular particles (does nor include rigid bodies) (Deepak)
+Adding shear rate for regular particles (does not include rigid bodies) (Deepak)
 - **shear rate (SR)**: Add a new class for controlling the shear rate (SR) when shearing a system for DPDMorse and Morse Brownian sims (BD and Langevin integration); however this does not apply to rigid bodies
 - **Tree modifications**: Modify the Tree Neighboring List method to remove auto-updates without SR
 - **y-boundary velocity**: Modify the way that a particle's velocity is updated when it crosses a y-boundary so that it takes into account the effect of the applied shear rate (as described in the [background reading on shearing](/background-reading/4-Shearing-4pg.pdf)

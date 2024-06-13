@@ -614,11 +614,6 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                     access_mode::read);
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
-    //~ add diameter [PROCF2024]
-    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
-                                   access_location::host,
-                                   access_mode::read);
-    //~
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
     //~ access particle diameter [PROCF2023] 
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
@@ -924,11 +919,6 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
     ArrayHandle<unsigned int> h_rtags(m_pdata->getRTags(),
                                       access_location::host,
                                       access_mode::read);
-    //~ add diameter [PROCF2024]
-    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
-                                   access_location::host,
-                                   access_mode::read);
-    //~
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
     //~ access particle diameter [PROCF2023] 
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);

@@ -55,7 +55,7 @@ New way to add shear rate for regular particles, that works for both DPD and BD 
 			* [x] test_communication.cc : **dummy flow velocity (vinf)** 
 			* [x] test_fire_energy_minimizer.cc : **dummy flow velocity (vinf)**
 		* [x] TwoStepBD.cc : **flow velocity (vinf, cur_vel), y-boundary velocity**
-		* [x] TwoStepConstantVolume.cc : *box dims, shear rate (SR)**
+		* [x] TwoStepConstantVolume.cc : **box dims, shear rate (SR)**
 		* [x] TwoStepLangevin.cc : **flow velocity (vinf), shear rate (SR)**
 	* [x] `mpcd/`
 		* [x] Integrator.h : **flow velocity (vinf)**

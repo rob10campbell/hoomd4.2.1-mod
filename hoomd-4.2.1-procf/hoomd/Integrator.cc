@@ -4,6 +4,7 @@
 // ########## Modified by PRO-CF //~ [PROCF2023] [PROCF2024] ##########
 
 #include "Integrator.h"
+#include "BoxDim.h" //~ include BoxDim [PROCF2023]
 
 #ifdef ENABLE_HIP
 #include "Integrator.cuh"
@@ -838,8 +839,8 @@ void Integrator::update(uint64_t timestep)
     {
     Updater::update(timestep);
 
-    //~ get box fims, add shear rate [PROCF2024]
-    BoxDim box_global = m_pdata->getGlobalBox();
+    //~ get box dims, add shear rate [PROCF2024]
+    //BoxDim box_global = m_pdata->getGlobalBox();
     Scalar shear_rate = (*m_vinf)(timestep);
     setSR(shear_rate);
     //~
@@ -870,8 +871,8 @@ void Integrator::prepRun(uint64_t timestep)
     {
     // ensure that all forces have updated delta t values at the start of step 0
 
-    //~ get box fims, add shear rate [PROCF2024]
-    BoxDim box_global = m_pdata->getGlobalBox();
+    //~ get box dims, add shear rate [PROCF2024]
+    //BoxDim box_global = m_pdata->getGlobalBox();
     Scalar shear_rate = (*m_vinf)(timestep);
     setSR(shear_rate);
     //~
