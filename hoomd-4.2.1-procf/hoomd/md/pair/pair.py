@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-###### Modified by PRO-CF ##~ [PROCF2023] ######
+###### Modified by PRO-CF ##~ [RHEOINF] ######
 
 """Pair forces."""
 
@@ -15,16 +15,16 @@ from hoomd.data.parameterdicts import ParameterDict, TypeParameterDict
 from hoomd.data.typeparam import TypeParameter
 import numpy as np
 from hoomd.data.typeconverter import OnlyFrom, nonnegative_real
-from abc import ABCMeta, abstractproperty ##~ add abstract property for bond_calc [PROCF2023]
+from abc import ABCMeta, abstractproperty ##~ add abstract property for bond_calc [RHEOINF]
 
-##~ add abstract property for bond_calc [PROCF2023] 
+##~ add abstract property for bond_calc [RHEOINF] 
 # add custom metaclass that inherits from both ABCMeta and force.Force
 class PairMeta(ABCMeta, type(force.Force)):
     pass
 ##~
 
 
-class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_calc [PROCF2023]
+class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_calc [RHEOINF]
     r"""Base class pair force.
 
     `Pair` is the base class for all pair forces.
@@ -73,7 +73,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [PROCF2023]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [RHEOINF]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -95,7 +95,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
                           nlist=hoomd.md.nlist.NeighborList))
         self.mode = mode
         self.nlist = nlist
-        self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [PROCF2023]
+        self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [RHEOINF]
 
     ##~ add a property to access _bond_calc instance variable
     @property
@@ -157,14 +157,14 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
             self.nlist._cpp_obj.setStorageMode(
                 _md.NeighborList.storageMode.full)
 
-        ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [PROCF2023]
+        ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [RHEOINF]
         if "PotentialPairDPDThermo" in self._cpp_class_name:
             self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
         else: 
             self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
         ##~ 
         #self._cpp_obj = cls(self._simulation.state._cpp_sys_def,
-        #                    self.nlist._cpp_obj) ##~ comment out [PROCF2023]
+        #                    self.nlist._cpp_obj) ##~ comment out [RHEOINF]
 
 
     def _detach_hook(self):
@@ -650,7 +650,7 @@ class Morse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
-        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
+        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [RHEOINF]
 
     `Morse` computes the Morse pair force on every particle in the simulation
     state:
@@ -677,8 +677,8 @@ class Morse(Pair):
           :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
         * ``r0`` (`float`, **required**) - position of the minimum
           :math:`r_0` :math:`[\mathrm{length}]`
-        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [PROCF2023]
-          :math: `scaled_D0` :math: `[true/false]` [PROCF2023]
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [RHEOINF]
+          :math: `scaled_D0` :math: `[true/false]` [RHEOINF]
 
         Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -691,17 +691,17 @@ class Morse(Pair):
     """
 
     _cpp_class_name = "PotentialPairMorse"
-    _default_scaled_D0 = False ##~ add scaled_D0 [PROCF2024]
+    _default_scaled_D0 = False ##~ add scaled_D0 [RHEOINF]
 
     def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None):
         super().__init__(nlist, default_r_cut, default_r_on, mode)
-        ##~ add scaled_D0 [PROCF2023]
+        ##~ add scaled_D0 [RHEOINF]
         if scaled_D0 is None:
             scaled_D0 = self._default_scaled_D0
         ##~
         params = TypeParameter(
             'params', 'particle_types',
-            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [PROCF2023]
+            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [RHEOINF]
         self._add_typeparam(params)
 
 class DPD(Pair):
@@ -1902,7 +1902,7 @@ class LJGauss(Pair):
             TypeParameterDict(epsilon=float, sigma=float, r0=float, len_keys=2))
         self._add_typeparam(params)
 
-##~ add DPDMorse() [PROCF2023] 
+##~ add DPDMorse() [RHEOINF] 
 class DPDMorse(Pair):
     r"""DPD Morse pair force. Added by PRO-CF research group for simulating attractive colloidal particles.
 
@@ -1912,9 +1912,9 @@ class DPDMorse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
         bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
-        scaled_D0 (bool): defauly value for on/off class attribute used to scale D0 by particle size (D0*((radius_i_radius_j)/2) [PROCF2023]
-        a1 (float): default value for a1; NOTE: this is legacy code from before polydispersity, a1 is NO LONGER USED [PROCF2023]
-        a2 (float): default value for a2; NOTE: this is legacy code from before polydispersity, a2 is NO LONGER USED [PROCF2023]
+        scaled_D0 (bool): defauly value for on/off class attribute used to scale D0 by particle size (D0*((radius_i_radius_j)/2) [RHEOINF]
+        a1 (float): default value for a1; NOTE: this is legacy code from before polydispersity, a1 is NO LONGER USED [RHEOINF]
+        a2 (float): default value for a2; NOTE: this is legacy code from before polydispersity, a2 is NO LONGER USED [RHEOINF]
 
     `DPDMorse` computes the Morse pair force, semi-hard potential contact force, and short-range lubrication (squeezing) force approximation  on every particle in the simulation
     state:
@@ -1955,14 +1955,14 @@ class DPDMorse(Pair):
         * ``eta`` (`float` **required**) - the background viscosity (viscosity of the background fluid)
           :math:`eta` :math:`[\mathrm{viscosity}]`
         * ``f_contact`` (`float`, **required**) - the contact force scaling parameter
-        * ``a1`` (`float`, **required**) - the radius of particle i NOTE: legacy parameter, a1 is now pulled from constructor [PROCF2023]
+        * ``a1`` (`float`, **required**) - the radius of particle i NOTE: legacy parameter, a1 is now pulled from constructor [RHEOINF]
           :math:`a1` :math:`[\mathrm{length}]`
-        * ``a2`` (`float`, **required**) - the radius of particle j NOTE: legacy parameter, a1 is now pulled from constructor [PROCF2023]
+        * ``a2`` (`float`, **required**) - the radius of particle j NOTE: legacy parameter, a1 is now pulled from constructor [RHEOINF]
           :math:`a2` :math:`[\mathrm{length}]`
         * ``rcut`` (`float`, **required**) - the surface-surface cut-off radius
           :math:`rcut` :math:`[\mathrm{length}]`
-        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [PROCF2023]
-          :math: `scaled_D0` :math: `[true/false]` [PROCF2023]
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [RHEOINF]
+          :math: `scaled_D0` :math: `[true/false]` [RHEOINF]
 
 Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         `dict`]
@@ -1984,7 +1984,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                          default_r_cut=default_r_cut,
                          default_r_on=0,
                          mode='none')
-        ##~ add scaled_D0, default a1, default a2 [PROCF2023]
+        ##~ add scaled_D0, default a1, default a2 [RHEOINF]
         if scaled_D0 is None:
             scaled_D0 = self._default_scaled_D0
         if a1 is None:
@@ -2040,7 +2040,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
 ##~
 
 
-##~ add MorseRepulse [PROCF2023]
+##~ add MorseRepulse [RHEOINF]
 class MorseRepulse(Pair):
     r"""Morse pair force with repulsion.
 

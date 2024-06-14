@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #ifndef __PAIR_EVALUATOR_ZBL__
 #define __PAIR_EVALUATOR_ZBL__
@@ -67,19 +67,19 @@ class EvaluatorPairZBL
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles.
-        \param _radcontact the sum of the interacting particle radii [PROCF2023]
-        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
+        \param _radcontact the sum of the interacting particle radii [RHEOINF]
+        \param _pair_typeids the typeIDs of the interacting particles [RHEOINF]
         \param _rcutsq Squared distance at which the potential goes to zero.
         \param _params Per type-pair parameters of this potential
     */
-    DEVICE EvaluatorPairZBL(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radcontact, pair_typeIDs [PROCF2023]
-        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), Zsq(_params.qi * _params.qj), aF(_params.aF) //~ add radcontact [PROCF2023]
+    DEVICE EvaluatorPairZBL(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radcontact, pair_typeIDs [RHEOINF]
+        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), Zsq(_params.qi * _params.qj), aF(_params.aF) //~ add radcontact [RHEOINF]
         {
-        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
-        typej = _pair_typeids[1]; //~ add typej [PROCF2023] 
+        typei = _pair_typeids[0]; //~ add typei [RHEOINF]
+        typej = _pair_typeids[1]; //~ add typej [RHEOINF] 
         }
         
-    //!~ add diameter [PROCF2023] 
+    //!~ add diameter [RHEOINF] 
     DEVICE static bool needsDiameter()
         {
         return false;
@@ -167,10 +167,10 @@ class EvaluatorPairZBL
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar radcontact;//!< Stored contact-distance from the constructor [PROCF2023]
-    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
-    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
-    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
+    Scalar radcontact;//!< Stored contact-distance from the constructor [RHEOINF]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [RHEOINF]
+    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [RHEOINF]
+    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [RHEOINF]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
     Scalar Zsq;    //!< Zsq parameter extracted from the params passed to the constructor
     Scalar aF;     //!< aF parameter extracted from the params passed to the constructor

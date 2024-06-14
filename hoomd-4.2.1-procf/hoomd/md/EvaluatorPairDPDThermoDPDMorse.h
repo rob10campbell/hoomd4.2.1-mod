@@ -220,16 +220,16 @@ class EvaluatorPairDPDThermoDPDMorse
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
-        \param _pair_typeids the typeIDs of the interacting particles [PROCF2023]
+        \param _pair_typeids the typeIDs of the interacting particles [RHEOINF]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _radsum, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radsum, pair_typeIDs [PROCF2023]
+    DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _radsum, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radsum, pair_typeIDs [RHEOINF]
         : rsq(_rsq), radsum(_radsum), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), 
-	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), scaled_D0(_params.scaled_D0) // add radsum, scaled_D0 [PROCF2023]
+	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), scaled_D0(_params.scaled_D0) // add radsum, scaled_D0 [RHEOINF]
         {
-        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
-        typej = _pair_typeids[1]; //~ add typej [PROCF2023]  
+        typei = _pair_typeids[0]; //~ add typei [RHEOINF]
+        typej = _pair_typeids[1]; //~ add typej [RHEOINF]  
         }
 
     //! Set i and j, (particle tags), and the timestep
@@ -260,7 +260,7 @@ class EvaluatorPairDPDThermoDPDMorse
         m_T = Temp;
         }
     
-    //~ add diameter [PROCF2023]
+    //~ add diameter [RHEOINF]
     //~ NOTE: for some reason diameters are not passed to this file correctly... which is why we use radcontact instead
     DEVICE static bool needsDiameter()
         {
@@ -466,15 +466,15 @@ class EvaluatorPairDPDThermoDPDMorse
 	      // if particles overlap
 	      if(r <= Scalar(0.0))
 	         {
-		 // resolve overlap with CONTACT FORCE, if a contact force is provided [PROCF2023]
+		 // resolve overlap with CONTACT FORCE, if a contact force is provided [RHEOINF]
     		 if (f_contact != 0.0)
                     {
     	            cont_divr = f_contact * (Scalar(1.0) - r) * pow((Scalar(0.50)*radsum),3) * rinv;
     	            }
-	         // if no contact force provided, resolve overlap with other forces [PROCF2023]
+	         // if no contact force provided, resolve overlap with other forces [RHEOINF]
 	         else
     	            {
-    	            // if D0 is provided, use this to calculate Morse repulsion [PROCF2023]
+    	            // if D0 is provided, use this to calculate Morse repulsion [RHEOINF]
     	            if (D0 != 0.0)
         	       {
         	       //Scalar Exp_factor = fast::exp(-alpha * (r - r0));
@@ -621,14 +621,14 @@ class EvaluatorPairDPDThermoDPDMorse
 
     protected:
     Scalar rsq;          //!< Stored rsq from the constructor
-    Scalar radsum;       //!< Stored contact-distance from the constructor [PROCF2023]
-    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
-    unsigned int typei;  //!<~ Stored typeID of particle i from the constructor [PROCF2023]
-    unsigned int typej;  //!<~ Stored typeID of particle j from the constructor [PROCF2023]
+    Scalar radsum;       //!< Stored contact-distance from the constructor [RHEOINF]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [RHEOINF]
+    unsigned int typei;  //!<~ Stored typeID of particle i from the constructor [RHEOINF]
+    unsigned int typej;  //!<~ Stored typeID of particle j from the constructor [RHEOINF]
     Scalar rcutsq;       //!< Stored rcutsq from the constructor
     // parameters for potential extracted from the params by constructor
-    Scalar diameter_i;  //!< the diameter of particle i [PROCF2023]
-    Scalar diameter_j;  //!< the diameter of particle j [PROCF2023]
+    Scalar diameter_i;  //!< the diameter of particle i [RHEOINF]
+    Scalar diameter_j;  //!< the diameter of particle j [RHEOINF]
     Scalar A0;		 //!< the conservative force scaling parameter
     Scalar gamma;        //!< the viscous dissipation parameter
     Scalar D0;           //!< the depth of the Morse potential well

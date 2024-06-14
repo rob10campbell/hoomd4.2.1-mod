@@ -1,14 +1,14 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] [RHEOINF] ##########
 
 #ifndef __POTENTIAL_PAIR_DPDTHERMO_H__
 #define __POTENTIAL_PAIR_DPDTHERMO_H__
 
 #include "PotentialPair.h"
 #include "hoomd/Variant.h"
-#include "Lifetime.h" //~ add Lifetime.h [PROCF2023]
+#include "Lifetime.h" //~ add Lifetime.h [RHEOINF]
 
 /*! \file PotentialPairDPDThermo.h
     \brief Defines the template class for a dpd thermostat and LJ pair potential
@@ -53,7 +53,7 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     //! Construct the pair potential
     PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<NeighborList> nlist,
-                           bool bond_calc); //~ add bond_calc [PROCF2023]
+                           bool bond_calc); //~ add bond_calc [RHEOINF]
     //! Destructor
     virtual ~PotentialPairDPDThermo() {};
 
@@ -63,7 +63,7 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     //! Get the temperature
     virtual std::shared_ptr<Variant> getT();
 
-    //~! Check the bond_calc flag [PROCF2023]
+    //~! Check the bond_calc flag [RHEOINF]
     void setBondCalcEnabled(bool bond_calc)
 	{
 	m_bond_calc = bond_calc;
@@ -74,7 +74,7 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 	}
     //~
 
-    //~ add Lifetime [PROCF2023] 
+    //~ add Lifetime [RHEOINF] 
     std::shared_ptr<Lifetime> LTIME;
     //~
 
@@ -86,7 +86,7 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     protected:
     std::shared_ptr<Variant> m_T; //!< Temperature for the DPD thermostat
 
-    bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [PROCF2023]
+    bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [RHEOINF]
 
     //! Actually compute the forces (overwrites PotentialPair::computeForces())
     virtual void computeForces(uint64_t timestep);
@@ -98,10 +98,10 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 template<class evaluator>
 PotentialPairDPDThermo<evaluator>::PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                                                           std::shared_ptr<NeighborList> nlist,
-                                                          bool bond_calc) //~ add bond_calc [PROCF2023]
-    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc) //~ add bond_calc [PROCF2023]
+                                                          bool bond_calc) //~ add bond_calc [RHEOINF]
+    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc) //~ add bond_calc [RHEOINF]
     {
-    //~ add bond_calc flag [PROCF2023]
+    //~ add bond_calc flag [RHEOINF]
     if(m_bond_calc)
 	{
         LTIME = std::shared_ptr<Lifetime>(new Lifetime(sysdef));
@@ -156,13 +156,13 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     ArrayHandle<unsigned int> h_tag(this->m_pdata->getTags(),
                                     access_location::host,
                                     access_mode::read);
-    //~ access particle diameter [PROCF2023] 
+    //~ access particle diameter [RHEOINF] 
     ArrayHandle<Scalar> h_diameter(this->m_pdata->getDiameters(),
                                    access_location::host,
                                    access_mode::read);
     //~
 
-    //~ access particle charges [PROCF2024]
+    //~ access particle charges [RHEOINF]
     ArrayHandle<Scalar> h_charge(this->m_pdata->getCharges(),
                                    access_location::host,
                                    access_mode::read);
@@ -171,12 +171,12 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     // force arrays
     ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(this->m_virial, access_location::host, access_mode::overwrite);
-    //~ add virial_ind [PROCF2023]
+    //~ add virial_ind [RHEOINF]
     ArrayHandle<Scalar> h_virial_ind(this->m_virial_ind, access_location::host, access_mode::overwrite);
     //~
 
     const BoxDim box = this->m_pdata->getBox();
-    //~ get box dims and shear rate [PROCF2024]
+    //~ get box dims and shear rate [RHEOINF]
     Scalar3 L2 = box.getL();
     uchar3 per_ = box.getPeriodic();
     Scalar shear_rate = this->m_SR;
@@ -187,7 +187,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
     // need to start from a zero force, energy and virial
     memset((void*)h_force.data, 0, sizeof(Scalar4) * this->m_force.getNumElements());
     memset((void*)h_virial.data, 0, sizeof(Scalar) * this->m_virial.getNumElements());
-    //~ add virial_ind [PROCF2023] 
+    //~ add virial_ind [RHEOINF] 
     memset((void*)h_virial_ind.data, 0, sizeof(Scalar) * this->m_virial_ind.getNumElements());
     //~
 
@@ -212,10 +212,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         Scalar viriali[6];
         for (unsigned int l = 0; l < 6; l++)
             viriali[l] = 0.0;
-        //~ initialize virialxyi_ind to zero [PROCF2024]
+        //~ initialize virialxyi_ind to zero [RHEOINF]
         Scalar virialxyi_ind = 0.0;
         //~
-        //~ initialize the current virial_ind to zero [PROCF2023]
+        //~ initialize the current virial_ind to zero [RHEOINF]
         Scalar viriali_ind[5];
         for (unsigned int l = 0; l < 5; l++)
             viriali_ind[l] = 0.0;
@@ -237,7 +237,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             Scalar3 vj = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
             Scalar3 dv = vi - vj;
 
-            //~ calculate shear rate [PROCF2024]
+            //~ calculate shear rate [RHEOINF]
             if(shear_rate != Scalar(0.0) && (int)per_.y){
                if (abs(dx.y) > Scalar(0.5)*L2.y){
                    if(dx.y > Scalar(0.0)) dv.x -= shear_rate;
@@ -250,7 +250,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < this->m_pdata->getNTypes());
 
-            //~ store the typeIDs of the current pair [PROCF2023]
+            //~ store the typeIDs of the current pair [RHEOINF]
             unsigned int pair_typeids[2] = {0, 0};
             pair_typeids[0] = typei;
             pair_typeids[1] = typej;
@@ -262,7 +262,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
             //~ the calculation is only used if there is polydispersity
             Scalar radcontact = 0.0;
             {
@@ -288,7 +288,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar force_divr_cons = Scalar(0.0);
-            //~ add virial_ind terms [PROCF2023] 
+            //~ add virial_ind terms [RHEOINF] 
             Scalar cons_divr = Scalar(0.0);
             Scalar disp_divr = Scalar(0.0);
             Scalar rand_divr = Scalar(0.0);
@@ -296,7 +296,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             Scalar cont_divr = Scalar(0.0);
 	    //~
             Scalar pair_eng = Scalar(0.0);  
-            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeids for polydispersity [PROCF2023] 
+            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeids for polydispersity [RHEOINF] 
 
             // Special Potential Pair DPD Requirements
             const Scalar currentTemp = m_T->operator()(timestep);
@@ -309,7 +309,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             eval.setRDotV(rdotv);
             eval.setT(currentTemp);
 
-	    //~ add bond_calc [PROCF2023]
+	    //~ add bond_calc [RHEOINF]
 	    if(m_bond_calc)
 		{
            	if(typei && typej) // if both are NOT zero (solvents are type zero)
@@ -340,7 +340,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 
             bool evaluated
                 = eval.evalForceEnergyThermo(force_divr, force_divr_cons, 
-                  //~ add virial_ind terms [PROCF2023]
+                  //~ add virial_ind terms [RHEOINF]
                   cons_divr, disp_divr, rand_divr, sq_divr, cont_divr, 
                   //~
                   pair_eng, energy_shift);
@@ -356,11 +356,11 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                 pair_virial[4] = Scalar(0.5) * dx.y * dx.z * force_divr_cons;
                 pair_virial[5] = Scalar(0.5) * dx.z * dx.z * force_divr_cons;
 
-                //~ compute virialxyi_ind [PROCF2024]
+                //~ compute virialxyi_ind [RHEOINF]
                 virialxyi_ind += Scalar(0.5) * force_divr_cons * dx.x * dx.y;
                 //~
 
-                //~ compute the virial_ind [PROCF2023]
+                //~ compute the virial_ind [RHEOINF]
 		Scalar virial_ind_prefix = Scalar(0.5) * dx.x * dx.y;
 		Scalar pair_virial_ind[5];
 		pair_virial_ind[0] = virial_ind_prefix * cons_divr;
@@ -376,7 +376,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                 pei += pair_eng * Scalar(0.5);
                 for (unsigned int l = 0; l < 6; l++)
                     viriali[l] += pair_virial[l];
-                //~ add virial_ind [PROCF2023]
+                //~ add virial_ind [RHEOINF]
                 for (unsigned int l = 0; l < 5; l++)
                     viriali_ind[l] += pair_virial_ind[l];
 		//~
@@ -392,10 +392,10 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                     h_force.data[mem_idx].w += pair_eng * Scalar(0.5);
                     for (unsigned int l = 0; l < 6; l++)
                         h_virial.data[l * this->m_virial_pitch + mem_idx] += pair_virial[l];
-                    //~ add virialxyi_ind [PROCF2024]
+                    //~ add virialxyi_ind [RHEOINF]
                     h_virial_ind.data[0 * this->m_virial_ind_pitch + mem_idx] += Scalar(0.5) * force_divr_cons * dx.x * dx.y;
                     //~
-                    //~ add virial_ind [PROCF2023] 
+                    //~ add virial_ind [RHEOINF] 
                     for (unsigned int l = 0; l < 5; l++)
                         h_virial_ind.data[l * this->m_virial_ind_pitch + mem_idx] += pair_virial_ind[l];
 		    //~
@@ -411,16 +411,16 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         h_force.data[mem_idx].w += pei;
         for (unsigned int l = 0; l < 6; l++)
             h_virial.data[l * this->m_virial_pitch + mem_idx] += viriali[l];
-        //~ add virialxyi_ind [PROCF2024]
+        //~ add virialxyi_ind [RHEOINF]
         h_virial_ind.data[0 * this->m_virial_ind_pitch + mem_idx] += virialxyi_ind;
         //~
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         for (unsigned int l = 0; l < 5; l++)
             h_virial_ind.data[l * this->m_virial_ind_pitch + mem_idx] += viriali_ind[l];
 	//~
         }
 
-    //~ add bond_calc [PROCF2023] 
+    //~ add bond_calc [RHEOINF] 
     if(m_bond_calc)
 	{
     	this->LTIME->updatebondtime(timestep);
@@ -445,7 +445,7 @@ CommFlags PotentialPairDPDThermo<evaluator>::getRequestedCommFlags(uint64_t time
     flags[comm_flag::velocity] = 1;
     // DPD needs tags for RNG
     flags[comm_flag::tag] = 1;
-    //~ add particle diameter [PROCF2023]
+    //~ add particle diameter [RHEOINF]
     flags[comm_flag::diameter]=1; 
     //~
 
@@ -466,9 +466,9 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
     pybind11::class_<PotentialPairDPDThermo<T>,
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>()) //~ add bool for bond_calc [PROCF2023]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>()) //~ add bool for bond_calc [RHEOINF]
         .def_property("bond_calc",  
-		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [PROCF2023]
+		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [RHEOINF]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
     }
 

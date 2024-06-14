@@ -1,10 +1,10 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #include "Integrator.h"
-#include "BoxDim.h" //~ include BoxDim [PROCF2023]
+#include "BoxDim.h" //~ include BoxDim [RHEOINF]
 
 #ifdef ENABLE_HIP
 #include "Integrator.cuh"
@@ -25,8 +25,8 @@ namespace hoomd
 /** @param sysdef System to update
     @param deltaT Time step to use
 */
-Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, std::shared_ptr<Variant> vinf) //~ add vinf [PROCF2024]
-    : Updater(sysdef, std::make_shared<PeriodicTrigger>(1)), m_deltaT(deltaT), m_vinf(vinf), m_SR(0) //~ add vinf and default shear rate [PROCF2024]
+Integrator::Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, std::shared_ptr<Variant> vinf) //~ add vinf [RHEOINF]
+    : Updater(sysdef, std::make_shared<PeriodicTrigger>(1)), m_deltaT(deltaT), m_vinf(vinf), m_SR(0) //~ add vinf and default shear rate [RHEOINF]
     {
 #ifdef ENABLE_MPI
     if (m_sysdef->isDomainDecomposed())
@@ -89,7 +89,7 @@ Scalar Integrator::getDeltaT()
     }
 
 //~ 
-/** \return the shear rate SR [PROCF2024]
+/** \return the shear rate SR [RHEOINF]
  */
 void Integrator::setSR(Scalar shear_rate)
     {
@@ -199,10 +199,10 @@ void Integrator::computeNetForce(uint64_t timestep)
         const GlobalArray<Scalar4>& net_force = m_pdata->getNetForce();
         const GlobalArray<Scalar>& net_virial = m_pdata->getNetVirial();
         const GlobalArray<Scalar4>& net_torque = m_pdata->getNetTorqueArray();
-        const GlobalArray<Scalar>& net_virial_ind = m_pdata->getNetVirialInd(); //~ add virial_ind [PROCF2023]
+        const GlobalArray<Scalar>& net_virial_ind = m_pdata->getNetVirialInd(); //~ add virial_ind [RHEOINF]
         ArrayHandle<Scalar4> h_net_force(net_force, access_location::host, access_mode::overwrite);
         ArrayHandle<Scalar> h_net_virial(net_virial, access_location::host, access_mode::overwrite);
-        ArrayHandle<Scalar> h_net_virial_ind(net_virial_ind, access_location::host, access_mode::overwrite); //~ add virial_ind [PROCF2023]
+        ArrayHandle<Scalar> h_net_virial_ind(net_virial_ind, access_location::host, access_mode::overwrite); //~ add virial_ind [RHEOINF]
         ArrayHandle<Scalar4> h_net_torque(net_torque,
                                           access_location::host,
                                           access_mode::overwrite);
@@ -210,7 +210,7 @@ void Integrator::computeNetForce(uint64_t timestep)
         // start by zeroing the net force and virial arrays
         memset((void*)h_net_force.data, 0, sizeof(Scalar4) * net_force.getNumElements());
         memset((void*)h_net_virial.data, 0, sizeof(Scalar) * net_virial.getNumElements());
-        memset((void*)h_net_virial_ind.data, 0, sizeof(Scalar) * net_virial_ind.getNumElements()); //~ add virial_ind [PROCF2023]
+        memset((void*)h_net_virial_ind.data, 0, sizeof(Scalar) * net_virial_ind.getNumElements()); //~ add virial_ind [RHEOINF]
         memset((void*)h_net_torque.data, 0, sizeof(Scalar4) * net_torque.getNumElements());
 
         for (unsigned int i = 0; i < 6; ++i)
@@ -222,32 +222,32 @@ void Integrator::computeNetForce(uint64_t timestep)
         // also sum up forces for ghosts, in case they are needed by the communicator
         unsigned int nparticles = m_pdata->getN() + m_pdata->getNGhosts();
         size_t net_virial_pitch = net_virial.getPitch();
-        size_t net_virial_ind_pitch = net_virial_ind.getPitch(); //~ add virial_ind [PROCF2023]
+        size_t net_virial_ind_pitch = net_virial_ind.getPitch(); //~ add virial_ind [RHEOINF]
 
         assert(nparticles <= net_force.getNumElements());
         assert(6 * nparticles <= net_virial.getNumElements());
-        assert(5 * nparticles <= net_virial_ind.getNumElements()); //~ add virial_ind [PROCF2023]
+        assert(5 * nparticles <= net_virial_ind.getNumElements()); //~ add virial_ind [RHEOINF]
         assert(nparticles <= net_torque.getNumElements());
 
         for (const auto& force : m_forces)
             {
             const GlobalArray<Scalar4>& h_force_array = force->getForceArray();
             const GlobalArray<Scalar>& h_virial_array = force->getVirialArray();
-            const GlobalArray<Scalar>& h_virial_ind_array = force->getVirialIndArray(); //~ add virial_ind [PROCF2023]
+            const GlobalArray<Scalar>& h_virial_ind_array = force->getVirialIndArray(); //~ add virial_ind [RHEOINF]
             const GlobalArray<Scalar4>& h_torque_array = force->getTorqueArray();
 
             assert(nparticles <= h_force_array.getNumElements());
             assert(6 * nparticles <= h_virial_array.getNumElements());
-            assert(5 * nparticles <= h_virial_ind_array.getNumElements()); //~ add virial_ind [PROCF2023]
+            assert(5 * nparticles <= h_virial_ind_array.getNumElements()); //~ add virial_ind [RHEOINF]
             assert(nparticles <= h_torque_array.getNumElements());
 
             ArrayHandle<Scalar4> h_force(h_force_array, access_location::host, access_mode::read);
             ArrayHandle<Scalar> h_virial(h_virial_array, access_location::host, access_mode::read);
-            ArrayHandle<Scalar> h_virial_ind(h_virial_ind_array, access_location::host, access_mode::read); //~ add virial_ind [PROCF2023]
+            ArrayHandle<Scalar> h_virial_ind(h_virial_ind_array, access_location::host, access_mode::read); //~ add virial_ind [RHEOINF]
             ArrayHandle<Scalar4> h_torque(h_torque_array, access_location::host, access_mode::read);
 
             size_t virial_pitch = h_virial_array.getPitch();
-            size_t virial_ind_pitch = h_virial_ind_array.getPitch(); //~ add virial_ind [PROCF2023]
+            size_t virial_ind_pitch = h_virial_ind_array.getPitch(); //~ add virial_ind [RHEOINF]
             for (unsigned int j = 0; j < nparticles; j++)
                 {
                 h_net_force.data[j].x += h_force.data[j].x;
@@ -266,7 +266,7 @@ void Integrator::computeNetForce(uint64_t timestep)
                         += h_virial.data[k * virial_pitch + j];
                     }
 
-                //~ add virial_ind [PROCF2023]
+                //~ add virial_ind [RHEOINF]
                 for (unsigned int k = 0; k < 5; k++)
                     {
                     h_net_virial_ind.data[k * net_virial_ind_pitch + j]
@@ -839,7 +839,7 @@ void Integrator::update(uint64_t timestep)
     {
     Updater::update(timestep);
 
-    //~ get box dims, add shear rate [PROCF2024]
+    //~ get box dims, add shear rate [RHEOINF]
     //BoxDim box_global = m_pdata->getGlobalBox();
     Scalar shear_rate = (*m_vinf)(timestep);
     setSR(shear_rate);
@@ -849,7 +849,7 @@ void Integrator::update(uint64_t timestep)
     for (auto& force : m_forces)
         {
         force->setDeltaT(m_deltaT);
-        force->setSR(shear_rate); //~ set shear rate [PROCF2024]
+        force->setSR(shear_rate); //~ set shear rate [RHEOINF]
         }
 
     for (auto& constraint_force : m_constraint_forces)
@@ -871,7 +871,7 @@ void Integrator::prepRun(uint64_t timestep)
     {
     // ensure that all forces have updated delta t values at the start of step 0
 
-    //~ get box dims, add shear rate [PROCF2024]
+    //~ get box dims, add shear rate [RHEOINF]
     //BoxDim box_global = m_pdata->getGlobalBox();
     Scalar shear_rate = (*m_vinf)(timestep);
     setSR(shear_rate);
@@ -880,7 +880,7 @@ void Integrator::prepRun(uint64_t timestep)
     for (auto& force : m_forces)
         {
         force->setDeltaT(m_deltaT);
-        force->setSR(shear_rate); //~ set shear rate [PROCF2024]
+        force->setSR(shear_rate); //~ set shear rate [RHEOINF]
         }
 
     for (auto& constraint_force : m_constraint_forces)
@@ -948,11 +948,11 @@ void export_Integrator(pybind11::module& m)
     pybind11::bind_vector<std::vector<std::shared_ptr<ForceCompute>>>(m, "ForceComputeList");
     pybind11::bind_vector<std::vector<std::shared_ptr<ForceConstraint>>>(m, "ForceConstraintList");
     pybind11::class_<Integrator, Updater, std::shared_ptr<Integrator>>(m, "Integrator")
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, std::shared_ptr<Variant>>()) //~ add pointer for vinf [PROCF2024]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, Scalar, std::shared_ptr<Variant>>()) //~ add pointer for vinf [RHEOINF]
         .def("updateGroupDOF", &Integrator::updateGroupDOF)
         .def_property("dt", &Integrator::getDeltaT, &Integrator::setDeltaT)
-        .def_property("SR", &Integrator::getSR, &Integrator::setSR) //~ add shear rate [PROCF2024]
-        .def_property("vinf", &Integrator::getVinf, &Integrator::setVinf) //~ add vinf [PROCF2024]
+        .def_property("SR", &Integrator::getSR, &Integrator::setSR) //~ add shear rate [RHEOINF]
+        .def_property("vinf", &Integrator::getVinf, &Integrator::setVinf) //~ add vinf [RHEOINF]
         .def_property_readonly("forces", &Integrator::getForces)
         .def_property_readonly("constraints", &Integrator::getConstraintForces)
         .def("computeLinearMomentum", &Integrator::computeLinearMomentum);

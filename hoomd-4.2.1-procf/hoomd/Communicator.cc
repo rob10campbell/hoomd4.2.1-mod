@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 /*! \file Communicator.cc
     \brief Implements the Communicator class
@@ -1188,7 +1188,7 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
       m_plan_copybuf(m_exec_conf), m_tag_copybuf(m_exec_conf), m_netforce_copybuf(m_exec_conf),
       m_nettorque_copybuf(m_exec_conf), m_netvirial_copybuf(m_exec_conf),
       m_netvirial_recvbuf(m_exec_conf), 
-      //~ add virial_ind [PROCF2023]
+      //~ add virial_ind [RHEOINF]
       m_netvirial_ind_copybuf(m_exec_conf), m_netvirial_ind_recvbuf(m_exec_conf),
       //~
       m_plan(m_exec_conf), m_plan_reverse(m_exec_conf),
@@ -1320,7 +1320,7 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
                               MPI_UNSIGNED,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR, 
-                              MPI_HOOMD_SCALAR, //~ add virial_ind [PROCF2024] 
+                              MPI_HOOMD_SCALAR, //~ add virial_ind [RHEOINF] 
                               MPI_HOOMD_SCALAR};
     MPI_Aint offsets[15]; 
     //~
@@ -1339,7 +1339,7 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
     offsets[11] = offsetof(detail::pdata_element, net_force);
     offsets[12] = offsetof(detail::pdata_element, net_torque);
     offsets[13] = offsetof(detail::pdata_element, net_virial);
-    offsets[14] = offsetof(detail::pdata_element, net_virial_ind); //~ add virial_ind [PROCF2023]
+    offsets[14] = offsetof(detail::pdata_element, net_virial_ind); //~ add virial_ind [RHEOINF]
 
     MPI_Datatype tmp;
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, &tmp);
@@ -1724,17 +1724,17 @@ void Communicator::migrateParticles()
         MPI_Waitall(2, &m_reqs.front(), &m_stats.front());
 
         // wrap received particles across a global boundary back into global box
-        //~ and update velocity when crossing y-boundary [PROCF2024]
+        //~ and update velocity when crossing y-boundary [RHEOINF]
         const BoxDim shifted_box = getShiftedBox();
         for (unsigned int idx = 0; idx < n_recv_ptls; idx++)
             {
             detail::pdata_element& p = m_recvbuf[idx];
             Scalar4& postype = p.pos;
             int3& image = p.image;
-            int img0 = image.y; //~ get y-image for velocity [PROCF2024]
+            int img0 = image.y; //~ get y-image for velocity [RHEOINF]
             shifted_box.wrap(postype, image);
-            img0 -= image.y; //~ use current velocity to update [PROCF2024]
-            p.vel.x += (img0 * m_SR); //~ calulate new velocity [PROCF2024]
+            img0 -= image.y; //~ use current velocity to update [RHEOINF]
+            p.vel.x += (img0 * m_SR); //~ calulate new velocity [RHEOINF]
             }
 
         // remove particles that were sent and fill particle data with received particles
@@ -2338,7 +2338,7 @@ void Communicator::exchangeGhosts()
             ArrayHandle<int3> h_image(m_pdata->getImages(),
                                       access_location::host,
                                       access_mode::readwrite);
-            //~ get velocity [PROCF2024]
+            //~ get velocity [RHEOINF]
             ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                        access_location::host,
                                        access_mode::readwrite);
@@ -2352,12 +2352,12 @@ void Communicator::exchangeGhosts()
                 Scalar4& pos = h_pos.data[idx];
 
                 // wrap particles received across a global boundary
-                //~ and update velocity of particles that cross the y-boundary [PROCF2024]
-                int3& img = h_image.data[idx]; //~ get image data [PROCF2024]
-                int img0 = img.y; //~ get y-image for velocity [PROCF2024]
+                //~ and update velocity of particles that cross the y-boundary [RHEOINF]
+                int3& img = h_image.data[idx]; //~ get image data [RHEOINF]
+                int img0 = img.y; //~ get y-image for velocity [RHEOINF]
                 shifted_box.wrap(pos, img);
-                img0 -= img.y; //~ use current velocity to modify [PROCF2024]
-                h_vel.data[idx].x += (img0 * m_SR); //~ update velocity [PROCF2024]
+                img0 -= img.y; //~ use current velocity to modify [RHEOINF]
+                h_vel.data[idx].x += (img0 * m_SR); //~ update velocity [RHEOINF]
                 }
             }
 
@@ -2856,13 +2856,13 @@ void Communicator::beginUpdateGhosts(uint64_t timestep)
             }
 
         // wrap particle positions (only if copying positions)
-        //~ and update the velocity for particles wrapped across y-boundary [PROCF2024]
+        //~ and update the velocity for particles wrapped across y-boundary [RHEOINF]
         if (flags[comm_flag::position])
             {
             ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
                                        access_location::host,
                                        access_mode::readwrite);
-            //~ get velocity [PROCF2024]
+            //~ get velocity [RHEOINF]
             ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
                                        access_location::host,
                                        access_mode::readwrite);
@@ -2876,8 +2876,8 @@ void Communicator::beginUpdateGhosts(uint64_t timestep)
                 // wrap particles received across a global boundary
                 int3 img = make_int3(0, 0, 0);
                 shifted_box.wrap(pos, img);
-                int img0 = img.y; //~ get y-image for velocity [PROCF2024]
-                h_vel.data[idx].x -= (img0 * m_SR); //~ update velocity [PROCF2024]
+                int img0 = img.y; //~ get y-image for velocity [RHEOINF]
+                h_vel.data[idx].x -= (img0 * m_SR); //~ update velocity [RHEOINF]
                 }
             }
 
@@ -2911,7 +2911,7 @@ void Communicator::updateNetForce(uint64_t timestep)
         {
         oss << "virial";
         }
-    //~ add virial_ind [PROCF2023]
+    //~ add virial_ind [RHEOINF]
     if (flags[comm_flag::net_virial_ind])
         {
         oss << "virial_ind";
@@ -2944,7 +2944,7 @@ void Communicator::updateNetForce(uint64_t timestep)
         m_netvirial_copybuf.clear();
         }
 
-    //~ add virial_ind [PROCF2023]
+    //~ add virial_ind [RHEOINF]
     if (flags[comm_flag::net_virial_ind])
         {
         m_netvirial_ind_copybuf.clear();
@@ -2985,7 +2985,7 @@ void Communicator::updateNetForce(uint64_t timestep)
             m_netvirial_copybuf.resize(old_size + 6 * m_num_copy_ghosts[dir]);
             }
 
-	//~ add virial_ind [PROCF2023]
+	//~ add virial_ind [RHEOINF]
         if (flags[comm_flag::net_virial_ind])
             {
             old_size = (unsigned int)m_netvirial_ind_copybuf.size();
@@ -3124,7 +3124,7 @@ void Communicator::updateNetForce(uint64_t timestep)
                 }
             }
 
-	//~ add virial_ind [PROCF2023]
+	//~ add virial_ind [RHEOINF]
         if (flags[comm_flag::net_virial_ind])
             {
             ArrayHandle<Scalar> h_netvirial_ind(m_pdata->getNetVirialInd(),
@@ -3365,7 +3365,7 @@ void Communicator::updateNetForce(uint64_t timestep)
                 }
             }
 
-	//~ add virial_ind [PROCF2023]
+	//~ add virial_ind [RHEOINF]
         if (flags[comm_flag::net_virial_ind])
             {
             m_netvirial_ind_recvbuf.resize(5 * m_num_recv_ghosts[dir]);

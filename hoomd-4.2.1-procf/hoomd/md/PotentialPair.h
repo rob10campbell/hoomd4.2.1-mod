@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 
 #ifndef __POTENTIAL_PAIR_H__
@@ -205,10 +205,10 @@ template<class evaluator> class PotentialPair : public ForceCompute
     std::vector<std::string> getTypeShapeMapping() const
         {
         std::vector<std::string> type_shape_mapping(m_pdata->getNTypes());
-        unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [PROCF2023]
+        unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [RHEOINF]
         for (unsigned int i = 0; i < type_shape_mapping.size(); i++)
             {
-            evaluator eval(Scalar(0.0), Scalar(0.0), pair_typeids, Scalar(0.0), this->m_params[m_typpair_idx(i, i)]); //~ add radcontact, array for pair_typeIDs [PROCF2023]
+            evaluator eval(Scalar(0.0), Scalar(0.0), pair_typeids, Scalar(0.0), this->m_params[m_typpair_idx(i, i)]); //~ add radcontact, array for pair_typeIDs [RHEOINF]
             type_shape_mapping[i] = eval.getShapeSpec();
             }
         return type_shape_mapping;
@@ -291,11 +291,11 @@ template<class evaluator> class PotentialPair : public ForceCompute
                 {
                 for (unsigned int type_j = 0; type_j < m_pdata->getNTypes(); type_j++)
                     {
-                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [PROCF2023]
+                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [RHEOINF]
                     // rho is the number density
                     Scalar rho_j = m_num_particles_by_type[type_j] / volume;
-                    evaluator eval(Scalar(0.0), Scalar(0.0), //~ add radcontact [PROCF2023] 
-                                   pair_typeids, //~ add array for pair_typeIDs [PROCF2023]
+                    evaluator eval(Scalar(0.0), Scalar(0.0), //~ add radcontact [RHEOINF] 
+                                   pair_typeids, //~ add array for pair_typeIDs [RHEOINF]
                                    h_rcutsq.data[m_typpair_idx(type_i, type_j)],
                                    m_params[m_typpair_idx(type_i, type_j)]);
                     m_external_energy += Scalar(2.0) * m_num_particles_by_type[type_i] * M_PI
@@ -317,14 +317,14 @@ template<class evaluator> class PotentialPair : public ForceCompute
                 {
                 for (unsigned int type_i = 0; type_i < m_pdata->getNTypes(); type_i++)
                     {
-                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [PROCF2023]
+                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [RHEOINF]
                     // rho is the number density
                     Scalar rho_i = m_num_particles_by_type[type_i] / volume;
                     for (unsigned int type_j = 0; type_j < m_pdata->getNTypes(); type_j++)
                         {
                         Scalar rho_j = m_num_particles_by_type[type_j] / volume;
-                        evaluator eval(Scalar(0.0), Scalar(0.0), //~ add radcontact [PROCF2023] 
-                                       pair_typeids, //~ add array for pair_typeIDs [PROCF2023]
+                        evaluator eval(Scalar(0.0), Scalar(0.0), //~ add radcontact [RHEOINF] 
+                                       pair_typeids, //~ add array for pair_typeIDs [RHEOINF]
                                        h_rcutsq.data[m_typpair_idx(type_i, type_j)],
                                        m_params[m_typpair_idx(type_i, type_j)]);
                         // The pressure LRC, where
@@ -615,14 +615,14 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
-    //~ access particle diameter [PROCF2023] 
+    //~ access particle diameter [RHEOINF] 
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
     //~
 
     // force arrays
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
-    //~ add virialxyi_ind [PROCF2024]
+    //~ add virialxyi_ind [RHEOINF]
     ArrayHandle<Scalar> h_virial_ind(m_virial_ind, access_location::host, access_mode::overwrite);
     //~
 
@@ -636,9 +636,9 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     // need to start from a zero force, energy and virial
     memset((void*)h_force.data, 0, sizeof(Scalar4) * m_force.getNumElements());
     memset((void*)h_virial.data, 0, sizeof(Scalar) * m_virial.getNumElements());
-    memset((void*)h_virial_ind.data, 0, sizeof(Scalar) * m_virial_ind.getNumElements()); //~ add virialxyi_ind [PROCF2024]
+    memset((void*)h_virial_ind.data, 0, sizeof(Scalar) * m_virial_ind.getNumElements()); //~ add virialxyi_ind [RHEOINF]
 
-    //~ print shear rate [PROCF2024]
+    //~ print shear rate [RHEOINF]
     //Scalar shear_rate = this->m_SR;
     //    //std::cout << shear_rate << std::endl;
     //~
@@ -653,7 +653,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         // sanity check
         assert(typei < m_pdata->getNTypes());
 
-        //~ access diameter (if needed) removed in v4 upgrade, readded by [PROCF2023]
+        //~ access diameter (if needed) removed in v4 upgrade, readded by [RHEOINF]
         Scalar di = Scalar(0.0);
         if (evaluator::needsDiameter())
            di = h_diameter.data[i];
@@ -673,7 +673,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         Scalar virialyyi = 0.0;
         Scalar virialyzi = 0.0;
         Scalar virialzzi = 0.0;
-        Scalar virialxyi_ind = 0.0; //~ add virialxyi_ind [PROCF2024]
+        Scalar virialxyi_ind = 0.0; //~ add virialxyi_ind [RHEOINF]
 
         // loop over all of the neighbors of this particle
         const size_t myHead = h_head_list.data[i];
@@ -692,11 +692,11 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
-            //~ store the typeIDs of the current pair [PROCF2023]
+            //~ store the typeIDs of the current pair [RHEOINF]
             unsigned int pair_typeids[2] = {typei, typej};
             //~
 
-            //~ access diameter (if needed) removed in v4 upgrade, readded by [PROCF2023]
+            //~ access diameter (if needed) removed in v4 upgrade, readded by [RHEOINF]
             Scalar dj = Scalar(0.0);
             if (evaluator::needsDiameter())
                 dj = h_diameter.data[j];
@@ -713,7 +713,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
             Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
             //~
 
@@ -741,8 +741,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
 
-            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [PROCF2023]
-            //~ add diameter (if needed) removed in v4, readded [PROCF2023]
+            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [RHEOINF]
+            //~ add diameter (if needed) removed in v4, readded [RHEOINF]
             if (evaluator::needsDiameter())
                 eval.setDiameter(di, dj);
             //~
@@ -795,7 +795,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     virialyyi += force_div2r * dx.y * dx.y;
                     virialyzi += force_div2r * dx.y * dx.z;
                     virialzzi += force_div2r * dx.z * dx.z;
-                    virialxyi_ind += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [PROCF2024]
+                    virialxyi_ind += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [RHEOINF]
                     }
 
                 // add the force to particle j if we are using the third law (MEM TRANSFER: 10
@@ -815,7 +815,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                         h_virial.data[3 * m_virial_pitch + mem_idx] += force_div2r * dx.y * dx.y;
                         h_virial.data[4 * m_virial_pitch + mem_idx] += force_div2r * dx.y * dx.z;
                         h_virial.data[5 * m_virial_pitch + mem_idx] += force_div2r * dx.z * dx.z;
-                        h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [PROCF2024]
+                        h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [RHEOINF]
                         }
                     }
                 }
@@ -835,7 +835,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             h_virial.data[3 * m_virial_pitch + mem_idx] += virialyyi;
             h_virial.data[4 * m_virial_pitch + mem_idx] += virialyzi;
             h_virial.data[5 * m_virial_pitch + mem_idx] += virialzzi;
-            h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += virialxyi_ind; //~ add virialxyi_ind [PROCF2024]
+            h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += virialxyi_ind; //~ add virialxyi_ind [RHEOINF]
             }
         }
 
@@ -855,7 +855,7 @@ CommFlags PotentialPair<evaluator>::getRequestedCommFlags(uint64_t timestep)
 
     flags[comm_flag::diameter] = 1; //~ make sure diameter is accessible in MPI
 
-    //~ add diameter (if needed) removed in v4 re-added [PROCF2023]
+    //~ add diameter (if needed) removed in v4 re-added [RHEOINF]
     if (evaluator::needsDiameter())
         flags[comm_flag::diameter] = 1;
     //~
@@ -920,7 +920,7 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
                                       access_location::host,
                                       access_mode::read);
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
-    //~ access particle diameter [PROCF2023] 
+    //~ access particle diameter [RHEOINF] 
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
     //~
 
@@ -942,7 +942,7 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
         // sanity check
         assert(typei < m_pdata->getNTypes());
 
-        //~ access diameter (if needed) removed in v4, re-added [PROCF2023]
+        //~ access diameter (if needed) removed in v4, re-added [RHEOINF]
         Scalar di = Scalar(0.0);
         if (evaluator::needsDiameter())
             di = h_diameter.data[i];
@@ -968,11 +968,11 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
-            //~ store the typeIDs of the current pair [PROCF2023]
+            //~ store the typeIDs of the current pair [RHEOINF]
             unsigned int pair_typeids[2] = {typei, typej};
             //~
 
-            //~ access diameter (if needed) removed in v4 upgrade, readded by [PROCF2023]
+            //~ access diameter (if needed) removed in v4 upgrade, readded by [RHEOINF]
             Scalar dj = Scalar(0.0);
             if (evaluator::needsDiameter())
                 dj = h_diameter.data[j];
@@ -989,7 +989,7 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
 
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [PROCF2023]
+            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
             Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
             //~
 
@@ -1017,8 +1017,8 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
 
-            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [PROCF2023]
-            //~ add diameter (if needed), removed in v4 but re-added [PROCF2023]
+            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [RHEOINF]
+            //~ add diameter (if needed), removed in v4 but re-added [RHEOINF]
             if (evaluator::needsDiameter())
                 eval.setDiameter(di, dj);
             //~

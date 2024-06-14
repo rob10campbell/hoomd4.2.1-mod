@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-###### Modified by PRO-CF ##~ [PROCF2024] ######
+###### Modified by PRO-CF ##~ [RHEOINF] ######
 
 """Define quantities that vary over the simulation.
 
@@ -243,7 +243,7 @@ class Power(_hoomd.VariantPower, Variant):
     __eq__ = Variant._private_eq
 
 
-##~ add Oscillatory [PROCF2024]
+##~ add Oscillatory [RHEOINF]
 class Oscillatory(_hoomd.VariantOscillatory, Variant):
     """Oscillating linear(?) ramps.
 
@@ -279,7 +279,7 @@ class Oscillatory(_hoomd.VariantOscillatory, Variant):
 ##~
 
 
-##~ add Sinusoid [PROCF2024]
+##~ add Sinusoid [RHEOINF]
 class Sinusoid(_hoomd.VariantSinusoid, Variant):
     """Oscillating sinusoidal ramps.
 
@@ -315,7 +315,7 @@ class Sinusoid(_hoomd.VariantSinusoid, Variant):
 ##~
 
 
-##~ add Cosinusoid [PROCF2024]
+##~ add Cosinusoid [RHEOINF]
 class Cosinusoid(_hoomd.VariantCosinusoid, Variant):
     """Oscillating cosinusoidal ramps.
     

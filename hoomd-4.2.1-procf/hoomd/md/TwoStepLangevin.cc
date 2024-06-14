@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #include "TwoStepLangevin.h"
 #include "hoomd/RNGIdentifiers.h"
@@ -217,7 +217,7 @@ void TwoStepLangevin::integrateStepTwo(uint64_t timestep)
     ArrayHandle<Scalar3> h_accel(m_pdata->getAccelerations(),
                                  access_location::host,
                                  access_mode::readwrite);
-    //~ access diameter [PROCF2024]
+    //~ access diameter [RHEOINF]
     //ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
     //                               access_location::host,
     //                               access_mode::read);
@@ -252,7 +252,7 @@ void TwoStepLangevin::integrateStepTwo(uint64_t timestep)
     // v(t+deltaT) = v(t+deltaT/2) + 1/2 * a(t+deltaT)*deltaT
     uint16_t seed = m_sysdef->getSeed();
 
-    //~ add shear rate and box dims [PROCF2024]
+    //~ add shear rate and box dims [RHEOINF]
     Scalar shear_rate = this->m_SR;
     const BoxDim& box_global = m_pdata->getGlobalBox();
     Scalar Ly = box_global.getL().y;
@@ -277,7 +277,7 @@ void TwoStepLangevin::integrateStepTwo(uint64_t timestep)
         Scalar gamma;
         unsigned int type = __scalar_as_int(h_pos.data[j].w);
         gamma = h_gamma.data[type];
-        //~ or... add diameter [PROCF2024]
+        //~ or... add diameter [RHEOINF]
         //Scalar gamma;
         //if (m_use_alpha)
         //    gamma = m_alpha * h_diameter.data[j];
@@ -293,8 +293,8 @@ void TwoStepLangevin::integrateStepTwo(uint64_t timestep)
         Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * currentTemp / m_deltaT);
         if (m_noiseless_t)
             coeff = Scalar(0.0);
-        Scalar vinf = shear_rate / Ly * h_pos.data[j].y; //~ add vinf [PROCF2024]
-        Scalar bd_fx = rx * coeff - gamma * (h_vel.data[j].x-vinf); //~ add vinf in flow direction [PROCF2024]
+        Scalar vinf = shear_rate / Ly * h_pos.data[j].y; //~ add vinf [RHEOINF]
+        Scalar bd_fx = rx * coeff - gamma * (h_vel.data[j].x-vinf); //~ add vinf in flow direction [RHEOINF]
         Scalar bd_fy = ry * coeff - gamma * h_vel.data[j].y;
         Scalar bd_fz = rz * coeff - gamma * h_vel.data[j].z;
 

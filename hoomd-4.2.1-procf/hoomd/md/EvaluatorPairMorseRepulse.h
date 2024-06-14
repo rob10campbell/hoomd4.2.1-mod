@@ -7,7 +7,7 @@
 /////~ Written by Rob Campbell (2024) based on EvaluatorPairMorse.h
 
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #ifndef __PAIR_EVALUATOR_MORSE_H__
 #define __PAIR_EVALUATOR_MORSE_H__
@@ -68,15 +68,15 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
         {
         Scalar D0;
         Scalar alpha;
-        bool Erep; //~ add bool for Electrostatics on/off [PROCF2024]
-        Scalar Z; //~ add Z param [PROCF2024]
-        Scalar kappa_e; //~ add kappa_e param [PROCF2024]
-        bool Yrep; //~ add bool for Yukawa repulsion on/off [PROCF2024]
-        Scalar epsilon; //~ add epsilon param [PROCF2024]
-        Scalar kappa_y; //~ add kappa_y param [PROCF2024]
+        bool Erep; //~ add bool for Electrostatics on/off [RHEOINF]
+        Scalar Z; //~ add Z param [RHEOINF]
+        Scalar kappa_e; //~ add kappa_e param [RHEOINF]
+        bool Yrep; //~ add bool for Yukawa repulsion on/off [RHEOINF]
+        Scalar epsilon; //~ add epsilon param [RHEOINF]
+        Scalar kappa_y; //~ add kappa_y param [RHEOINF]
         Scalar r0;
-        Scalar f_contact; //~ add f_contact param [PROCF2023]
-        bool scaled_D0; //~ add scaled_D0 param [PROCF2023]
+        Scalar f_contact; //~ add f_contact param [RHEOINF]
+        bool scaled_D0; //~ add scaled_D0 param [RHEOINF]
 
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
@@ -89,37 +89,37 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
 #endif
 
 #ifndef __HIPCC__
-        param_type() : D0(0), alpha(0), Erep(false), Z(0), kappa_e(0), Yrep(false), epsilon(0), kappa_y(0), r0(0), f_contact(0), scaled_D0(false) { } //~ add params [PROCF2024]
+        param_type() : D0(0), alpha(0), Erep(false), Z(0), kappa_e(0), Yrep(false), epsilon(0), kappa_y(0), r0(0), f_contact(0), scaled_D0(false) { } //~ add params [RHEOINF]
 
         param_type(pybind11::dict v, bool managed = false, bool Erep = false, bool Yrep = false)
             {
             D0 = v["D0"].cast<Scalar>();
             alpha = v["alpha"].cast<Scalar>();
-            this->Erep = Erep; //~ add boolean check for Electrostatic repulsion [PROCF2024]
-            Z = v["Z"].cast<Scalar>(); //~ add Z param [PROCF2024]
-            kappa_e = v["kappa_e"].cast<Scalar>(); //~ add kappa_e param [PROCF2024]
-            this->Yrep = Yrep; //~ add boolean check for Yukawa repulsion [PROCF2024]
-            epsilon = v["epsilon"].cast<Scalar>(); //~ add epsilon param [PROCF2024]
-            kappa_y = v["kappa_y"].cast<Scalar>(); //~ add kappa_y param [PROCF2024]
+            this->Erep = Erep; //~ add boolean check for Electrostatic repulsion [RHEOINF]
+            Z = v["Z"].cast<Scalar>(); //~ add Z param [RHEOINF]
+            kappa_e = v["kappa_e"].cast<Scalar>(); //~ add kappa_e param [RHEOINF]
+            this->Yrep = Yrep; //~ add boolean check for Yukawa repulsion [RHEOINF]
+            epsilon = v["epsilon"].cast<Scalar>(); //~ add epsilon param [RHEOINF]
+            kappa_y = v["kappa_y"].cast<Scalar>(); //~ add kappa_y param [RHEOINF]
             r0 = v["r0"].cast<Scalar>();
-            f_contact = v["f_contact"].cast<Scalar>(); //~ add f_contact param [PROCF2023]
-            this->scaled_D0 = scaled_D0; //~ add scaled_D0 param [PROCF2023
+            f_contact = v["f_contact"].cast<Scalar>(); //~ add f_contact param [RHEOINF]
+            this->scaled_D0 = scaled_D0; //~ add scaled_D0 param [RHEOINF
             }
 
-        param_type(Scalar d, Scalar a, bool Erep, Scalar z, Scalar ke, bool Yrep, Scalar e, Scalar ky, Scalar r, Scalar f, bool scaled_D0, bool managed = false) //~ add params [PROCF2024]
+        param_type(Scalar d, Scalar a, bool Erep, Scalar z, Scalar ke, bool Yrep, Scalar e, Scalar ky, Scalar r, Scalar f, bool scaled_D0, bool managed = false) //~ add params [RHEOINF]
 
             {
             D0 = d;
             alpha = a;
-            Erep = Erep; //~ add boolean check for Electrostatic repulsion [PROCF2024]
-            Z = z; //~ add Z param [PROCF2024]
-            kappa_e = ke; //~ add kappa_e param [PROCF2024]
-            Yrep = Yrep; //~ add boolean check for Yukawa repulsion [PROCF2024]
-            epsilon = e; //~ add epsilon param [PROCF2024]
-            kappa_y = ky; //~ add kappa_y param [PROCF2024]
+            Erep = Erep; //~ add boolean check for Electrostatic repulsion [RHEOINF]
+            Z = z; //~ add Z param [RHEOINF]
+            kappa_e = ke; //~ add kappa_e param [RHEOINF]
+            Yrep = Yrep; //~ add boolean check for Yukawa repulsion [RHEOINF]
+            epsilon = e; //~ add epsilon param [RHEOINF]
+            kappa_y = ky; //~ add kappa_y param [RHEOINF]
             r0 = r;
-            f_contact = f; //~ add f_contact param [PROCF2023]
-            scaled_D0 = scaled_D0; //~ add scaled_D0 param [PROCF2023]
+            f_contact = f; //~ add f_contact param [RHEOINF]
+            scaled_D0 = scaled_D0; //~ add scaled_D0 param [RHEOINF]
             }
 
         pybind11::dict asDict()
@@ -127,15 +127,15 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
             pybind11::dict v;
             v["D0"] = D0;
             v["alpha"] = alpha;
-            v["Erep"] = Erep; //~ add boolean check for Electrostatic repulsion [PROCF2024]
-            v["Z"] = Z; //~ add Z param [PROCF2024]
-            v["kappa_e"] = kappa_e; //~ add kappa_e param [PROCF2024]
-            v["Yrep"] = Yrep; //~ add boolean check for Yukawa repulsion [PROCF2024]
-            v["epsilon"] = epsilon; //~ add epsilon param [PROCF2024]
-            v["kappa_y"] = kappa_y; //~ add kappa_y param [PROCF2024]
+            v["Erep"] = Erep; //~ add boolean check for Electrostatic repulsion [RHEOINF]
+            v["Z"] = Z; //~ add Z param [RHEOINF]
+            v["kappa_e"] = kappa_e; //~ add kappa_e param [RHEOINF]
+            v["Yrep"] = Yrep; //~ add boolean check for Yukawa repulsion [RHEOINF]
+            v["epsilon"] = epsilon; //~ add epsilon param [RHEOINF]
+            v["kappa_y"] = kappa_y; //~ add kappa_y param [RHEOINF]
             v["r0"] = r0;
-            v["f_contact"] = f_contact; //~ add f_contact param [PROCF2023]
-            v["scaled_D0"] = scaled_D0; //~ add scaled_D0 param [PROCF2023] 
+            v["f_contact"] = f_contact; //~ add f_contact param [RHEOINF]
+            v["scaled_D0"] = scaled_D0; //~ add scaled_D0 param [RHEOINF] 
             return v;
             }
 #endif
@@ -146,14 +146,14 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairMorseRepulse(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radcontact and pair typeids [PROCF2023]
-        : rsq(_rsq), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), Erep(_params.Erep), Z(_params.Z), kappa_e(_params.kappa_e), Yrep(_params.Yrep), epsilon(_params.epsilon), kappa_y(_params.kappa_y), r0(_params.r0), f_contact(_params.f_contact), scaled_D0(_params.scaled_D0) //~ add params [PROCF2024]
+    DEVICE EvaluatorPairMorseRepulse(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radcontact and pair typeids [RHEOINF]
+        : rsq(_rsq), rcutsq(_rcutsq), D0(_params.D0), alpha(_params.alpha), Erep(_params.Erep), Z(_params.Z), kappa_e(_params.kappa_e), Yrep(_params.Yrep), epsilon(_params.epsilon), kappa_y(_params.kappa_y), r0(_params.r0), f_contact(_params.f_contact), scaled_D0(_params.scaled_D0) //~ add params [RHEOINF]
         {
-        typei = _pair_typeids[0]; //~ add typei [PROCF2023]
-        typej = _pair_typeids[1]; //~ add typej [PROCF2023]
+        typei = _pair_typeids[0]; //~ add typei [RHEOINF]
+        typej = _pair_typeids[1]; //~ add typej [RHEOINF]
         }
 
-    //~ add diameter [PROCF2023] 
+    //~ add diameter [RHEOINF] 
     DEVICE static bool needsDiameter()
         {
         return true;
@@ -191,7 +191,7 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
     */
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
-        //~ Add radsum from passed diameters [PROCF2023] 
+        //~ Add radsum from passed diameters [RHEOINF] 
         Scalar radsum = 0.5 * (diameter_i + diameter_j); 
         //~ Scale attraction strength by particle size is scaled_D0 is true
         if (scaled_D0)
@@ -206,7 +206,7 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
             Scalar r = fast::sqrt(rsq);
             Scalar Exp_factor = fast::exp(-alpha * (r - radsum));
 
-            //~ check if contact force is provided [PROCF2023]
+            //~ check if contact force is provided [RHEOINF]
             if (f_contact != 0.0)
                 {
                 //~ if particles overlap (r < radsum) apply contact force
@@ -260,10 +260,10 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
 
 
             pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
-            //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [PROCF2023]
+            //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [RHEOINF]
 
-            //~ turn off energy shift [PROCF2024]
-            //~ form must change because of new repulsion; but also shouldn't be needed because of contact force [PROCF2024]
+            //~ turn off energy shift [RHEOINF]
+            //~ form must change because of new repulsion; but also shouldn't be needed because of contact force [RHEOINF]
             //if (energy_shift)
             //    {
             //    Scalar rcut = fast::sqrt(rcutsq);
@@ -304,24 +304,24 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
 
     protected:
     Scalar rsq;    //!< Stored rsq from the constructor
-    Scalar radcontact;//!< Stored contact-distance from the constructor [PROCF2023]
-    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [PROCF2023]
-    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [PROCF2023]
-    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [PROCF2023]
+    Scalar radcontact;//!< Stored contact-distance from the constructor [RHEOINF]
+    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [RHEOINF]
+    unsigned int typei;//!<~ Stored typeID of particle i from the constructor [RHEOINF]
+    unsigned int typej;//!<~ Stored typeID of particle j from the constructor [RHEOINF]
     Scalar rcutsq; //!< Stored rcutsq from the constructor
-    Scalar diameter_i;//!<~ add diameter_i [PROCF2023]
-    Scalar diameter_j;//!<~ add diameter_j [PROCF2023]
+    Scalar diameter_i;//!<~ add diameter_i [RHEOINF]
+    Scalar diameter_j;//!<~ add diameter_j [RHEOINF]
     Scalar D0;     //!< Depth of the Morse potential at its minimum
     Scalar alpha;  //!< Controls width of the potential well
-    bool Erep;        //!<~ Electrostatic on/off bool [PROCF2024]
-    Scalar Z;         //!<~ (scaled) surface charge [PROCF2024]
-    Scalar kappa_e;   //!<~ Debye (screeneing) length [PROCF2024]
-    bool Yrep;        //!<~ Yukawa on/off bool [PROCF2024]
-    Scalar epsilon;   //!<~ Yukawa energy factor [PROCF2024]
-    Scalar kappa_y;   //!<~ Yukawa scaling factor [PROCF2024]
-    Scalar r0;     //!< Offset, i.e., position of the potential minimum //~ comment out [PROCF2024]
-    Scalar f_contact; //!< Contact force magnitude, for resolving overlap [PROCF2023]
-    bool scaled_D0;   //!<~ on/off bool for scaling D0 by particle size [PROCF2023]
+    bool Erep;        //!<~ Electrostatic on/off bool [RHEOINF]
+    Scalar Z;         //!<~ (scaled) surface charge [RHEOINF]
+    Scalar kappa_e;   //!<~ Debye (screeneing) length [RHEOINF]
+    bool Yrep;        //!<~ Yukawa on/off bool [RHEOINF]
+    Scalar epsilon;   //!<~ Yukawa energy factor [RHEOINF]
+    Scalar kappa_y;   //!<~ Yukawa scaling factor [RHEOINF]
+    Scalar r0;     //!< Offset, i.e., position of the potential minimum //~ comment out [RHEOINF]
+    Scalar f_contact; //!< Contact force magnitude, for resolving overlap [RHEOINF]
+    bool scaled_D0;   //!<~ on/off bool for scaling D0 by particle size [RHEOINF]
     };
 
     } // end namespace md

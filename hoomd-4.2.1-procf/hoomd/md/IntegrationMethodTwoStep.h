@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #include "hoomd/Autotuned.h"
 #include "hoomd/ParticleGroup.h"
@@ -124,7 +124,7 @@ class PYBIND11_EXPORT IntegrationMethodTwoStep : public Autotuned
     //! Change the timestep
     virtual void setDeltaT(Scalar deltaT);
 
-    //!~ Change the shear rate [PROCF2024]
+    //!~ Change the shear rate [RHEOINF]
     virtual void setSR(Scalar shear_rate);
     //~
 
@@ -186,7 +186,7 @@ class PYBIND11_EXPORT IntegrationMethodTwoStep : public Autotuned
     bool m_aniso;    //!< True if anisotropic integration is requested
 
     Scalar m_deltaT; //!< The time step
-    Scalar m_SR;     //!<~ The shear rate [PROCF2024]
+    Scalar m_SR;     //!<~ The shear rate [RHEOINF]
     };
 
     } // end namespace md

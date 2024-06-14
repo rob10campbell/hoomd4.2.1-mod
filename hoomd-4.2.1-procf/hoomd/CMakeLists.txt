@@ -57,7 +57,7 @@ set(_hoomd_sources Action.cc
                    Analyzer.cc
                    BondedGroupData.cc
                    BoxResizeUpdater.cc
-                   BoxShearUpdater.cc #[PROCF2024]
+                   BoxShearUpdater.cc #[RHEOINF]
                    CellList.cc
                    CellListStencil.cc
                    ClockSource.cc
@@ -126,7 +126,7 @@ set(_hoomd_headers
     BoxResizeUpdater.h
     BoxResizeUpdaterGPU.cuh
     BoxResizeUpdaterGPU.h
-    BoxShearUpdater.h #[PROCF2024]
+    BoxShearUpdater.h #[RHEOINF]
     UpdaterRemoveDrift.h
     CachedAllocator.h
     CellListGPU.cuh

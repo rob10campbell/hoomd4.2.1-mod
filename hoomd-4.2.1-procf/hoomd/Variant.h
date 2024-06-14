@@ -1,14 +1,14 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #pragma once
 
 #include <cstdint>
 #include <pybind11/pybind11.h>
 #include <utility>
-#include <iostream> //~ add iostream [PROCF2024]
+#include <iostream> //~ add iostream [RHEOINF]
 
 #include "HOOMDMath.h"
 

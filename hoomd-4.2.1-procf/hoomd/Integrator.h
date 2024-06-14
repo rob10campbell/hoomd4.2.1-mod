@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
@@ -17,7 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <string>
 #include <vector>
-#include "Variant.h" //~ add Variant [PROCF2024]
+#include "Variant.h" //~ add Variant [RHEOINF]
 
 #ifdef ENABLE_HIP
 #include <hip/hip_runtime.h>
@@ -64,7 +64,7 @@ class PYBIND11_EXPORT Integrator : public Updater
     {
     public:
     /// Constructor
-    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, std::shared_ptr<Variant> vinf); //~ add vinf [PROCF2024]
+    Integrator(std::shared_ptr<SystemDefinition> sysdef, Scalar deltaT, std::shared_ptr<Variant> vinf); //~ add vinf [RHEOINF]
 
     /// Destructor
     virtual ~Integrator();
@@ -102,7 +102,7 @@ class PYBIND11_EXPORT Integrator : public Updater
     /// Return the timestep
     Scalar getDeltaT();
 
-    //~ add shear rate and vinf [PROCF2024]
+    //~ add shear rate and vinf [RHEOINF]
     /// Change the shear rate
     void setSR(Scalar);
 
@@ -204,7 +204,7 @@ class PYBIND11_EXPORT Integrator : public Updater
     /// The step size
     Scalar m_deltaT;
 
-    //~ add vinf and shear rate [PROCF2024]
+    //~ add vinf and shear rate [RHEOINF]
     /// The flow velcoity
     std::shared_ptr<Variant> m_vinf;
 

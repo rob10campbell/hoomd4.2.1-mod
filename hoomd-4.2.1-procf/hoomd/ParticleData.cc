@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 /*! \file ParticleData.cc
     \brief Contains all code for ParticleData, and SnapshotParticleData.
@@ -415,7 +415,7 @@ void ParticleData::allocate(unsigned int N)
     GlobalArray<Scalar> net_virial(N, 6, m_exec_conf);
     m_net_virial.swap(net_virial);
     TAG_ALLOCATION(m_net_virial);
-    //~ add virial_ind [PROCF2023] 
+    //~ add virial_ind [RHEOINF] 
     GlobalArray<Scalar> net_virial_ind(N, 5, m_exec_conf);
     m_net_virial_ind.swap(net_virial_ind);
     TAG_ALLOCATION(m_net_virial_ind);
@@ -434,7 +434,7 @@ void ParticleData::allocate(unsigned int N)
         ArrayHandle<Scalar> h_net_virial(m_net_virial,
                                          access_location::host,
                                          access_mode::overwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(m_net_virial_ind,
                                          access_location::host,
                                          access_mode::overwrite);
@@ -442,7 +442,7 @@ void ParticleData::allocate(unsigned int N)
         memset(h_net_force.data, 0, sizeof(Scalar4) * m_net_force.getNumElements());
         memset(h_net_torque.data, 0, sizeof(Scalar4) * m_net_torque.getNumElements());
         memset(h_net_virial.data, 0, sizeof(Scalar) * m_net_virial.getNumElements());
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         memset(h_net_virial_ind.data, 0, sizeof(Scalar) * m_net_virial_ind.getNumElements());
 	//~
         }
@@ -593,7 +593,7 @@ void ParticleData::allocateAlternateArrays(unsigned int N)
     m_net_virial_alt.swap(net_virial_alt);
     TAG_ALLOCATION(m_net_virial_alt);
 
-    //~ Net virial_ind [PROCF2023] 
+    //~ Net virial_ind [RHEOINF] 
     GlobalArray<Scalar> net_virial_ind_alt(N, 5, m_exec_conf);
     m_net_virial_ind_alt.swap(net_virial_ind_alt);
     TAG_ALLOCATION(m_net_virial_ind_alt);
@@ -614,7 +614,7 @@ void ParticleData::allocateAlternateArrays(unsigned int N)
         ArrayHandle<Scalar> h_net_virial_alt(m_net_virial_alt,
                                              access_location::host,
                                              access_mode::overwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind_alt(m_net_virial_ind_alt,
                                              access_location::host,
                                              access_mode::overwrite);
@@ -622,7 +622,7 @@ void ParticleData::allocateAlternateArrays(unsigned int N)
         memset(h_net_force_alt.data, 0, sizeof(Scalar4) * m_net_force_alt.getNumElements());
         memset(h_net_torque_alt.data, 0, sizeof(Scalar4) * m_net_torque_alt.getNumElements());
         memset(h_net_virial_alt.data, 0, sizeof(Scalar) * m_net_virial_alt.getNumElements());
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         memset(h_net_virial_ind_alt.data, 0, sizeof(Scalar) * m_net_virial_ind_alt.getNumElements());
 	//~
         }
@@ -778,7 +778,7 @@ void ParticleData::reallocate(unsigned int max_n)
 
     m_net_force.resize(max_n);
     m_net_virial.resize(max_n, 6);
-    m_net_virial_ind.resize(max_n, 5); //~ add virial_ind [PROCF2023]
+    m_net_virial_ind.resize(max_n, 5); //~ add virial_ind [RHEOINF]
     m_net_torque.resize(max_n);
         {
         ArrayHandle<Scalar4> h_net_force(m_net_force,
@@ -790,7 +790,7 @@ void ParticleData::reallocate(unsigned int max_n)
         ArrayHandle<Scalar> h_net_virial(m_net_virial,
                                          access_location::host,
                                          access_mode::readwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(m_net_virial_ind,
                                          access_location::host,
                                          access_mode::readwrite);
@@ -798,7 +798,7 @@ void ParticleData::reallocate(unsigned int max_n)
         memset(h_net_force.data, 0, sizeof(Scalar4) * m_net_force.getNumElements());
         memset(h_net_torque.data, 0, sizeof(Scalar4) * m_net_torque.getNumElements());
         memset(h_net_virial.data, 0, sizeof(Scalar) * m_net_virial.getNumElements());
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         memset(h_net_virial_ind.data, 0, sizeof(Scalar) * m_net_virial_ind.getNumElements());
 	//~
         }
@@ -876,7 +876,7 @@ void ParticleData::reallocate(unsigned int max_n)
         m_net_force_alt.resize(max_n);
         m_net_torque_alt.resize(max_n);
         m_net_virial_alt.resize(max_n, 6);
-        m_net_virial_ind_alt.resize(max_n, 5); //~ add virial_ind [PROCF2023]
+        m_net_virial_ind_alt.resize(max_n, 5); //~ add virial_ind [RHEOINF]
 
             {
             ArrayHandle<Scalar4> h_net_force_alt(m_net_force_alt,
@@ -888,7 +888,7 @@ void ParticleData::reallocate(unsigned int max_n)
             ArrayHandle<Scalar> h_net_virial_alt(m_net_virial_alt,
                                                  access_location::host,
                                                  access_mode::overwrite);
-            //~ add virial_ind [PROCF2023] 
+            //~ add virial_ind [RHEOINF] 
             ArrayHandle<Scalar> h_net_virial_ind_alt(m_net_virial_ind_alt,
                                                  access_location::host,
                                                  access_mode::overwrite);
@@ -896,7 +896,7 @@ void ParticleData::reallocate(unsigned int max_n)
             memset(h_net_force_alt.data, 0, sizeof(Scalar4) * m_net_force_alt.getNumElements());
             memset(h_net_torque_alt.data, 0, sizeof(Scalar4) * m_net_torque_alt.getNumElements());
             memset(h_net_virial_alt.data, 0, sizeof(Scalar) * m_net_virial_alt.getNumElements());
-            //~ add virial_ind [PROCF2023] 
+            //~ add virial_ind [RHEOINF] 
             memset(h_net_virial_ind_alt.data, 0, sizeof(Scalar) * m_net_virial_ind_alt.getNumElements());
 	    //~
             }
@@ -2129,7 +2129,7 @@ Scalar ParticleData::getPNetVirial(unsigned int tag, unsigned int component) con
     return result;
     }
 
-//~ add virial_ind [PROCF2023]
+//~ add virial_ind [RHEOINF]
 Scalar ParticleData::getPNetVirialInd(unsigned int tag, unsigned int component) const
     {
     unsigned int i = getRTag(tag);
@@ -2866,7 +2866,7 @@ void export_ParticleData(pybind11::module& m)
         .def("getPNetForce", &ParticleData::getPNetForce)
         .def("getNetTorque", &ParticleData::getNetTorque)
         .def("getPNetVirial", &ParticleData::getPNetVirial)
-        .def("getPNetVirialInd", &ParticleData::getPNetVirialInd) //~ add virial_ind [PROCF2023] 
+        .def("getPNetVirialInd", &ParticleData::getPNetVirialInd) //~ add virial_ind [RHEOINF] 
         .def("getMomentsOfInertia", &ParticleData::getMomentsOfInertia)
         .def("setPosition", &ParticleData::setPosition)
         .def("setVelocity", &ParticleData::setVelocity)
@@ -3040,7 +3040,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
         ArrayHandle<Scalar> h_net_virial(getNetVirial(),
                                          access_location::host,
                                          access_mode::readwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(getNetVirialInd(),
                                          access_location::host,
                                          access_mode::readwrite);
@@ -3087,7 +3087,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
         ArrayHandle<Scalar> h_net_virial_alt(m_net_virial_alt,
                                              access_location::host,
                                              access_mode::overwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind_alt(m_net_virial_ind_alt,
                                              access_location::host,
                                              access_mode::overwrite);
@@ -3099,7 +3099,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
         unsigned int n = 0;
         unsigned int m = 0;
         unsigned int net_virial_pitch = (unsigned int)m_net_virial.getPitch();
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch();
 	//~
         for (unsigned int i = 0; i < old_nparticles; ++i)
@@ -3123,7 +3123,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
                 for (unsigned int j = 0; j < 6; ++j)
                     h_net_virial_alt.data[net_virial_pitch * j + n]
                         = h_net_virial.data[net_virial_pitch * j + i];
-                //~ add virial_ind [PROCF2023] 
+                //~ add virial_ind [RHEOINF] 
                 for (unsigned int j = 0; j < 5; ++j)
                     h_net_virial_ind_alt.data[net_virial_ind_pitch * j + n]
                         = h_net_virial_ind.data[net_virial_ind_pitch * j + i];
@@ -3150,7 +3150,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
                 p.net_torque = h_net_torque.data[i];
                 for (unsigned int j = 0; j < 6; ++j)
                     p.net_virial[j] = h_net_virial.data[net_virial_pitch * j + i];
-                //~ add virial_ind [PROCF2023] 
+                //~ add virial_ind [RHEOINF] 
                 for (unsigned int j = 0; j < 5; ++j)
                     p.net_virial_ind[j] = h_net_virial_ind.data[net_virial_ind_pitch * j + i];
 		//~
@@ -3183,7 +3183,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
     swapNetForce();
     swapNetTorque();
     swapNetVirial();
-    swapNetVirialInd(); //~ add virial_ind [PROCF2023]
+    swapNetVirialInd(); //~ add virial_ind [RHEOINF]
     swapTags();
 
         {
@@ -3248,7 +3248,7 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
         ArrayHandle<Scalar> h_net_virial(getNetVirial(),
                                          access_location::host,
                                          access_mode::readwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(getNetVirialInd(),
                                          access_location::host,
                                          access_mode::readwrite);
@@ -3260,7 +3260,7 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
                                                access_mode::readwrite);
 
         unsigned int net_virial_pitch = (unsigned int)m_net_virial.getPitch();
-        unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch(); //~ add virial_ind [PROCF2023]
+        unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch(); //~ add virial_ind [RHEOINF]
 
         // add new particles at the end
         unsigned int n = old_nparticles;
@@ -3282,7 +3282,7 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
             h_net_torque.data[n] = p.net_torque;
             for (unsigned int j = 0; j < 6; ++j)
                 h_net_virial.data[net_virial_pitch * j + n] = p.net_virial[j];
-            //~ add virial_ind [PROCF2023] 
+            //~ add virial_ind [RHEOINF] 
             for (unsigned int j = 0; j < 5; ++j)
                 h_net_virial_ind.data[net_virial_ind_pitch * j + n] = p.net_virial_ind[j];
 	    //~

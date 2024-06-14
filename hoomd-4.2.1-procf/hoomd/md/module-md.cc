@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// #### Modified by PRO-CF //~ [PROCF2023] #####
+// #### Modified by PRO-CF //~ [RHEOINF] #####
 
 #include <pybind11/pybind11.h>
 
@@ -56,7 +56,7 @@ void export_PotentialPairExpandedMie(pybind11::module& m);
 void export_PotentialPairYukawa(pybind11::module& m);
 void export_PotentialPairEwald(pybind11::module& m);
 void export_PotentialPairMorse(pybind11::module& m);
-//~ add MorseRepulse [PROCF2023]
+//~ add MorseRepulse [RHEOINF]
 void export_PotentialPairMorseRepulse(pybind11::module& m);
 //~
 void export_PotentialPairMoliere(pybind11::module& m);
@@ -103,7 +103,7 @@ void export_PotentialExternalWallMorse(pybind11::module& m);
 
 void export_PotentialPairDPDThermoDPD(pybind11::module& m);
 void export_PotentialPairDPDThermoLJ(pybind11::module& m);
-//~ add DPDMorse [PROCF2023] 
+//~ add DPDMorse [RHEOINF] 
 void export_PotentialPairDPDThermoDPDMorse(pybind11::module& m);
 //~
 
@@ -326,7 +326,7 @@ PYBIND11_MODULE(_md, m)
     export_PotentialPairYukawa(m);
     export_PotentialPairEwald(m);
     export_PotentialPairMorse(m);
-    //~ add MorseRepulase [PROCF2023]
+    //~ add MorseRepulase [RHEOINF]
     export_PotentialPairMorseRepulse(m);
     //~
     export_PotentialPairMoliere(m);
@@ -355,7 +355,7 @@ PYBIND11_MODULE(_md, m)
 
     export_PotentialPairDPDThermoDPD(m);
     export_PotentialPairDPDThermoLJ(m);
-    //~ add DPDMorse [PROCF2023] 
+    //~ add DPDMorse [RHEOINF] 
     export_PotentialPairDPDThermoDPDMorse(m);
     //~
 

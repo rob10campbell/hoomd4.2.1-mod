@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [RHEOINF] ##########
 
 #include "Variant.h"
 
@@ -181,7 +181,7 @@ void export_Variant(pybind11::module& m)
             }));
 
 
-    //~ add Oscillatory [PROCF2024]
+    //~ add Oscillatory [RHEOINF]
     pybind11::class_<VariantOscillatory, Variant, std::shared_ptr<VariantOscillatory>>(m, "VariantOscillatory")
         .def(pybind11::init<Scalar, uint64_t, uint64_t>(),
              pybind11::arg("A"),
@@ -205,7 +205,7 @@ void export_Variant(pybind11::module& m)
             }));
     //~
 
-    //~ add Sinusoid [PROCF2024]
+    //~ add Sinusoid [RHEOINF]
     pybind11::class_<VariantSinusoid, Variant, std::shared_ptr<VariantSinusoid>>(m, "VariantSinusoid")
         .def(pybind11::init<Scalar, uint64_t, Scalar>(),
              pybind11::arg("value"),
@@ -229,7 +229,7 @@ void export_Variant(pybind11::module& m)
             }));
     //~
 
-    //~ add Cosinusoid [PROCF2024]
+    //~ add Cosinusoid [RHEOINF]
     pybind11::class_<VariantCosinusoid, Variant, std::shared_ptr<VariantCosinusoid>>(m, "VariantCosinusoid")
         .def(pybind11::init<Scalar, uint64_t, Scalar>(),
              pybind11::arg("value"),

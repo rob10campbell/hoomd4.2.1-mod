@@ -1,13 +1,13 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-//~ ########## Modified by PRO-CF ##~ [PROCF2024] ##########
+//~ ########## Modified by PRO-CF ##~ [RHEOINF] ##########
 
 #include "Action.h"
 #include "Analyzer.h"
 #include "BondedGroupData.h"
 #include "BoxResizeUpdater.h"
-#include "BoxShearUpdater.h" //~ add BoxShear [PROCF2024]
+#include "BoxShearUpdater.h" //~ add BoxShear [RHEOINF]
 #include "CellList.h"
 #include "CellListStencil.h"
 #include "ClockSource.h"
@@ -319,7 +319,7 @@ PYBIND11_MODULE(_hoomd, m)
     export_PythonUpdater(m);
     export_Integrator(m);
     export_BoxResizeUpdater(m);
-    export_BoxShearUpdater(m); //~ add BoxShear [PROCF2024]
+    export_BoxShearUpdater(m); //~ add BoxShear [RHEOINF]
     export_UpdaterRemoveDrift(m);
 #ifdef ENABLE_HIP
     export_BoxResizeUpdaterGPU(m);

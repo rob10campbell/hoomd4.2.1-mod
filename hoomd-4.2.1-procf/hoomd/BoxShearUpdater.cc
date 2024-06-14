@@ -7,7 +7,7 @@
 //~ Written by Dr. Deepak Mangal 
 //~ Documentation by Rob Campbell (2024)
 
-// ########## Created by PRO-CF //~ [PROCF2024] ##########
+// ########## Created by PRO-CF //~ [RHEOINF] ##########
 
 /*! \file BoxShearUpdater.cc
     \brief Defines the BoxShearUpdater class
