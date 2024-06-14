@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+#######~ Modified by Rheoinformatic to include corrected def of Langevin integrator matching HOOMD-blue v4.7.0 [RHEOINF] ~#######
+
 """MD integration methods.
 
 .. code-block:: python
@@ -691,7 +693,7 @@ class Langevin(Method):
     where :math:`\vec{\tau}_\mathrm{C} = \vec{\tau}_\mathrm{net}`,
     :math:`\gamma_r^i` is the i-th component of the rotational drag coefficient
     (`gamma_r`), :math:`\tau_\mathrm{R}^i` is a component of the uniform random
-    the torque, :math:`\vec{L}` is the particle's angular momentum and :math:`I`
+    the torque, :math:`\vec{L}` is the particle's angular velocity and :math:`I`
     is the the particle's moment of inertia. The magnitude of the random torque
     is chosen via the fluctuation-dissipation theorem to be consistent with the
     specified drag and temperature, :math:`kT`.
@@ -753,7 +755,7 @@ class Langevin(Method):
 
         gamma_r (TypeParameter[``particle type``,[`float`, `float` , `float`]]):
             The rotational drag coefficient tensor for each particle type
-            :math:`[\mathrm{time}^{-1}]`.
+            :math:`[\mathrm{mass} \cdot mathrm{length}^{2} \cdot \mathrm{time}^{-1}]`.
 
             .. rubric:: Example:
 
