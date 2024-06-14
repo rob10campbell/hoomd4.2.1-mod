@@ -106,20 +106,20 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
             this->scaled_D0 = scaled_D0; //~ add scaled_D0 param [RHEOINF
             }
 
-        param_type(Scalar d, Scalar a, bool Erep, Scalar z, Scalar ke, bool Yrep, Scalar e, Scalar ky, Scalar r, Scalar f, bool scaled_D0, bool managed = false) //~ add params [RHEOINF]
+        param_type(Scalar d, Scalar a, bool Er, Scalar z, Scalar ke, bool Yr, Scalar e, Scalar ky, Scalar r, Scalar f, bool sD, bool managed = false) //~ add params [RHEOINF]
 
             {
             D0 = d;
             alpha = a;
-            Erep = Erep; //~ add boolean check for Electrostatic repulsion [RHEOINF]
+            Erep = Er; //~ add boolean check for Electrostatic repulsion [RHEOINF]
             Z = z; //~ add Z param [RHEOINF]
             kappa_e = ke; //~ add kappa_e param [RHEOINF]
-            Yrep = Yrep; //~ add boolean check for Yukawa repulsion [RHEOINF]
+            Yrep = Yr; //~ add boolean check for Yukawa repulsion [RHEOINF]
             epsilon = e; //~ add epsilon param [RHEOINF]
             kappa_y = ky; //~ add kappa_y param [RHEOINF]
             r0 = r;
             f_contact = f; //~ add f_contact param [RHEOINF]
-            scaled_D0 = scaled_D0; //~ add scaled_D0 param [RHEOINF]
+            scaled_D0 = sD; //~ add scaled_D0 param [RHEOINF]
             }
 
         pybind11::dict asDict()

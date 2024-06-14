@@ -76,13 +76,13 @@ class EvaluatorPairMorse
             this->scaled_D0 = scaled_D0; //~ add scaled_D0 param [RHEOINF]
             }
 
-        param_type(Scalar d, Scalar a, Scalar r, Scalar f, bool scaled_D0, bool managed = false) //~ add f_contact and scaled_D0 params [RHEOINF]
+        param_type(Scalar d, Scalar a, Scalar r, Scalar f, bool sD, bool managed = false) //~ add f_contact and scaled_D0 params [RHEOINF]
             {
             D0 = d;
             alpha = a;
             r0 = r;
             f_contact = f; //~ add f_contact param [RHEOINF]
-            scaled_D0 = scaled_D0; //~ add scaled_D0 param [RHEOINF]
+            scaled_D0 = sD; //~ add scaled_D0 param [RHEOINF]
             }
 
         pybind11::dict asDict()
