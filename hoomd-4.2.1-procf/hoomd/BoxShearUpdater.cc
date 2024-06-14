@@ -1,4 +1,4 @@
-//~ ########## Created by the PRO-CF research group ##########
+//~ ########## Created by the Rheoinformatic research group ##########
 //~ HOOMD-blue:
 // Copyright (c) 2009-2022 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
@@ -7,7 +7,7 @@
 //~ Written by Dr. Deepak Mangal 
 //~ Documentation by Rob Campbell (2024)
 
-// ########## Created by PRO-CF //~ [RHEOINF] ##########
+// ########## Created by Rheoinformatic //~ [RHEOINF] ##########
 
 /*! \file BoxShearUpdater.cc
     \brief Defines the BoxShearUpdater class

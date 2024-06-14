@@ -1,6 +1,6 @@
 ## Scripts
 
-This folder contains example scripts for simulations in the PRO-CF Colloids Team.
+This folder contains example scripts for simulations in the Rheoinformatic Colloids Team.
 
 1. [install-update](/scripts/install-update): bash scripts for installing and updating hoomd4.1-mod
 2. [sim-templates](/scripts/sim-templates): template scripts for monodisperse colloidal simulations using [Brownian Dynamics](/scripts/sim-templates/Brownian-sims) or [Dissipative Particle Dynamics (DPD)](/scripts/sim-templates/DPD-sims). 

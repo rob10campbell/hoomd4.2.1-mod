@@ -1,4 +1,4 @@
-//~ ########## Created by the PRO-CF research group ##########
+//~ ########## Created by the Rheoinformatic research group ##########
 ////~ HOOMD-blue:
 //// Copyright (c) 2009-2022 The Regents of the University of Michigan.
 //// Part of HOOMD-blue, released under the BSD 3-Clause License.
@@ -7,7 +7,7 @@
 /////~ Written by Rob Campbell (2024) based on EvaluatorPairMorse.h
 
 
-// ########## Modified by PRO-CF //~ [RHEOINF] ##########
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
 
 #ifndef __PAIR_EVALUATOR_MORSE_H__
 #define __PAIR_EVALUATOR_MORSE_H__

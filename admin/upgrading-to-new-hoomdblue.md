@@ -1,6 +1,6 @@
 # Upgrading to a New HOOMD-blue Version
 
-This repository was created to hold a modified version of HOOMD-blue v4.2.1 for colloid simulations in the PRO-CF group. In the future you may want to integrate these changes into a newer version of HOOMD-blue; however, this is complicated and time consuming. HOOMD-blue is constantly improving, but in the past they have also removed features that were essential to our work. Be aware that our changes are specific to our research, and may not easily integrate with other updates.
+This repository was created to hold a modified version of HOOMD-blue v4.2.1 for colloid simulations in the Rheoinformatic group. In the future you may want to integrate these changes into a newer version of HOOMD-blue; however, this is complicated and time consuming. HOOMD-blue is constantly improving, but in the past they have also removed features that were essential to our work. Be aware that our changes are specific to our research, and may not easily integrate with other updates.
 
 Jump to:
 

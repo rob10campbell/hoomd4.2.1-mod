@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-###### Modified by PRO-CF ##~ [RHEOINF] ######
+###### Modified by Rheoinformatic ##~ [RHEOINF] ######
 
 """Pair forces."""
 
@@ -1904,7 +1904,7 @@ class LJGauss(Pair):
 
 ##~ add DPDMorse() [RHEOINF] 
 class DPDMorse(Pair):
-    r"""DPD Morse pair force. Added by PRO-CF research group for simulating attractive colloidal particles.
+    r"""DPD Morse pair force. Added by Rheoinformatic research group for simulating attractive colloidal particles.
 
     Args:
         kT (float): System kinetic temperature.

@@ -1,4 +1,4 @@
-### Modified by PRO-CF #[RHEOINF] ###
+### Modified by Rheoinformatic #[RHEOINF] ###
 
 
 set(_md_sources module-md.cc

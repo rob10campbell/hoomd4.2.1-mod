@@ -58,7 +58,7 @@ To make changes and then merge them into this version, follow a modified version
 When adding mods to a file
 - add a line in the header to note that the file has been changed at the current date (YYYY-MM)<br>
 ```C
-///////~ PRO-CF in-house mods tagged //~ [RHEOINF] ~///////
+///////~ Rheoinformatic in-house mods tagged //~ [RHEOINF] ~///////
 ```
 If this already exists, just update the date.
 

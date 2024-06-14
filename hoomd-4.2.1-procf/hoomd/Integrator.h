@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [RHEOINF] ##########
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
 
 #ifdef __HIPCC__
 #error This header cannot be compiled by nvcc

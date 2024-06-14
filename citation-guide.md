@@ -1,4 +1,4 @@
-# Citation Guide for PRO-CF Simulations with HOOMD-blue
+# Citation Guide for Rheoinformatic Simulations with HOOMD-blue
 
 * [HOOMD-blue software](/citation-guide.md#hoomd-blue-software)
 * [VMD visualizations](/citation-guide.md#vmd-visualizations)

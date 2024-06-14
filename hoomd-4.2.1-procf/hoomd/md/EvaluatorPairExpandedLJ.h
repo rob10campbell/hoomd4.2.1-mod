@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [RHEOINF] ##########
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
 
 #ifndef __PAIR_EVALUATOR_ExpandedLJ_H__
 #define __PAIR_EVALUATOR_ExpandedLJ_H__

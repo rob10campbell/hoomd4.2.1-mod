@@ -1,6 +1,6 @@
 # hoomd4.2.1-mod
 
-This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the PRO-CF group. It also includes: 
+This repository contains the modified version of HOOMD-blue v4.2 used for colloid simulations in the Rheoinformatic group. It also includes: 
 * [Installation instructions](/README.md#installation)
 * [Background Reading](/background-reading) about how these simulations work
 * [Example scripts](/scripts) for installing and running simulations on an HPC research cluster
