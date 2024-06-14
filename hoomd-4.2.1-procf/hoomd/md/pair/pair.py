@@ -1978,8 +1978,9 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _default_scaled_D0 = False
     _default_a1 = 0.0
     _default_a2 = 0.0
+    _default_kT = 0.1
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, kT=None):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
@@ -1989,6 +1990,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
             scaled_D0 = self._default_scaled_D0
         if a1 is None:
             a1 = self._default_a1
+        if a2 is None:
+            a2 = self._default_a2
         if a2 is None:
             a2 = self._default_a2
         ##~
@@ -2006,6 +2009,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
                               a2=float(a2),
                               rcut=float,
                               scaled_D0=bool(scaled_D0),
+                              kT=float(kT),
                               len_keys=2))
         self._add_typeparam(params)
         param_dict = ParameterDict(kT=hoomd.variant.Variant)

@@ -167,6 +167,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	Scalar a2;
 	Scalar rcut;
 	bool scaled_D0;
+        Scalar kT;
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -177,7 +178,7 @@ class EvaluatorPairDPDThermoDPDMorse
         void set_memory_hints() const { }
 #endif
 #ifndef __HIPCC__
-        param_type() : A0(0), gamma(0), D0(0), alpha(0), r0(0), eta(0), f_contact(0), a1(0), a2(0), rcut(0), scaled_D0(false) { }
+        param_type() : A0(0), gamma(0), D0(0), alpha(0), r0(0), eta(0), f_contact(0), a1(0), a2(0), rcut(0), scaled_D0(false), kT(0) { }
 
         param_type(pybind11::dict v, bool managed = false, bool scaled_D0 = false)
             {
@@ -192,6 +193,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	    a2 = v["a2"].cast<Scalar>();
 	    rcut = v["rcut"].cast<Scalar>();
 	    this->scaled_D0 = scaled_D0;
+            kT = v["kT"].cast<Scalar>();
             }
 
         pybind11::dict asDict()
@@ -208,6 +210,7 @@ class EvaluatorPairDPDThermoDPDMorse
 	    v["a2"] = a2;
 	    v["rcut"] = rcut;
 	    v["scaled_D0"] = scaled_D0;
+	    v["kT"] = kT;
             return v;
             }
 #endif
@@ -226,7 +229,7 @@ class EvaluatorPairDPDThermoDPDMorse
     */
     DEVICE EvaluatorPairDPDThermoDPDMorse(Scalar _rsq, Scalar _radsum, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radsum, pair_typeIDs [RHEOINF]
         : rsq(_rsq), radsum(_radsum), rcutsq(_rcutsq), A0(_params.A0), gamma(_params.gamma), D0(_params.D0), alpha(_params.alpha), 
-	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), scaled_D0(_params.scaled_D0) // add radsum, scaled_D0 [RHEOINF]
+	r0(_params.r0), eta(_params.eta), f_contact(_params.f_contact), a1(_params.a1), a2(_params.a2), rcut(_params.rcut), scaled_D0(_params.scaled_D0), kT(_params.kT) // add radsum, scaled_D0, kT [RHEOINF]
         {
         typei = _pair_typeids[0]; //~ add typei [RHEOINF]
         typej = _pair_typeids[1]; //~ add typej [RHEOINF]  
@@ -481,12 +484,16 @@ class EvaluatorPairDPDThermoDPDMorse
         	       cons_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
         	       pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
         	       }
-    	            // if no D0 is provided
+    	            // if no D0 is provided use repulsion of D0=10kT
+                    // kT defaults to 0.1 but can be changed with the system
                     else
-                       // use conservative force
                        {
-                       force_divr = A0 * w_factor * rinv;
-                       pair_eng = A0 * (rcut - r) - Scalar(1.0 / 2.0) * A0 * rcutinv * (rcut * rcut - r * r);
+                       Scalar repulse_D0 = 10*kT;
+                       cons_divr = Scalar(2.0) * repulse_D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
+                       pair_eng = repulse_D0 * Exp_factor * (Exp_factor - Scalar(2.0));
+                       // use conservative force
+                       //force_divr = A0 * w_factor * rinv;
+                       //pair_eng = A0 * (rcut - r) - Scalar(1.0 / 2.0) * A0 * rcutinv * (rcut * rcut - r * r);
         	       }
     	            }
 	         }
@@ -640,6 +647,7 @@ class EvaluatorPairDPDThermoDPDMorse
     Scalar a2;		 //!< the radius of particle j
     Scalar rcut;	 //!< the cut-off radius for particle interaction
     bool scaled_D0;	 //!< on/off bool for scaling D0 by particle size 
+    Scalar kT;	         //!< the system temperature (typically 0.1 or 1.0)
     uint16_t m_seed;     //!< User set seed for thermostat PRNG
     unsigned int m_i;    //!< index of first particle (should it be tag?).  For use in PRNG
     unsigned int m_j;    //!< index of second particle (should it be tag?). For use in PRNG
