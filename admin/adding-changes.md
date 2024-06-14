@@ -58,13 +58,13 @@ To make changes and then merge them into this version, follow a modified version
 When adding mods to a file
 - add a line in the header to note that the file has been changed at the current date (YYYY-MM)<br>
 ```C
-///////~ PRO-CF in-house mods tagged //~ [PROCF-YYYY] ~///////
+///////~ PRO-CF in-house mods tagged //~ [RHEOINF] ~///////
 ```
 If this already exists, just update the date.
 
 - At each change, give a brief explanation of your changes if you can, and then mark it with the tag referenced in the header
 ```C
-added code /*commented out code*/ //~ optional explanation [PROCF-YYYY-MM]
+added code /*commented out code*/ //~ optional explanation [RHEOINF]
 ```
 Don't DELETE things, comment them out instead.
 

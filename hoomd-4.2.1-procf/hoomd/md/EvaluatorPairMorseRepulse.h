@@ -7,7 +7,7 @@
 /////~ Written by Rob Campbell (2024) based on EvaluatorPairMorse.h
 
 
-// ########## Modified by PRO-CF //~ [PROCF2023] [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
 
 #ifndef __PAIR_EVALUATOR_MORSE_H__
 #define __PAIR_EVALUATOR_MORSE_H__

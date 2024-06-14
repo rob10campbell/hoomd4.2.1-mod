@@ -52,7 +52,7 @@ typedef std::function<std::shared_ptr<TwoStepConstantVolume>(
 std::shared_ptr<FIREEnergyMinimizer>
 base_class_fire_creator(std::shared_ptr<SystemDefinition> sysdef, Scalar dt, std::shared_ptr<Variant> vinf) //~ add vinf [PROCF2024]
     {
-    return std::shared_ptr<FIREEnergyMinimizer>(new FIREEnergyMinimizer(sysdef, dt, vinf)); //~ add vinf [PROCF20244]
+    return std::shared_ptr<FIREEnergyMinimizer>(new FIREEnergyMinimizer(sysdef, dt, vinf)); //~ add vinf [PROCF2024]
     }
 
 //! TwoStepNVE factory for the unit tests

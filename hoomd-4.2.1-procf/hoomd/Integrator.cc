@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] [PROCF2024] ##########
+// ########## Modified by PRO-CF //~ [PROCF2023] ##########
 
 #include "Integrator.h"
 #include "BoxDim.h" //~ include BoxDim [PROCF2023]

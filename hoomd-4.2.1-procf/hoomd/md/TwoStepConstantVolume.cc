@@ -95,7 +95,7 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
 
         // particles may have been moved slightly outside the box by the above steps, wrap them back
         // into place
-        //const BoxDim& box = m_pdata->getBox(); //~ comment out this line, now set before loop [PROCFw024]
+        //const BoxDim& box = m_pdata->getBox(); //~ comment out this line, now set before loop [PROCF2024]
 
         ArrayHandle<int3> h_image(m_pdata->getImages(),
                                   access_location::host,
