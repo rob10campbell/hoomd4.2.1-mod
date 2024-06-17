@@ -1992,8 +1992,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
             a1 = self._default_a1
         if a2 is None:
             a2 = self._default_a2
-        if a2 is None:
-            a2 = self._default_a2
+        if sys_kT is None:
+            sys_kT = self._default_sys_kT
         ##~
         self._bond_calc = bond_calc
         params = TypeParameter(
