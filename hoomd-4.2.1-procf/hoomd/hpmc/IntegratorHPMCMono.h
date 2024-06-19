@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 // inclusion guard
 #ifndef _INTEGRATOR_HPMC_MONO_H_
 #define _INTEGRATOR_HPMC_MONO_H_
@@ -134,7 +136,7 @@ class IntegratorHPMCMono : public IntegratorHPMC
         typedef typename Shape::param_type param_type;
 
         //! Constructor
-        IntegratorHPMCMono(std::shared_ptr<SystemDefinition> sysdef);
+        IntegratorHPMCMono(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> vinf); //~ add vinf [RHEOINF]
 
         virtual ~IntegratorHPMCMono()
             {
@@ -483,8 +485,8 @@ class IntegratorHPMCMono : public IntegratorHPMC
     };
 
 template <class Shape>
-IntegratorHPMCMono<Shape>::IntegratorHPMCMono(std::shared_ptr<SystemDefinition> sysdef)
-            : IntegratorHPMC(sysdef),
+IntegratorHPMCMono<Shape>::IntegratorHPMCMono(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<Variant> vinf) //~ add vinf [RHEOINF]
+            : IntegratorHPMC(sysdef, vinf), //~ add vinf [RHEOINF]
               m_update_order(m_pdata->getN()),
               m_image_list_is_initialized(false),
               m_image_list_valid(false),
@@ -2652,7 +2654,7 @@ namespace detail {
 template < class Shape > void export_IntegratorHPMCMono(pybind11::module& m, const std::string& name)
     {
     pybind11::class_< IntegratorHPMCMono<Shape>, IntegratorHPMC, std::shared_ptr< IntegratorHPMCMono<Shape> > >(m, name.c_str())
-          .def(pybind11::init< std::shared_ptr<SystemDefinition> >())
+          .def(pybind11::init< std::shared_ptr<SystemDefinition>, std::shared_ptr<Variant>>()) //~ add vinf [PROCF2023]
           .def("setParam", &IntegratorHPMCMono<Shape>::setParam)
           .def("setInteractionMatrix", &IntegratorHPMCMono<Shape>::setInteractionMatrix)
           .def("getInteractionMatrix", &IntegratorHPMCMono<Shape>::getInteractionMatrixPy)

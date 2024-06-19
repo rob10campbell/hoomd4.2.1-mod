@@ -14,7 +14,7 @@ File lists are formatted as: `folder/`; file
 * [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential) : Add AO Potential (might be incorrect calc?) (Rob)
-
+* [HPMC](/changelog.md#hpmc) : enable compilation with HPMC on (see important notes in description) (Rob)
 
 ## Core Modifications
 Contact Force, Lubrication Force, track virial components (Nabi and Deepak)
@@ -213,3 +213,32 @@ Adding AO Potential (might be incorrect calc?) (Rob)
 		* [ ] `pair`
 			* [ ] \_\_init\_\_.py **call DPDAO**
 			* [ ] pair.py : **call DPDAO**
+
+
+## HPMC
+Fix HPMC integrator to allow compilation when HPMC is enabled (for Hard Particle Monte Carlo)
+NOTE: **[IMPORTANT]** Our modifications are not designed for use with Hard Particle Monte Carlo (HPMC) simulations. HPMC is NOT included in the installation by default. If you want to run HPMC simulations with any of our modifications, you should do additional work to integrate the mods first.<br>
+Additionally, HPMC is an active area of development in HOOMD-blue. Because our software is based on HOOMD-blue v4.2.1 many important HPMC features are not included (because they had not yet been implemented/corrected/integrated in v4.2.1).
+- **vinf**: Add vinf to the HPMC integrators so they can be constructed from the modified Integrator class. This does NOT enable shear flow in HPMC sims, it only allows the HPMC integrator to correctly compile.
+ * [ ] `hoomd/`
+	* [ ] `hpmd/`
+		* [ ] IntegratorHPMC.cc : **vinf**
+		* [ ] IntegratorHPMC.h : **vinf**
+		* [ ] IntegratorHPMCMono.h : **vinf**
+		* [ ] IntegratorHPMCMonoNEC.h : **vinf**
+		* [ ] module_convex_polygon.cc : **vinf**
+		* [ ] module_convex_polyhedron.cc : **vinf**
+		* [ ] module_convex_spheropolyhedron.cc : **vinf**
+		* [ ] module_ellipsoid.cc : **vinf**
+		* [ ] module_faceted_ellipsoid.cc : **vinf**
+		* [ ] module_polyhedron.cc : **vinf**
+		* [ ] module_simple_polygon.cc : **vinf**
+		* [ ] module_sphere.cc : **vinf**
+		* [ ] module_spheropolygon.cc : **vinf**
+		* [ ] module_sphinx.cc : **vinf**
+		* [ ] module_union_convex_polyhedron.cc : **vinf**
+		* [ ] module_union_faceted_ellipsoid.cc : **vinf**
+		* [ ] module_union_sphere.cc : **vinf**
+
+
+
