@@ -116,7 +116,7 @@ nlayers_VP = 100 # n_layers in y direction (should be at least particle size)
 
 #Particle velocity profile
 def solvent_vel_profile_py(filename):
-  traj = gsd.hoomd.open(filename, 'rb')
+  traj = gsd.hoomd.open(filename, 'r')
   nparticles=traj[-1].particles.N
   Lbox=traj[-1].configuration.box[0:3]
   vel=traj[-1].particles.velocity
@@ -143,7 +143,7 @@ def non_affinity_py(filename, DPDtime):
   pos_prev_unwrap=init_pos.copy()
 
   # get the shear trajectory
-  traj = gsd.hoomd.open(filename, 'rb')
+  traj = gsd.hoomd.open(filename, 'r')
   nframe=len(traj)
 
   filename='non_affinity.txt'
