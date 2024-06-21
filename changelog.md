@@ -110,6 +110,7 @@ Track and use polydisperse particle radii for surface-surface distance (h_ij) ca
 - **diameter**: adds diameter back (removed by HOOMD-blue devs between hoomdv3 and hoomdv4)
 - **typeIDs**: tracks particle typeID, used to reset solvent radius to zero in DPD force calcs
 - **a1 and a2 deprecated**: default values for a1 and a2 are provided. This means you can run new scripts without a1 and a2, and you can still run old scripts that specified a1 and a2 as a DPDMorse parameter in Python; however, a1 and a2 values are NOT used in the code anymore. Radii are always read from the simulation GSD file.
+- **alpha**: scale the BD drag/diffusion coefficient by particle size (this was standard behavior in HOOMD-blue v3 but was removed with the removal of diameter in HOOMD-blue v4) 
 
 * [x] `hoomd/`
     * [x] `example_plugins/`
@@ -142,11 +143,17 @@ Track and use polydisperse particle radii for surface-surface distance (h_ij) ca
         * [x] EvaluatorPairYukawa.h : **radcontact, diameter, typeIDs**
         * [x] EvaluatorPairZBL.h : **radcontact, diameter, typeIDs**
         * [x] EvaluatorWalls.h : **radcontact, diameter, typeIDs**
+	* [x] `methods/`
+		* [x] methods.py : **alpha**
         * [x] `pair/`
             * [x] pair.py : **optional scaled_D0 [Morse, DPDMorse], a1 and a2 deprecated**
         * [x] PotentialPair.h : **radcontact, track diameter, typeIDs**
         * [x] PotentialPairAlchemical.h : **radcontact, typeIDs**
         * [x] PotentialPairDPDThermo.h : **radcontact, diameter, typeIDs**
+	* [x] TwoStepBD.cc : **alpha**
+        * [x] TwoStepLangevin.cc : **alpha**
+	* [x] TwoStepLangevinBase.cc : **alpha**
+	* [x] TwoStepLangevinBase.h : **alpha**
 
 
 ## On-Off Contact Force

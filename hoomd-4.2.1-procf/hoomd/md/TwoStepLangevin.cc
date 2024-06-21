@@ -218,9 +218,9 @@ void TwoStepLangevin::integrateStepTwo(uint64_t timestep)
                                  access_location::host,
                                  access_mode::readwrite);
     //~ access diameter [RHEOINF]
-    //ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
-    //                               access_location::host,
-    //                               access_mode::read);
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
     //~
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
@@ -274,20 +274,20 @@ void TwoStepLangevin::integrateStepTwo(uint64_t timestep)
         Scalar ry = uniform(rng);
         Scalar rz = uniform(rng);
 
+        //~ add alpha [RHEOINF]
         Scalar gamma;
-        unsigned int type = __scalar_as_int(h_pos.data[j].w);
-        gamma = h_gamma.data[type];
-        //~ or... add diameter [RHEOINF]
-        //Scalar gamma;
-        //if (m_use_alpha)
-        //    gamma = m_alpha * h_diameter.data[j];
-        //else
-        //    {
-        //    unsigned int type = __scalar_as_int(h_pos.data[j].w);
-        //    gamma = h_gamma.data[type];
-        //    }
-        //~
+        if (m_use_alpha)
+            gamma = m_alpha * h_diameter.data[j];
+        else
+            {
+            unsigned int type = __scalar_as_int(h_pos.data[j].w);
+            gamma = h_gamma.data[type];
+            }
 
+        //Scalar gamma;
+        //unsigned int type = __scalar_as_int(h_pos.data[j].w);
+        //gamma = h_gamma.data[type];
+        //~
 
         // compute the bd force
         Scalar coeff = fast::sqrt(Scalar(6.0) * gamma * currentTemp / m_deltaT);
