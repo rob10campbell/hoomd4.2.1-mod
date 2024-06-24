@@ -42,7 +42,8 @@ R_C1 = 1  # 1st type colloid particle radius
 
 # Brownian parameters
 eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
-gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
+#gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
+alpha = 3.*np.pi*eta0 # BD drag coefficient, gamma=alpha*diameter in HOOMD-blue
 
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
@@ -91,9 +92,9 @@ else:
 
   # choose integration method for the end of each timestep
   # BROWNIAN (overdamped) or LANGEVIN (underdamped)
-  brownian = hoomd.md.methods.Brownian(filter=all_, kT=KT, default_gamma=gamma)
+  brownian = hoomd.md.methods.Brownian(filter=all_, kT=KT, alpha=alpha)
   integrator=hoomd.md.Integrator(dt=dt_Integration, forces=[morse], methods=[brownian])
-  #langevin = hoomd.md.methods.Langevin(filter=all_, kT=KT, default_gamma=gamma)
+  #langevin = hoomd.md.methods.Langevin(filter=all_, kT=KT, alpha=alpha)
   #integrator = hoomd.md.Integrator(dt=dt_Integration, forces=[morse], methods=[langevin])
   sim.operations.integrator = integrator
 
