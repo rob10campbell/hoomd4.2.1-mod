@@ -14,7 +14,7 @@ import hoomd.md # molecular dynamics
 import gsd # provides Python API; MUST import sub packages explicitly (as below)
 import gsd.hoomd # read and write HOOMD schema GSD files
 # Maths
-import numpy
+import numpy as np
 import math
 import random # pseudo-random number generator
 # Other
@@ -42,7 +42,7 @@ R_C1 = 1 # 1st type colloid particle radius
 
 # Brownian parameters
 eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
-#gamma = 6.0*numpy.pi*eta0*R_C1 # BD stock friction coefficient
+#gamma = 6.0*np.pi*eta0*R_C1 # BD stock friction coefficient
 alpha = 3.*np.pi*eta0 # BD drag coefficient, gamma=alpha*diameter in HOOMD-blue
 
 # Particle interaction parameters
