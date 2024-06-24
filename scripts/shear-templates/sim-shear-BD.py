@@ -37,7 +37,7 @@ R_C1 = 1 # 1st type colloid particle radius
 # Brownian parameters
 eta0 = 1.0 # viscosity of the fluid (tunable parameter, not direct viscosity)
 #gamma = 6.0*np.pi*eta0*R_C1 # BD stock friction coefficient
-alpha = 3.*np.pi*eta0/phi # BD drag coefficient, gets scaled by particle size in HOOMD-blue
+alpha = 3.*np.pi*eta0 # BD drag coefficient, gamma=alpha*diameter in HOOMD-blue
 
 # Particle interaction parameters
 r_c = 1.0 # cut-off radius parameter, r_c>=3/kappa (r_cut = # * r_c) 
