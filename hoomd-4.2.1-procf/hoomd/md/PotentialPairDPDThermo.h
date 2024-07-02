@@ -88,6 +88,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 
     bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [RHEOINF]
 
+   //ofstream DiameterFile; //~ print diameters [RHEOINF]
+
     //! Actually compute the forces (overwrites PotentialPair::computeForces())
     virtual void computeForces(uint64_t timestep);
     };
@@ -268,7 +270,12 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
             {
             radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
             }
+            //~ Print or save diameters to check that values are correct 
             //std::cout << "contact = " << radcontact << std::endl;
+            //string diameter_file = "potential_pair_diameters.csv";
+            //DiameterFile.open("potential_pair_diameters.csv", ios::out | ios::app);
+            //DiameterFile << h_tag.data[i] << "," << h_tag.data[j] << "," << typei << "," << typej << "," << h_diameter.data[i] << "," << h_diameter.data[j] << "," << radcontact << "\n";
+            //DiameterFile.close();
             //~
 
             // calculate the drag term r \dot v
