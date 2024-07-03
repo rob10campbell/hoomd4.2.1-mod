@@ -1,16 +1,16 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
-
 // $Id$
 // $URL$
 
-#ifndef __PAIR_EVALUATOR_DIPOLE_H__
-#define __PAIR_EVALUATOR_DIPOLE_H__
+#ifndef __PAIR_EVALUATOR_ROTATION_H__
+#define __PAIR_EVALUATOR_ROTATION_H__
 
 #ifndef __HIPCC__
 #include <string>
+#include "hoomd/HOOMDMath.h"
+#include "hoomd/md/RotationMap.h"
 #endif
 
 #ifdef ENABLE_HIP
@@ -18,8 +18,8 @@
 #endif
 #include "hoomd/VectorMath.h"
 #include <iostream>
-/*! \file EvaluatorPairDipole.h
-    \brief Defines the dipole potential
+/*! \file EvaluatorPairRotation.h
+    \brief Defines the angular rotation potential
 */
 
 // need to declare these class methods with __device__ qualifiers when building
@@ -37,13 +37,13 @@ namespace hoomd
     {
 namespace md
     {
-class EvaluatorPairDipole
+class EvaluatorPairRotation
     {
     public:
     struct param_type
         {
-        Scalar A;     //! The electrostatic energy scale.
-        Scalar kappa; //! The inverse screening length.
+        Scalar K; //! The energy oscillation magnitude encountered during rotation 
+        unsigned int n; //! The energy oscillation frequency (# of peaks of height 2K)
 
 #ifdef ENABLE_HIP
         //! Set CUDA memory hints
@@ -62,21 +62,21 @@ class EvaluatorPairDipole
 
         HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
 
-        HOSTDEVICE param_type() : A(0), kappa(0) { }
+        HOSTDEVICE param_type() : K(0), n(0) { }
 
 #ifndef __HIPCC__
 
         param_type(pybind11::dict v, bool managed)
             {
-            A = v["A"].cast<Scalar>();
-            kappa = v["kappa"].cast<Scalar>();
+            K = v["K"].cast<Scalar>();
+            n = v["n"].cast<unsigned int>();
             }
 
         pybind11::object toPython()
             {
             pybind11::dict v;
-            v["A"] = A;
-            v["kappa"] = kappa;
+            v["K"] = K;
+            v["n"] = n;
             return std::move(v);
             }
 
@@ -91,7 +91,6 @@ class EvaluatorPairDipole
     struct shape_type
         {
         vec3<Scalar> mu;
-
         //! Load dynamic data members into shared memory and increase pointer
         /*! \param ptr Pointer to load data to (will be incremented)
             \param available_bytes Size of remaining shared memory allocation
@@ -129,17 +128,18 @@ class EvaluatorPairDipole
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _quat_i Quaternion of i^{th} particle
         \param _quat_j Quaternion of j^{th} particle
-        \param _A Electrostatic energy scale
-        \param _kappa Inverse screening length
+        \param _K energy oscillation magnitude
+        \param _n energy oscillation frequency
         \param _params Per type pair parameters of this potential
     */
-    HOSTDEVICE EvaluatorPairDipole(Scalar3& _dr,
-                                   Scalar4& _quat_i,
-                                   Scalar4& _quat_j,
-                                   Scalar _rcutsq,
-                                   const param_type& _params)
-        : dr(_dr), rcutsq(_rcutsq), q_i(0), q_j(0), quat_i(_quat_i), quat_j(_quat_j), 
-          mu_i {0, 0, 0}, mu_j {0, 0, 0}, A(_params.A), kappa(_params.kappa)
+    HOSTDEVICE EvaluatorPairRotation(Scalar3& _dr,
+                                     Scalar4& _quat_i,
+                                     Scalar4& _quat_j,
+                                     Scalar _rcutsq,
+                                     const param_type& _params
+                                     )
+        : dr(_dr), rcutsq(_rcutsq), tag_i(0), tag_j(0), quat_i(_quat_i), quat_j(_quat_j),
+          mu_i {0, 0, 0}, mu_j {0, 0, 0}, K(_params.K), n(_params.n), rotationMap()
         {
         }
 
@@ -152,7 +152,7 @@ class EvaluatorPairDipole
     //! Whether the pair potential needs particle tags.
     HOSTDEVICE static bool needsTags()
         {
-        return false;
+        return true;
         }
         
     //! don't need diameter
@@ -169,24 +169,23 @@ class EvaluatorPairDipole
     //! whether pair potential requires charges
     HOSTDEVICE static bool needsCharge()
         {
-        return true;
+        return false;
         }
 
     //!~ Whether the pair potential uses typeid. [RHEOINF]
     HOSTDEVICE static bool needsTypes()
         {
-        return false;
+        return true;
         }
-    HOSTDEVICE void setTypes(unsigned int typei, unsigned int typej) { }
     //~
 
     //!~ Whether the pair potential uses timestep. [RHEOINF]
     HOSTDEVICE static bool needsTimestep()
         {
-        return false;
+        return true;
         }
-    HOSTDEVICE void setTimestep(uint64_t timestep)  { }
     //~
+
 
     /// Whether the potential implements the energy_shift parameter
     HOSTDEVICE static bool constexpr implementsEnergyShift()
@@ -194,7 +193,7 @@ class EvaluatorPairDipole
         return false;
         }
 
-    //! Accept the optional shape values
+
     /*! \param shape_i Shape of particle i
         \param shape_j Shape of particle j
     */
@@ -208,17 +207,36 @@ class EvaluatorPairDipole
     /*! \param tag_i Tag of particle i
         \param tag_j Tag of particle j
     */
-    HOSTDEVICE void setTags(unsigned int tagi, unsigned int tagj) { }
+    HOSTDEVICE void setTags(unsigned int tagi, unsigned int tagj) 
+    {
+    tag_i = tagi;
+    tag_j = tagj;
+    }
 
     //! Accept the optional charge values
     /*! \param qi Charge of particle i
         \param qj Charge of particle j
     */
-    HOSTDEVICE void setCharge(Scalar qi, Scalar qj)
-        {
-        q_i = qi;
-        q_j = qj;
-        }
+    HOSTDEVICE void setCharge(Scalar qi, Scalar qj) { }
+
+    //! Accept the optional types
+    /*! \param type_i typeID of particle i
+        \param type_j typeID of particle j
+    */
+    HOSTDEVICE void setTypes(unsigned int typei, unsigned int typej) 
+    {
+    type_i = typei;
+    type_j = typej;
+    }
+
+    //! Accept the optional timestep
+    /*! \param timestep the current timestep
+    */
+    HOSTDEVICE void setTimestep(uint64_t timestep)
+    {
+    currentTimestep = timestep;
+    }
+
 
     //! Evaluate the force and energy
     /*! \param force Output parameter to write the computed force.
@@ -239,98 +257,101 @@ class EvaluatorPairDipole
         vec3<Scalar> rvec(dr);
         Scalar rsq = dot(rvec, rvec);
 
+        // if the particles do not interact
         if (rsq > rcutsq)
-            return false;
+           {
+           // check if the bond broke
+           BondInfo bond_info;
+           if (rotationMap.getBondInfo(tag_i, tag_j, bond_info))
+           {
+             // Bond existed before this, mark it as broken
+             rotationMap.addBondBroke(currentTimestep, tag_i, tag_j);
+           }
+
+           return false;
+           }
+ 
+        // Compute the current orientation vectors in the space frame
+        // Assuming the initial orientation vector is (1, 0, 0) (x-axis)
+        vec3<Scalar> initial_orientation_i(1, 0, 0);
+        vec3<Scalar> initial_orientation_j(1, 0, 0);
+
+        vec3<Scalar> e_i = rotate(quat<Scalar>(quat_i), mu_i);
+        vec3<Scalar> e_j = rotate(quat<Scalar>(quat_j), mu_j);
 
         Scalar rinv = fast::rsqrt(rsq);
-        Scalar r2inv = Scalar(1.0) / rsq;
-        Scalar r3inv = r2inv * rinv;
-        Scalar r5inv = r3inv * r2inv;
-
-        // convert dipole vector in the body frame of each particle to space
-        // frame
-        vec3<Scalar> p_i = rotate(quat<Scalar>(quat_i), mu_i);
-        vec3<Scalar> p_j = rotate(quat<Scalar>(quat_j), mu_j);
-
-        vec3<Scalar> f;
-        vec3<Scalar> t_i;
-        vec3<Scalar> t_j;
-        Scalar e = Scalar(0.0);
-
         Scalar r = Scalar(1.0) / rinv;
-        Scalar prefactor = A * fast::exp(-kappa * r);
+        //Scalar r2inv = Scalar(1.0) / rsq;
 
-        bool dipole_i_interactions = (mu_i != vec3<Scalar>(0, 0, 0));
-        bool dipole_j_interactions = (mu_j != vec3<Scalar>(0, 0, 0));
-        bool dipole_interactions = dipole_j_interactions && dipole_j_interactions;
-        // dipole-dipole
-        if (dipole_interactions)
+        // compute angles
+        Scalar orientation_i = dot(e_i, rvec) / (sqrt(dot(e_i, e_i)) * r);
+        Scalar orientation_j = dot(e_j, rvec) / (sqrt(dot(e_j, e_j)) * r);
+        Scalar theta_i = acos(orientation_i);
+        Scalar theta_j = acos(orientation_j);
+
+        Scalar torsional_orientation_ij = dot(e_i, e_j) / (sqrt(dot(e_i, e_i)) * sqrt(dot(e_j, e_j)));
+        Scalar gamma_ij = acos(torsional_orientation_ij);
+
+        ////~ reference add bond_calc from PotentialPairDPDThermo [RHEOINF]
+        //if(m_bond_calc)
+        //  {
+        //  if(typei && typej) // if both are NOT zero (solvents are type zero)
+        //    {
+        //    Scalar rsq_root = fast::sqrt(rsq) - Scalar(0.5)*(h_diameter.data[i]+h_diameter.data[j]);
+        //    if(rsq_root < Scalar(0.10)) // assumes the cut-off is 0.1
+        //      {
+        //      if(rsq_root < Scalar(0.08))
+        //        {
+        //        this->LTIME->Bond_check[bond_index] = 2;
+        //        }
+        //      else
+        //        {
+        //        this->LTIME->Bond_check[bond_index] = 1;
+        //        }
+
+        BondInfo bond_info;
+        if (!rotationMap.getBondInfo(tag_i, tag_j, bond_info))
+        {
+            // Bond is new, add it to the map
+            rotationMap.addBondFormed(currentTimestep, tag_i, tag_j, type_i, type_j, theta_i, theta_j, gamma_ij);
+        }
+        else
             {
-            Scalar r7inv = r5inv * r2inv;
-            Scalar pidotpj = dot(p_i, p_j);
-            Scalar pidotr = dot(p_i, rvec);
-            Scalar pjdotr = dot(p_j, rvec);
+            rotationMap.getBondInfo(tag_i, tag_j, bond_info);
+            // Bond exists, use the stored values
+            Scalar theta_i_0 = bond_info.theta_i_0;
+            Scalar theta_j_0 = bond_info.theta_j_0;
+            Scalar gamma_ij_0 = bond_info.gamma_ij_0;
 
-            Scalar pre1
-                = prefactor
-                  * (Scalar(3.0) * r5inv * pidotpj - Scalar(15.0) * r7inv * pidotr * pjdotr);
-            Scalar pre2 = prefactor * Scalar(3.0) * r5inv * pjdotr;
-            Scalar pre3 = prefactor * Scalar(3.0) * r5inv * pidotr;
-            Scalar pre4 = prefactor * Scalar(-1.0) * r3inv;
-            Scalar pre5 = prefactor * (r3inv * pidotpj - Scalar(3.0) * r5inv * pidotr * pjdotr)
-                          * kappa * rinv;
+            Scalar del_theta_i = theta_i - theta_i_0;
+            Scalar del_theta_j = theta_j - theta_j_0;
+            Scalar del_gamma_ij = gamma_ij - gamma_ij_0;
 
-            f += pre1 * rvec + pre2 * p_i + pre3 * p_j + pre5 * rvec;
+            // Compute potential
+            Scalar U_rot = (K / r) * (3 - cos(n * del_theta_i) - cos(n * del_theta_j) - cos(n * del_gamma_ij));
 
-            vec3<Scalar> scaledpicrosspj(pre4 * cross(p_i, p_j));
+            std::cout << "Pair U_rot: " << U_rot << std::endl;
 
-            t_i += scaledpicrosspj + pre2 * cross(p_i, rvec);
-            t_j += -scaledpicrosspj + pre3 * cross(p_j, rvec);
+            // Compute the force F_rot            
+            //
+            //f_scalar = 
+            //vec3<Scalar> f = f_scalar * (dr / r);
+            //
 
-            e += prefactor * (r3inv * pidotpj - Scalar(3.0) * r5inv * pidotr * pjdotr);
-            }
-        // dipole i - electrostatic j
-        if (dipole_i_interactions && q_j != Scalar(0.0))
-            {
-            Scalar pidotr = dot(p_i, rvec);
-            Scalar pre1 = prefactor * Scalar(3.0) * q_j * r5inv * pidotr;
-            Scalar pre2 = prefactor * q_j * r3inv;
-            Scalar pre3 = prefactor * q_j * r3inv * pidotr * kappa * rinv;
+            //vec3<Scalar> f;
+            //vec3<Scalar> t_i;
+            //vec3<Scalar> t_j;
+            //Scalar e = U_rot;
 
-            f += pre2 * p_i - pre1 * rvec - pre3 * rvec;
+            //force = vec_to_scalar3(f);
+            //torque_i = vec_to_scalar3(t_i);
+            //torque_j = vec_to_scalar3(t_j);
+            //pair_eng = e;
 
-            t_i += pre2 * cross(p_i, rvec);
-
-            e -= pidotr * pre2;
-            }
-        // electrostatic i - dipole j
-        if (q_i != Scalar(0.0) && dipole_j_interactions)
-            {
-            Scalar pjdotr = dot(p_j, rvec);
-            Scalar pre1 = prefactor * Scalar(3.0) * q_i * r5inv * pjdotr;
-            Scalar pre2 = prefactor * q_i * r3inv;
-            Scalar pre3 = prefactor * q_i * r3inv * pjdotr * kappa * rinv;
-
-            f += pre1 * rvec - pre2 * p_j + pre3 * rvec;
-
-            t_j += -pre2 * cross(p_j, rvec);
-
-            e += pjdotr * pre2;
-            }
-        // electrostatic-electrostatic
-        if (q_i != Scalar(0.0) && q_j != Scalar(0.0))
-            {
-            Scalar fforce = prefactor * q_i * q_j * (kappa + rinv) * r2inv;
-
-            f += fforce * rvec;
-
-            e += prefactor * q_i * q_j * rinv;
             }
 
-        force = vec_to_scalar3(f);
-        torque_i = vec_to_scalar3(t_i);
-        torque_j = vec_to_scalar3(t_j);
-        pair_eng = e;
+        rotationMap.writeBondHistory(currentTimestep, tag_i, tag_j);
+
         return true;
         }
 
@@ -350,7 +371,7 @@ class EvaluatorPairDipole
      */
     static std::string getName()
         {
-        return "dipole";
+        return "rotation";
         }
 
     std::string getShapeSpec() const
@@ -362,12 +383,18 @@ class EvaluatorPairDipole
     protected:
     Scalar3 dr;             //!< Stored vector pointing between particle centers of mass
     Scalar rcutsq;          //!< Stored rcutsq from the constructor
-    Scalar q_i, q_j;        //!< Stored particle charges
+    unsigned int tag_i;
+    unsigned int tag_j;
+    unsigned int type_i;
+    unsigned int type_j;
     Scalar4 quat_i, quat_j; //!< Stored quaternion of ith and jth particle from constructor
     vec3<Scalar> mu_i;      /// Magnetic moment for ith particle
     vec3<Scalar> mu_j;      /// Magnetic moment for jth particle
-    Scalar A;
-    Scalar kappa;
+    Scalar K;
+    unsigned int n;
+    vec3<Scalar> e_i, e_j;
+    RotationMap rotationMap; //!< Reference to the rotation map
+    uint64_t currentTimestep;
     // const param_type &params;   //!< The pair potential parameters
     };
 

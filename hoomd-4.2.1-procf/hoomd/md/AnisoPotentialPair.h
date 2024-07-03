@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #ifndef __ANISO_POTENTIAL_PAIR_H__
 #define __ANISO_POTENTIAL_PAIR_H__
 
@@ -588,7 +590,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
 
                 Scalar pair_eng = Scalar(0.0);
 
-                aniso_evaluator eval(dx, quat_i, quat_j, rcutsq, param);
+                aniso_evaluator eval(dx, quat_i, quat_j, rcutsq, param); 
 
                 if (aniso_evaluator::needsCharge())
                     eval.setCharge(qi, qj);
@@ -596,6 +598,14 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                     eval.setShape(&m_shape_params[typei], &m_shape_params[typej]);
                 if (aniso_evaluator::needsTags())
                     eval.setTags(h_tag.data[i], h_tag.data[j]);
+                //~ add pair typeids for polydispersity [RHEOINF]
+                if (aniso_evaluator::needsTypes())
+                    eval.setTypes(typei, typej);
+                //~
+                //~ add timestep for RotationMap [RHEOINF]
+                if (aniso_evaluator::needsTimestep())
+                    eval.setTimestep(timestep);
+                //~
 
                 bool evaluated = eval.evaluate(force, pair_eng, energy_shift, torque_i, torque_j);
 

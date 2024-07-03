@@ -563,3 +563,16 @@ class ALJ(AnisotropicPair):
         log shape for visualization and storage through the GSD file type.
         """
         return self._return_type_shapes()
+
+
+##~ add Rotation restriction potential
+class Rotation(AnisotropicPair):
+
+    _cpp_class_name = "AnisoPotentialPairRotation"
+
+    def __init__(self, nlist, default_r_cut=None):
+        super().__init__(nlist, default_r_cut, 'none')
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(K=float, n=float, len_keys=2))
+        self._extend_typeparam((params))

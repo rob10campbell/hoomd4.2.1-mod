@@ -9,6 +9,7 @@ set(_md_sources module-md.cc
                    AnisoPotentialPairALJ3.cc
                    AnisoPotentialPairDipole.cc
                    AnisoPotentialPairGB.cc
+                   AnisoPotentialPairRotation.cc #[RHEOINF]
                    AlchemyData.cc
                    BondTablePotential.cc
                    CommunicatorGrid.cc
@@ -111,6 +112,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairMorseRepulse.h #[RHEOINF]
                 EvaluatorPairOPP.h
                 EvaluatorPairFourier.h
+                EvaluatorPairRotation.h #[RHEOINF]
                 EvaluatorPairReactionField.h
                 EvaluatorPairExpandedLJ.h
                 EvaluatorPairTable.h

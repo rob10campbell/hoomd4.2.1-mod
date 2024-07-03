@@ -221,6 +221,27 @@ Adding AO Potential (might be incorrect calc?) (Rob)
 			* [ ] \_\_init\_\_.py **call DPDAO**
 			* [ ] pair.py : **call DPDAO**
 
+## Rotation Restriction
+Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and Gelb (Soft Matter, 2020), DOI: 10.1039/c9sm01755k (Rob) <br>
+*WARNING*: unfinished (does not actually calculate forces, only tests the new RotationMap class)
+- **rotation map**: create a new map to track bond formation and particle oritnetation (for use in rotation restriction calculations)
+- **timestep**: pass timestep to the Evaluator and RotationMap 
+- **types**: pass particle types to the Evaluator and Rotationmap
+
+* [x] `hoomd/`
+	* [x] `md/`
+		* [x] AnisoPotentialPair.h : **types, timestep**
+		* [x] **[ADD NEW FILE]** AnisoPotentialPairRotation.cc
+		* [x] CMakeLists.txt : **set new files (RotationMap, EvaluatorPairRotation, AnisoPotentialPairRotation)**
+		* [x] EvaluatorPairALJ.h : **types, timestep**
+		* [x] EvaluatorPairDipole.h : **types, timestep**
+		* [x] EvaluatorPairGB.h : **types, timestep**
+		* [x] **[ADD NEW FILE]** EvaluatorPairRotation.h *WARNING: unfinished*
+
+		* [x] `pair/`
+			* [x] aniso.py : *add Rotation*
+		* [x] **[ADD NEW FILE]** RotationMap.h
+
 
 ## HPMC
 Fix HPMC integrator to allow compilation when HPMC is enabled (for Hard Particle Monte Carlo)
@@ -246,6 +267,4 @@ Additionally, HPMC is an active area of development in HOOMD-blue. Because our s
 		* [ ] module_union_convex_polyhedron.cc : **vinf**
 		* [ ] module_union_faceted_ellipsoid.cc : **vinf**
 		* [ ] module_union_sphere.cc : **vinf**
-
-
 

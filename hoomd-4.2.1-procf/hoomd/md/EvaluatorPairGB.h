@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #ifndef __EVALUATOR_PAIR_GB_H__
 #define __EVALUATOR_PAIR_GB_H__
 
@@ -141,7 +143,7 @@ class EvaluatorPairGB
                                const Scalar4& _qj,
                                const Scalar _rcutsq,
                                const param_type& _params)
-        : dr(_dr), rcutsq(_rcutsq), qi(_qi), qj(_qj), epsilon(_params.epsilon),
+        : dr(_dr), rcutsq(_rcutsq), qi(_qi), qj(_qj), epsilon(_params.epsilon), 
           lperp(_params.lperp), lpar(_params.lpar)
         {
         }
@@ -174,6 +176,22 @@ class EvaluatorPairGB
         {
         return false;
         }
+
+    //!~ Whether the pair potential uses typeid. [RHEOINF]
+    HOSTDEVICE static bool needsTypes()
+        {
+        return false;
+        }
+    HOSTDEVICE void setTypes(unsigned int typei, unsigned int typej)  { }
+    //~
+
+    //!~ Whether the pair potential uses timestep. [RHEOINF]
+    HOSTDEVICE static bool needsTimestep()
+        {
+        return false;
+        }
+    HOSTDEVICE void setTimestep(uint64_t timestep)  { }
+    //~
 
     /// Whether the potential implements the energy_shift parameter
     HOSTDEVICE static bool constexpr implementsEnergyShift()
