@@ -575,4 +575,7 @@ class Rotation(AnisotropicPair):
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(K=float, n=float, len_keys=2))
-        self._extend_typeparam((params))
+        mu = TypeParameter('mu', 'particle_types',
+                           TypeParameterDict((float, float, float), len_keys=1))
+        self._extend_typeparam((params, mu))
+##~

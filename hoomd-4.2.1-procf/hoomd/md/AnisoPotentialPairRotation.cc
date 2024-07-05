@@ -15,13 +15,38 @@ namespace md
     {
 namespace detail
     {
-template void export_AnisoPotentialPair<EvaluatorPairRotation>(pybind11::module& m,
-                                                         const std::string& name);
+
+// Template specification modeled after Dipole anisotropic pair potential. A specific
+// template instance is needed since we expose the shape as just mu in Python
+// when the default behavior exposes setting and getting the shape through
+// 'shape'.
+template<>
+inline void export_AnisoPotentialPair<EvaluatorPairRotation>(pybind11::module& m,
+                                                           const std::string& name)
+    {
+    pybind11::class_<AnisoPotentialPair<EvaluatorPairRotation>,
+                     ForceCompute,
+                     std::shared_ptr<AnisoPotentialPair<EvaluatorPairRotation>>>
+        anisopotentialpair(m, name.c_str());
+    anisopotentialpair
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def("setParams", &AnisoPotentialPair<EvaluatorPairRotation>::setParamsPython)
+        .def("getParams", &AnisoPotentialPair<EvaluatorPairRotation>::getParamsPython)
+        .def("setMu", &AnisoPotentialPair<EvaluatorPairRotation>::setShapePython)
+        .def("getMu", &AnisoPotentialPair<EvaluatorPairRotation>::getShapePython)
+        .def("setRCut", &AnisoPotentialPair<EvaluatorPairRotation>::setRCutPython)
+        .def("getRCut", &AnisoPotentialPair<EvaluatorPairRotation>::getRCut)
+        .def_property("mode",
+                      &AnisoPotentialPair<EvaluatorPairRotation>::getShiftMode,
+                      &AnisoPotentialPair<EvaluatorPairRotation>::setShiftModePython)
+        .def("getTypeShapesPy", &AnisoPotentialPair<EvaluatorPairRotation>::getTypeShapesPy);
+    }
 
 void export_AnisoPotentialPairRotation(pybind11::module& m)
     {
     export_AnisoPotentialPair<EvaluatorPairRotation>(m, "AnisoPotentialPairRotation");
     }
+
     } // end namespace detail
     } // end namespace md
     } // end namespace hoomd

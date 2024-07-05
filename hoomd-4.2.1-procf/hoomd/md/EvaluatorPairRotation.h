@@ -42,8 +42,11 @@ class EvaluatorPairRotation
     public:
     struct param_type
         {
+        //Scalar D0;
+        //Scalar alpha;
+        //Scalar r0;
         Scalar K; //! The energy oscillation magnitude encountered during rotation 
-        unsigned int n; //! The energy oscillation frequency (# of peaks of height 2K)
+        Scalar n; //! The energy oscillation frequency (# of peaks of height 2K)
 
 #ifdef ENABLE_HIP
         //! Set CUDA memory hints
@@ -62,19 +65,26 @@ class EvaluatorPairRotation
 
         HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
 
+        //HOSTDEVICE param_type() : D0(0), alpha(0), r0(0), K(0), n(0) { }
         HOSTDEVICE param_type() : K(0), n(0) { }
 
 #ifndef __HIPCC__
 
         param_type(pybind11::dict v, bool managed)
             {
+            //D0 = v["D0"].cast<Scalar>();
+            //alpha = v["alpha"].cast<Scalar>();
+            //r0 = v["r0"].cast<Scalar>();
             K = v["K"].cast<Scalar>();
-            n = v["n"].cast<unsigned int>();
+            n = v["n"].cast<Scalar>();
             }
 
         pybind11::object toPython()
             {
             pybind11::dict v;
+            //v["D0"] = D0;
+            //v["alpha"] = alpha;
+            //v["r0"] = r0;
             v["K"] = K;
             v["n"] = n;
             return std::move(v);
@@ -139,7 +149,8 @@ class EvaluatorPairRotation
                                      const param_type& _params
                                      )
         : dr(_dr), rcutsq(_rcutsq), tag_i(0), tag_j(0), quat_i(_quat_i), quat_j(_quat_j),
-          mu_i {0, 0, 0}, mu_j {0, 0, 0}, K(_params.K), n(_params.n), rotationMap()
+          //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), K(_params.K), n(_params.n), rotationMap()
+          mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), K(_params.K), n(_params.n), rotationMap()
         {
         }
 
@@ -158,13 +169,17 @@ class EvaluatorPairRotation
     //! don't need diameter
     DEVICE static bool needsDiameter()
         {
-        return false;
+        return true;
         }
     //! Accept the optional diameter values
     /*! \param di Diameter of particle i
         \param dj Diameter of particle j
     */
-    DEVICE void setDiameter(Scalar di, Scalar dj) { }
+    DEVICE void setDiameter(Scalar di, Scalar dj)
+        { 
+        diameter_i = di;
+        diameter_j = dj;
+        }
 
     //! whether pair potential requires charges
     HOSTDEVICE static bool needsCharge()
@@ -257,10 +272,14 @@ class EvaluatorPairRotation
         vec3<Scalar> rvec(dr);
         Scalar rsq = dot(rvec, rvec);
 
+        std::cout << "Rotation Potential..." << std::endl;
+
         // if the particles do not interact
         if (rsq > rcutsq)
            {
            // check if the bond broke
+           std::cout << "rsq > rcutsq" << std::endl;
+           std::cout << "rsq = " << rsq << "rcutsq = " << rcutsq << std::endl;
            BondInfo bond_info;
            if (rotationMap.getBondInfo(tag_i, tag_j, bond_info))
            {
@@ -270,6 +289,9 @@ class EvaluatorPairRotation
 
            return false;
            }
+
+        //~ Add radsum from passed diameters [RHEOINF] 
+        //Scalar radsum = 0.5 * (diameter_i + diameter_j);
  
         // Compute the current orientation vectors in the space frame
         // Assuming the initial orientation vector is (1, 0, 0) (x-axis)
@@ -279,9 +301,20 @@ class EvaluatorPairRotation
         vec3<Scalar> e_i = rotate(quat<Scalar>(quat_i), mu_i);
         vec3<Scalar> e_j = rotate(quat<Scalar>(quat_j), mu_j);
 
+        vec3<Scalar> f;
+        vec3<Scalar> t_i;
+        vec3<Scalar> t_j;
+        Scalar e = Scalar(0.0);
+
         Scalar rinv = fast::rsqrt(rsq);
         Scalar r = Scalar(1.0) / rinv;
         //Scalar r2inv = Scalar(1.0) / rsq;
+
+        // Compute Morse 
+        //Scalar Exp_factor = fast::exp(-alpha * (r - radsum));
+        //f_scalar = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
+        //pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
+
 
         // compute angles
         Scalar orientation_i = dot(e_i, rvec) / (sqrt(dot(e_i, e_i)) * r);
@@ -309,25 +342,55 @@ class EvaluatorPairRotation
         //        this->LTIME->Bond_check[bond_index] = 1;
         //        }
 
+        std::cout << "Checking RotationMap" << std::endl;
+
         BondInfo bond_info;
         if (!rotationMap.getBondInfo(tag_i, tag_j, bond_info))
         {
+            std::cout << "New bond found" << std::endl;
+            std::cout << "Adding bond to the RotationMap" << std::endl;
             // Bond is new, add it to the map
             rotationMap.addBondFormed(currentTimestep, tag_i, tag_j, type_i, type_j, theta_i, theta_j, gamma_ij);
+            rotationMap.getBondInfo(tag_i, tag_j, bond_info);
+            std::cout << bond_info.timestep << std::endl;
+            std::cout << bond_info.id1 << std::endl;
+            std::cout << bond_info.id2 << std::endl;
+            std::cout << bond_info.typei << std::endl;
+            std::cout << bond_info.typej << std::endl;
+            std::cout << bond_info.formedTimestep << std::endl;
+            std::cout << bond_info.theta_i_0 << std::endl;
+            std::cout << bond_info.theta_j_0 << std::endl;
+            std::cout << bond_info.gamma_ij_0 << std::endl;
+            std::cout << bond_info.broken << std::endl;
+            std::cout << bond_info.brokeTimestep << std::endl;
+
         }
         else
             {
+
+            std::cout << "Extracting RotationMap" << std::endl;
             rotationMap.getBondInfo(tag_i, tag_j, bond_info);
+            std::cout << bond_info.id1 << std::endl;
+            std::cout << bond_info.id2 << std::endl;
+            std::cout << bond_info.typei << std::endl;
+            std::cout << bond_info.typej << std::endl;
+            std::cout << bond_info.formedTimestep << std::endl;
+            std::cout << bond_info.theta_i_0 << std::endl;
+            std::cout << bond_info.theta_j_0 << std::endl;
+            std::cout << bond_info.gamma_ij_0 << std::endl;
+            std::cout << bond_info.broken << std::endl;
+            std::cout << bond_info.brokeTimestep << std::endl;
             // Bond exists, use the stored values
             Scalar theta_i_0 = bond_info.theta_i_0;
             Scalar theta_j_0 = bond_info.theta_j_0;
             Scalar gamma_ij_0 = bond_info.gamma_ij_0;
 
+            std::cout << "Calculating amount of rotation since last step" << std::endl;
             Scalar del_theta_i = theta_i - theta_i_0;
             Scalar del_theta_j = theta_j - theta_j_0;
             Scalar del_gamma_ij = gamma_ij - gamma_ij_0;
 
-            // Compute potential
+            // Compute rotation potential
             Scalar U_rot = (K / r) * (3 - cos(n * del_theta_i) - cos(n * del_theta_j) - cos(n * del_gamma_ij));
 
             std::cout << "Pair U_rot: " << U_rot << std::endl;
@@ -338,18 +401,16 @@ class EvaluatorPairRotation
             //vec3<Scalar> f = f_scalar * (dr / r);
             //
 
-            //vec3<Scalar> f;
-            //vec3<Scalar> t_i;
-            //vec3<Scalar> t_j;
-            //Scalar e = U_rot;
+            e += U_rot;
 
-            //force = vec_to_scalar3(f);
-            //torque_i = vec_to_scalar3(t_i);
-            //torque_j = vec_to_scalar3(t_j);
-            //pair_eng = e;
+            force = vec_to_scalar3(f);
+            torque_i = vec_to_scalar3(t_i);
+            torque_j = vec_to_scalar3(t_j);
+            pair_eng = e;
 
             }
 
+        std::cout << "Writing current Rotationmap to BondHistory file" << std::endl;
         rotationMap.writeBondHistory(currentTimestep, tag_i, tag_j);
 
         return true;
@@ -390,8 +451,13 @@ class EvaluatorPairRotation
     Scalar4 quat_i, quat_j; //!< Stored quaternion of ith and jth particle from constructor
     vec3<Scalar> mu_i;      /// Magnetic moment for ith particle
     vec3<Scalar> mu_j;      /// Magnetic moment for jth particle
+    Scalar diameter_i;//!<~ add diameter_i [RHEOINF]
+    Scalar diameter_j;//!<~ add diameter_j [RHEOINF]
+    //Scalar D0;     //!< Depth of the Morse potential at its minimum
+    //Scalar alpha;  //!< Controls width of the potential well
+    //Scalar r0;     //!< Offset, i.e., position of the potential minimum
     Scalar K;
-    unsigned int n;
+    Scalar n;
     vec3<Scalar> e_i, e_j;
     RotationMap rotationMap; //!< Reference to the rotation map
     uint64_t currentTimestep;
@@ -401,4 +467,4 @@ class EvaluatorPairRotation
     } // end namespace md
     } // end namespace hoomd
 
-#endif // __PAIR_EVALUATOR_DIPOLE_H__
+#endif // __PAIR_EVALUATOR_ROTATION_H__
