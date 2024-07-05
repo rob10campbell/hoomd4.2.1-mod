@@ -178,6 +178,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 PotentialTersoff.h
                 PPPMForceComputeGPU.h
                 PPPMForceCompute.h
+                RotationMap.h # [RHEOINF]
                 TableAngleForceComputeGPU.h
                 TableAngleForceCompute.h
                 TableDihedralForceComputeGPU.h

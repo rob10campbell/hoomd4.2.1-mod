@@ -223,7 +223,7 @@ Adding AO Potential (might be incorrect calc?) (Rob)
 
 ## Rotation Restriction
 Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and Gelb (Soft Matter, 2020), DOI: 10.1039/c9sm01755k (Rob) <br>
-*WARNING*: unfinished (does not actually calculate forces, only tests the new RotationMap class)
+*WARNING*: unfinished (does not actually calculate forces, only tests the new RotationMap class) ...also seems like the Evaluator is not properly activated? No print statements are generated from wihin in, despite printing correctly from other Evaluators...
 - **rotation map**: create a new map to track bond formation and particle oritnetation (for use in rotation restriction calculations)
 - **timestep**: pass timestep to the Evaluator and RotationMap 
 - **types**: pass particle types to the Evaluator and Rotationmap
@@ -238,6 +238,7 @@ Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and
 		* [x] EvaluatorPairGB.h : **types, timestep**
 		* [x] **[ADD NEW FILE]** EvaluatorPairRotation.h *WARNING: unfinished*
 
+		* [x] module-md.cc : **add AnisoPotentialPairRotation**
 		* [x] `pair/`
 			* [x] aniso.py : *add Rotation*
 		* [x] **[ADD NEW FILE]** RotationMap.h
