@@ -66,6 +66,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 AnisoPotentialPairGPU.cuh
                 AnisoPotentialPairGPU.h
                 AnisoPotentialPair.h
+                BondMap.h #[RHEOINF]
                 BondTablePotentialGPU.h
                 BondTablePotential.h
                 CommunicatorGridGPU.h
@@ -109,6 +110,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairExpandedMie.h
                 EvaluatorPairMoliere.h
                 EvaluatorPairMorse.h
+                EvaluatorPairMorseAngleLimit.h #[RHEOINF]
                 EvaluatorPairMorseRepulse.h #[RHEOINF]
                 EvaluatorPairOPP.h
                 EvaluatorPairFourier.h
@@ -456,7 +458,7 @@ foreach(_evaluator ${_external_evaluators})
     endif()
 endforeach()
 
-set(_wall_evaluators LJ Yukawa ForceShiftedLJ Mie Gauss Morse) #add MorseRepulse if you want it to be a wall evaluator? [RHEOINF]
+set(_wall_evaluators LJ Yukawa ForceShiftedLJ Mie Gauss Morse) #add MorseRepulse and MorseAngleLimit if you want them to be wall evaluators? [RHEOINF]
 
 foreach(_evaluator ${_wall_evaluators})
     configure_file(export_PotentialExternalWall.cc.inc
@@ -512,6 +514,7 @@ set(_pair_evaluators Buckingham
                      Yukawa
                      Ewald
                      Morse
+                     MorseAngleLimit #[RHEOINF]
                      MorseRepulse #[RHEOINF]
                      ConservativeDPD
                      Moliere

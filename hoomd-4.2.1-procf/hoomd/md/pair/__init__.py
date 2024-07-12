@@ -144,6 +144,7 @@ from .pair import (
     Yukawa,
     Ewald,
     Morse,
+    MorseAngleLimit, #[RHEOINF]
     MorseRepulse, #[RHEOINF]
     DPD,
     DPDConservative,

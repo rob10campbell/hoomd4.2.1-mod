@@ -20,6 +20,8 @@
 #include "hoomd/Index1D.h"
 #include "hoomd/managed_allocator.h"
 #include "hoomd/md/EvaluatorPairLJ.h"
+#include "BondMap.h" //~ add BondMap [RHEOINF]
+#include <iostream> //~ add BondMap [RHEOINF]
 
 #ifdef ENABLE_HIP
 #include <hip/hip_runtime.h>
@@ -38,6 +40,8 @@
 #ifdef __HIPCC__
 #error This header cannot be compiled by nvcc
 #endif
+
+//extern BondDataManager manager;  // Declaration of the global instance of BondDataManager [RHEOINF]
 
 namespace hoomd
     {
@@ -227,6 +231,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
     virtual bool isAutotuningComplete();
 
     protected:
+    //BondDataManager manager; // Implementation of BondDataManager object [RHEOINF]
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
     energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
     Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
@@ -619,6 +624,10 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
     //~
 
+    //~ access particle tags
+    ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+    //~
+
     // force arrays
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
@@ -642,6 +651,20 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     //Scalar shear_rate = this->m_SR;
     //    //std::cout << shear_rate << std::endl;
     //~
+
+    //~ clear map data from the previous timestep [RHEOINF]
+    BondDataManager& manager = BondDataManager::getInstance();
+    manager.clearData();
+    //~
+
+    //~ get old keys from BondMap [RHEOINF]
+    //std::vector<std::tuple<unsigned int, unsigned int>> old_keys = manager.getAllKeys();
+    //std::cout << "All old_keys:" << std::endl;
+    //for (const auto& key : old_keys) {
+    //    std::cout << "(" << std::get<0>(key) << ", " << std::get<1>(key) << ")" << std::endl;
+    //}
+    //~
+
 
     // for each particle
     for (int i = 0; i < (int)m_pdata->getN(); i++)
@@ -678,6 +701,106 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         // loop over all of the neighbors of this particle
         const size_t myHead = h_head_list.data[i];
         const unsigned int size = (unsigned int)h_n_neigh.data[i];
+
+        //~ save neighbor data to the BondMap [RHEOINF]
+        //BondDataManager& manager = BondDataManager::getInstance();
+        //std::vector<std::tuple<unsigned int, unsigned int>> new_keys; // track new keys
+        for (unsigned int k = 0; k < size; k++)
+            {
+            // access the index of this neighbor (MEM TRANSFER: 1 scalar)
+            unsigned int j = h_nlist.data[myHead + k];
+            assert(j < m_pdata->getN() + m_pdata->getNGhosts());
+
+            // record all new keys
+            //std::tuple<unsigned int, unsigned int> curr_pair = std::make_tuple(h_tag.data[i], h_tag.data[j]);
+            //new_keys.push_back(curr_pair);
+
+            // calculate dr_ji (MEM TRANSFER: 3 scalars / FLOPS: 3)
+            Scalar3 pj = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+            Scalar3 dx = pi - pj;
+
+            // access the type of the neighbor particle (MEM TRANSFER: 1 scalar)
+            unsigned int typej = __scalar_as_int(h_pos.data[j].w);
+            assert(typej < m_pdata->getNTypes());
+
+            //~ access diameter (if needed) 
+            //Scalar dj = Scalar(0.0); 
+            //dj = h_diameter.data[j];
+            //~
+
+            // apply periodic boundary conditions
+            dx = box.minImage(dx);
+
+            // calculate r_ij squared (FLOPS: 5)
+            Scalar rsq = dot(dx, dx);
+
+            // get parameters for this type pair
+            unsigned int typpair_idx = m_typpair_idx(typei, typej);
+            Scalar rcutsq = h_rcutsq.data[typpair_idx]; 
+
+            if (rsq < rcutsq) {
+                //int value;
+                //unsigned int key = h_tag.data[i];
+                // if the key exists, then increase the value +1
+                BondTrackData value; // Initialize with default values 
+                // count multiple bonds between these particles
+                //if (manager.getData(h_tag.data[j], h_tag.data[j], value)) {
+                //    manager.incrementNbonds(h_tag.data[i], h_tag.data[j]);
+                //if (manager.getData(key, value)) {
+                //    manager.setData(key, value + 1);
+                //} else {
+                if (!manager.getData(h_tag.data[j], h_tag.data[j], value)) {
+                    // otherwise, create the key with the value of 1
+                    //value.nbonds = 1;
+                    value.formedTime = timestep;
+                    //value.brokeTime = 0;
+                    value.pos1_x = h_pos.data[j].x;
+                    value.pos1_y = h_pos.data[j].y;
+                    value.pos1_z = h_pos.data[j].z;
+                    value.pos2_x = h_pos.data[j].x;
+                    value.pos2_y = h_pos.data[j].y;
+                    value.pos2_z = h_pos.data[j].z;
+                    value.d1 = h_diameter.data[i];
+                    value.d2 = h_diameter.data[j];
+                    value.type1 = typei;
+                    value.type2 = typej;
+                    manager.setData(h_tag.data[i], h_tag.data[j], value);
+                //    manager.setData(key, 1);
+                }
+            } 
+        }
+        //std::cout << "Values have been set for particle i." << std::endl;
+
+        // update brokeTime for all broken bonds!
+        //for (const auto& key : old_keys) {
+        //    if (std::find(new_keys.begin(), new_keys.end(), key) == new_keys.end()) {
+        //        unsigned int tag_a = std::get<0>(key);
+        //        unsigned int tag_b = std::get<1>(key);
+        //        BondTrackData value;
+        //        if (manager.getData(tag_a, tag_b, value)) {
+        //            value.brokeTime = timestep; 
+        //            manager.setData(tag_a, tag_b, value);
+        //        }
+        //    }
+        //}
+        //manager.printData();
+        //std::cout << "-----" << std::endl;
+        // look for old keys in new keys, and remove all bonds that broke this timestep
+        //for (const auto& key : new_keys) {
+        //    BondTrackData value;
+        //    if (manager.getData(std::get<0>(key), std::get<1>(key), value)) {
+        //        if (value.brokeTime == timestep) {
+        //            manager.removeKey(std::get<0>(key), std::get<1>(key));
+        //            std::cout << "Removed key (" << std::get<0>(key) << ", " << std::get<1>(key)
+        //                      << ") with brokeTime == " << timestep << "." << std::endl;
+        //        }
+        //    }
+        //}
+        //std::cout << "<----->" << std::endl;
+        //std::cout << "<----->" << std::endl;
+        //~ 
+
+
         for (unsigned int k = 0; k < size; k++)
             {
             // access the index of this neighbor (MEM TRANSFER: 1 scalar)
@@ -748,6 +871,17 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             //~
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
+
+            //~ set tags and timestep for new bond calc [RHEOINF]
+            if (evaluator::needsTags())
+              eval.setTags(h_tag.data[i], h_tag.data[j]);
+            if (evaluator::needsTimestep())
+              eval.setTimestep(timestep);
+            if (evaluator::needsIJPos())
+              eval.setIJPos(pi, pj);
+            if (evaluator::needsBox())
+              eval.setBox(box);
+            //~
 
             bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift);
 

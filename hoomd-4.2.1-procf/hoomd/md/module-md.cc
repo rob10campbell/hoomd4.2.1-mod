@@ -56,6 +56,9 @@ void export_PotentialPairExpandedMie(pybind11::module& m);
 void export_PotentialPairYukawa(pybind11::module& m);
 void export_PotentialPairEwald(pybind11::module& m);
 void export_PotentialPairMorse(pybind11::module& m);
+//~ add MorseAngleLimit [RHEOINF]
+void export_PotentialPairMorseAngleLimit(pybind11::module& m);
+//~
 //~ add MorseRepulse [RHEOINF]
 void export_PotentialPairMorseRepulse(pybind11::module& m);
 //~
@@ -327,6 +330,9 @@ PYBIND11_MODULE(_md, m)
     export_PotentialPairYukawa(m);
     export_PotentialPairEwald(m);
     export_PotentialPairMorse(m);
+    //~ add MorseRepulase [RHEOINF]
+    export_PotentialPairMorseAngleLimit(m);
+    //~
     //~ add MorseRepulase [RHEOINF]
     export_PotentialPairMorseRepulse(m);
     //~

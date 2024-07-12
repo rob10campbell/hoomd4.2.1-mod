@@ -2136,3 +2136,80 @@ class MorseRepulse(Pair):
         self._add_typeparam(params)
 
 ##~
+
+##~
+class MorseAngleLimit(Pair):
+    r"""Morse pair force with added angular repulsion (if many-body structures form angles greater than theta_bar).
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`. 
+        mode (str): Energy shifting/smoothing mode.
+        scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [RHEOINF]
+
+    `MorseAngleLimit` computes the Morse pair force on every particle in the simulation
+    state, and adds an angular repulsion if particles are in a many-body structure with certain shape:
+
+    .. math::
+        U(r) = D_0 \left[ \exp \left(-2\alpha\left(
+            r-r_0\right)\right) -2\exp \left(-\alpha\left(r-r_0\right)
+            \right) \right]
+        U_rep(r) = B \Lambda(r) \Lambda(r') \exp( (\frac{r \cdot r'}{r r'}) - cos(/theta_bar))^2 / w^2 )
+
+        Where Lambda is a radial modulation function that decays smoothly
+        Lambda(r) = r^(−10) [1 − (r/2)^10]^2 H(2 − r)
+        and H is the Heaviside function 
+
+    Example::
+
+        nl = nlist.Cell()
+        morse = pair.MorseAngleLimit(default_r_cut=3.0, nlist=nl)
+        morse.params[('A', 'A')] = dict(D0=1.0, alpha=3.0, r0=1.0, f_contact=0, theta_bar=1.13446, B=67.27, w=0.30, scaled_D0=false)
+        morse.r_cut[('A', 'A')] = 3.0
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``D0`` (`float`, **required**) - depth of the potential at its
+          minimum :math:`D_0` :math:`[\mathrm{energy}]`
+        * ``alpha`` (`float`, **required**) - the width of the potential well
+          :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
+        * ``r0`` (`float`, **required**) - position of the minimum
+          :math:`r_0` :math:`[\mathrm{length}]`
+        * ``f_contact`` (`float`, **required**) - magnitude of contact force (set to zero to remove contact force)
+          :math:`f_contact` :math:`[]`
+        * ``theta_bar`` (`float`, **required**) - size of the reference angle limit (in radians)
+          :math:`theta_bar` :math:`[\mathrm{radians}]`
+        * ``B`` (`float`, **required**) - magnitude of angular repulsion 
+          :math:`B` :math:`[\mathrm{energy}]`
+        * ``w`` (`float`, **required**) - width of the angular repulsion potential (about peak B at position theta_bar)
+          :math:`w` :math:`[\mathrm{length?}]`
+        * ``scaled_D0`` (`bool`, optional) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [RHEOINF]
+          :math: `scaled_D0` :math: `[true/false]` [RHEOINF]
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``, ``"shift"``, or ``"xplor"``.
+
+        Type: `str`
+    """
+
+    _cpp_class_name = "PotentialPairMorseAngleLimit"
+    _default_scaled_D0 = False ##~ add scaled_D0 [RHEOINF]
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        ##~ add scaled_D0 [RHEOINF]
+        if scaled_D0 is None:
+            scaled_D0 = self._default_scaled_D0
+        ##~
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, theta_bar=float, B=float, w=float, scaled_D0=bool(scaled_D0), len_keys=2))
+        self._add_typeparam(params)
+##~
