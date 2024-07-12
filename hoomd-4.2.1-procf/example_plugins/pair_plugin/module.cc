@@ -2,7 +2,7 @@
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 // Include the defined classes that are to be exported to python
-#include "EvaluatorPairExample.h"
+//#include "EvaluatorPairExample.h" //~ deactivate EvaluatorPairExample [RHEOINF]
 
 #include "hoomd/md/PotentialPair.h"
 #include <pybind11/pybind11.h>
@@ -19,9 +19,9 @@ namespace md
 // in CMakeLists (with an underscore in front)
 PYBIND11_MODULE(_pair_plugin, m)
     {
-    detail::export_PotentialPair<EvaluatorPairExample>(m, "PotentialPairExample");
+    //detail::export_PotentialPair<EvaluatorPairExample>(m, "PotentialPairExample"); //~ deactivate EvaluatorPairExample [RHEOINF]
 #ifdef ENABLE_HIP
-    detail::export_PotentialPairGPU<EvaluatorPairExample>(m, "PotentialPairExampleGPU");
+    //detail::export_PotentialPairGPU<EvaluatorPairExample>(m, "PotentialPairExampleGPU"); //~ deactivate EvaluatorPairExample [RHEOINF]
 #endif
     }
 
