@@ -14,6 +14,8 @@ File lists are formatted as: `folder/`; file
 * [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential) : Add AO Potential (might be incorrect calc?) (Rob)
+* [Bond Angle Limit](/changelog.md#bond-angle-limit) : Add an effective bending rigidity for multi-body structures with certain angles (Rob)
+* [Turn off EvaluatorPairExample](/changelog.md#turn-off-evaluatorpairexample) : the example custom Evaluator is now turned off (Rob)
 * [HPMC](/changelog.md#hpmc) : enable compilation with HPMC on (see important notes in description) (Rob)
 
 ## Core Modifications
@@ -217,9 +219,62 @@ Adding AO Potential (might be incorrect calc?) (Rob)
 	* [ ] `md/`
 		* [ ] CMakeLists.txt : **set new file (EvaluatorPairDPDThermoDPDAO.h)**
 		* [ ] **[ADD NEW FILE]** EvaluatorPairDPDThermoDPDAO.h (the Asakura-Oosawa potential)
+		* [ ] module-md.cc : **call MorseAngleLimit**
 		* [ ] `pair`
 			* [ ] \_\_init\_\_.py **call DPDAO**
 			* [ ] pair.py : **call DPDAO**
+
+
+## Bond Angle Limit
+Adding a new potential that limits three-body colloid structures to angles around a reference angle theta_bar<r>
+(based on Bantawa, Fontaine-Seiler, Olmstead, Del Gado (2021, JPhys Condensed Matt) [DOI 10.1088/1361-648X/ac14f6](https://doi.org/10.1088/1361-648X/ac14f6))
+- **MorseAngleLimit**: A new Evaluator that combines BD Morse with "effective bond rigidity" from a multi-body bonding angle limit
+- **BondMap**: A new file that creates and stores bonded neighbor information for all colloids each timestep (can be modified to track bond formation/breaking?)
+- **tags**: set/get particle tags for interacting with BondMap
+- **timestep**: set/get timestep (legacy from other tests)
+- **positions**: set/get xyz components of position for current particle pair for angle calculations
+- **VectorMath**: include Vector Math for angle calculations
+
+ * [ ] `hoomd/`
+ 	* [x] `example_plugins/`
+		* [x] `pair_plugin/`
+			* [x] EvaluatorPairExample.h : **tags, timestep, positions, VectorMath**
+	* [ ] `md/`
+		* [x] **[ADD NEW FILE]** BondMap.h
+		* [x] CMakeLists.txt : **set new file (EvaluatorPairMorseAngleLimit.h)**
+		* [x] EvaluatorPairBuckingham.h : **tags, timestep, positions, VectorMath** 
+		* [x] EvaluatorPairDLVO.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairDPDThermoDPD.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairDPDThermoDPDMorse.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairDPDThermoLJ.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairEwald.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairExpandedGaussian.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairExpandedLJ.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairExpandedMie.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairForceShiftedLJ.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairFourier.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairGauss.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairLJ.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairLJ0804.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairLJ1208.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairLJGauss.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairMie.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairMoliere.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairMorse.h : **tags, timestep, positions, VectorMath**
+		* [ ] **[ADD NEW FILE]** EvaluatorPairMorseAngleLimit.h (which uses BondMap) 
+		* [x] EvaluatorPairOPP.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairReactionField.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairTWF.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairTable.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairYukawa.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorPairZBL.h : **tags, timestep, positions, VectorMath**
+		* [x] EvaluatorWalls.h : **tags, timestep, positions, VectorMath**
+		* [x] module-md.cc : **call MorseAngleLimit**
+		* [x] PotentialPair.h : **set/call BondMap, tags, timestep**
+		* [x] `pair`
+			* [x] \_\_init\_\_.py **call MorseAngleLimit**
+			* [x] pair.py : **call MorseAngleLimit**
+
 
 ## Rotation Restriction
 Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and Gelb (Soft Matter, 2020), DOI: 10.1039/c9sm01755k (Rob) <br>
@@ -242,6 +297,16 @@ Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and
 		* [x] `pair/`
 			* [x] aniso.py : *add Rotation*
 		* [x] **[ADD NEW FILE]** RotationMap.h
+
+
+## Turn off EvaluatorPairExample
+Turn off the example custom Evaluator (no longer compiled with the rest of the software) <br>
+Set/Get BoxDim box value (required for MorseAngleLimit) cannot compile with a placeholder system (it requires a real system box!) so even with the correct code the EvaluatorPairExample.h file cannot be compiled (BoxDim components do not exist); so this file was removed from compilation (not used in the software normally, anyway, it only exists as an example for writing custom evaluators)
+* [ ] `hoomd/`
+	* [x] `example_plugins/`
+		* [x] `pair_plugin/`
+			* [x] EvaluatorPairExample.h -> EvaluatorPairExample_ref.h
+			* [x] module-md.cc : **comment out EvaluatorPairExample**
 
 
 ## HPMC

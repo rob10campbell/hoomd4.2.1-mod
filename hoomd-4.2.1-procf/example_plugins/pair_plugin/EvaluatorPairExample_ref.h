@@ -3,8 +3,8 @@
 
 // ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
 
-#ifndef __PAIR_EVALUATOR_TWF_H__
-#define __PAIR_EVALUATOR_TWF_H__
+#ifndef __PAIR_EVALUATOR_EXAMPLE_H__
+#define __PAIR_EVALUATOR_EXAMPLE_H__
 
 #ifndef __HIPCC__
 #include <string>
@@ -12,19 +12,14 @@
 
 #include "hoomd/HOOMDMath.h"
 #include "hoomd/VectorMath.h" // add vectors for optional position [RHEOINF]
-#include <cmath>
 
-/*! \file EvaluatorPairTWF.h
-    \brief Defines the pair potential evaluator for the TWF potential
-    \details The potential was designed for simulating globular proteins and is
-    a modification of the LJ potential with harder interactions and a variable
-    well width. For more information see the Python documentation.
+/*! \file EvaluatorPairExample.h
+    \brief Defines the pair evaluator class for the example potential
 */
 
-// need to declare these class methods with __device__ qualifiers when building
-// in nvcc
-// DEVICE is __host__ __device__ when included in nvcc and blank when included
-// into the host compiler
+// need to declare these class methods with __device__ qualifiers when building in nvcc
+// DEVICE is __host__ __device__ when included in nvcc and blank when included into the host
+// compiler
 #ifdef __HIPCC__
 #define DEVICE __device__
 #define HOSTDEVICE __host__ __device__
@@ -37,16 +32,15 @@ namespace hoomd
     {
 namespace md
     {
-//! Class for evaluating the TWF pair potential
-class EvaluatorPairTWF
+
+class EvaluatorPairExample
     {
     public:
     //! Define the parameter type used by this pair potential evaluator
     struct param_type
         {
-        Scalar sigma;
-        Scalar alpha;
-        Scalar prefactor;
+        Scalar k;     //!< Spring constant
+        Scalar sigma; //!< Minima of the spring
 
         DEVICE void load_shared(char*& ptr, unsigned int& available_bytes) { }
 
@@ -61,43 +55,41 @@ class EvaluatorPairTWF
 #endif
 
 #ifndef __HIPCC__
-        param_type() : sigma(1), alpha(1), prefactor(1) { }
+        param_type() : k(0), sigma(0) { }
 
         param_type(pybind11::dict v, bool managed = false)
             {
+            k = v["k"].cast<Scalar>();
             sigma = v["sigma"].cast<Scalar>();
-            alpha = v["alpha"].cast<Scalar>();
-            prefactor = 4.0 * v["epsilon"].cast<Scalar>() / (alpha * alpha);
-            }
-
-        param_type(Scalar sigma, Scalar epsilon, Scalar alpha, bool managed = false)
-            : sigma(sigma), alpha(alpha), prefactor(4 * epsilon / (alpha * alpha))
-            {
             }
 
         pybind11::dict asDict()
             {
             pybind11::dict v;
+            v["k"] = k;
             v["sigma"] = sigma;
-            v["alpha"] = alpha;
-            v["epsilon"] = alpha * alpha / 4 * prefactor;
             return v;
             }
 #endif
-        } __attribute__((aligned(16)));
+        }
+#if HOOMD_LONGREAL_SIZE == 32
+        __attribute__((aligned(8)));
+#else
+        __attribute__((aligned(16)));
+#endif
 
     //! Constructs the pair potential evaluator
     /*! \param _rsq Squared distance between the particles
         \param _radcontact the sum of the interacting particle radii [RHEOINF]
-        \param _pair_typeids the typeIDs of the interacting particles [RHEOINF]
+        \param _pair_typeids the typeID of the interacting particles [RHEOINF]
         \param _rcutsq Squared distance at which the potential goes to 0
         \param _params Per type pair parameters of this potential
     */
-    DEVICE EvaluatorPairTWF(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~add radcontact, pair_typeIDs [RHEOINF]
-        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), params(_params) //~ add radcontact [RHEOINF]
+    DEVICE EvaluatorPairExample(Scalar _rsq, Scalar _radcontact, unsigned int _pair_typeids[2], Scalar _rcutsq, const param_type& _params) //~ add radcontact, pair_typeids[RHEOINF]
+        : rsq(_rsq), radcontact(_radcontact), rcutsq(_rcutsq), k(_params.k), sigma(_params.sigma) //~ add radcontact [RHEOINF]
         {
         typei = _pair_typeids[0]; //~ add typei [RHEOINF]
-        typej = _pair_typeids[1]; //~ add typej [RHEOINF] 
+        typej = _pair_typeids[1]; //~ add typej [RHEOINF]
         }
 
     //~ add tags [RHEOINF]
@@ -107,8 +99,8 @@ class EvaluatorPairTWF
         }
     HOSTDEVICE void setTags(unsigned int tagi, unsigned int tagj) { }
     //~
-        
-    //!~ add diameter [RHEOINF]
+
+    //!~ add diameter [RHEOINF] 
     DEVICE static bool needsDiameter()
         {
         return false;
@@ -118,15 +110,14 @@ class EvaluatorPairTWF
         \param dj Diameter of particle j
     */
     DEVICE void setDiameter(Scalar di, Scalar dj) { }
-    //~
-
-    //! TWF doesn't use charge
+    //~ 
+    
+    //! Example doesn't use charge
     DEVICE static bool needsCharge()
         {
         return false;
         }
-
-    //! Accept the optional charge values.
+    //! Accept the optional charge value
     /*! \param qi Charge of particle i
         \param qj Charge of particle j
     */
@@ -163,11 +154,14 @@ class EvaluatorPairTWF
     HOSTDEVICE void setBox(const BoxDim box) { }
     //~
 
+
     //! Evaluate the force and energy
     /*! \param force_divr Output parameter to write the computed force divided by r.
         \param pair_eng Output parameter to write the computed pair energy
         \param energy_shift If true, the potential must be shifted so that
         V(r) is continuous at the cutoff
+        \note There is no need to check if rsq < rcutsq in this method.
+        Cutoff tests are performed in PotentialPair.
 
         \return True if they are evaluated or false if they are not because
         we are beyond the cutoff
@@ -177,38 +171,19 @@ class EvaluatorPairTWF
         // compute the force divided by r in force_divr
         if (rsq < rcutsq)
             {
-            // Compute common terms to equations
-            Scalar sigma2 = params.sigma * params.sigma;
-            // If particles are overlapping return maximum possible energy
-            // and force since this is an invalid state and should be
-            // infinite energy and force.
-            if (rsq <= sigma2)
-                {
-                // Since std::numeric_limit<>::max cannot be used for GPU
-                // code, we use the INFINITY macros instead.
-                pair_eng = INFINITY;
-                force_divr = INFINITY;
-                return true;
-                }
+            Scalar r = fast::sqrt(rsq);
+            Scalar rinv = 1 / r;
+            Scalar overlap = sigma - r;
 
-            Scalar common_term = 1.0 / (rsq / sigma2 - 1.0);
-            Scalar common_term3 = common_term * common_term * common_term;
-            Scalar common_term6 = common_term3 * common_term3;
-            // Compute force and energy
-            pair_eng = params.prefactor * (common_term6 - params.alpha * common_term3);
-            // The force term is -(dE / dr) * (1 / r).
-            Scalar force_term = 6 * common_term / sigma2;
-            force_divr
-                = params.prefactor * force_term * (2 * common_term6 - params.alpha * common_term3);
+            force_divr = k * overlap * rinv;
+
+            pair_eng = Scalar(0.5) * k * overlap * overlap;
 
             if (energy_shift)
                 {
-                Scalar common_term_shift = 1.0 / (rcutsq / sigma2 - 1.0);
-                Scalar common_term3_shift
-                    = common_term_shift * common_term_shift * common_term_shift;
-                Scalar common_term6_shift = common_term3_shift * common_term3_shift;
-                pair_eng
-                    -= params.prefactor * (common_term6_shift - params.alpha * common_term3_shift);
+                Scalar rcut = fast::sqrt(rcutsq);
+                Scalar cut_overlap = sigma - rcut;
+                pair_eng -= Scalar(0.5) * k * cut_overlap * cut_overlap;
                 }
             return true;
             }
@@ -216,11 +191,13 @@ class EvaluatorPairTWF
             return false;
         }
 
+    //! Example doesn't eval LRC integrals
     DEVICE Scalar evalPressureLRCIntegral()
         {
         return 0;
         }
 
+    //! Example doesn't eval LRC integrals
     DEVICE Scalar evalEnergyLRCIntegral()
         {
         return 0;
@@ -232,7 +209,7 @@ class EvaluatorPairTWF
      */
     static std::string getName()
         {
-        return std::string("twf");
+        return std::string("example_pair");
         }
 
     std::string getShapeSpec() const
@@ -242,15 +219,17 @@ class EvaluatorPairTWF
 #endif
 
     protected:
-    Scalar rsq;        //!< Stored rsq from the constructor
+    Scalar rsq;    //!< Stored rsq from the constructor
     Scalar radcontact; //!< Stored contact-distance from the constructor [RHEOINF]
-    unsigned int pair_typeids;//!< Stored pair typeIDs from the constructor [RHEOINF]
+    unsigned int pair_typeids[2];//!< Stored pair typeIDs from the constructor [RHEOINF]
     unsigned int typei;//!<~ Stored typeID of particle i from the constructor [RHEOINF]
     unsigned int typej;//!<~ Stored typeID of particle j from the constructor [RHEOINF]
-    Scalar rcutsq;     //!< Stored rcutsq from the constructor
-    param_type params; //!< parameters passed to the constructor
+    Scalar rcutsq; //!< Stored rcutsq from the constructor
+    Scalar k;      //!< Stored k from the constructor
+    Scalar sigma;  //!< Stored sigma from the constructor
     };
 
-    }  // end namespace md
-    }  // end namespace hoomd
-#endif // __PAIR_EVALUATOR_TWF_H__
+    } // end namespace md
+    } // end namespace hoomd
+
+#endif // __PAIR_EVALUATOR_EXAMPLE_H__

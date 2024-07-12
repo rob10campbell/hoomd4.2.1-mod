@@ -12,6 +12,7 @@
 
 #include "EvaluatorPairMoliere.h"
 #include "hoomd/HOOMDMath.h"
+#include "hoomd/VectorMath.h" // add vectors for optional position [RHEOINF]
 
 /*! \file EvaluatorPairZBL.h
     \brief Defines the pair evaluator class for ZBL potentials
@@ -79,6 +80,14 @@ class EvaluatorPairZBL
         typej = _pair_typeids[1]; //~ add typej [RHEOINF] 
         }
         
+    //~ add tags [RHEOINF]
+    HOSTDEVICE static bool needsTags()
+        {
+        return false;
+        }
+    HOSTDEVICE void setTags(unsigned int tagi, unsigned int tagj) { }
+    //~
+
     //!~ add diameter [RHEOINF] 
     DEVICE static bool needsDiameter()
         {
@@ -101,6 +110,37 @@ class EvaluatorPairZBL
         \param qj Charge of particle j
     */
     DEVICE void setCharge(Scalar qi, Scalar qj) { }
+
+    //~ add timestep [RHEOINF]
+    HOSTDEVICE static bool needsTimestep()
+        {
+        return false;
+        }
+    HOSTDEVICE void setTimestep(uint64_t timestep)  { }
+    //~
+
+    //~ add i and j positions [RHEOINF] 
+    DEVICE static bool needsIJPos()
+        {
+        return false;
+        }
+    //! Accept the optional position values
+    /*! \param pi position of particle i
+        \param pj position of particle j
+    */
+    DEVICE void setIJPos(Scalar3 pi, Scalar3 pj) {}
+    //~
+
+    //!~ Whether the potential pair needs BoxDim info [RHEOINF]
+    HOSTDEVICE static bool needsBox()
+        {
+        return false;
+        }
+    //! Accept the optional BoxDim structure
+    /*! \param box the current box
+    */
+    HOSTDEVICE void setBox(const BoxDim box) { }
+    //~
 
     //! Evaluate the force and energy.
     /*! \param force_divr Output parameter to write the computed force divided by r
