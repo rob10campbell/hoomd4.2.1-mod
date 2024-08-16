@@ -100,6 +100,9 @@ class PotentialPairAlchemical : public PotentialPair<evaluator>
     using PotentialPair<evaluator>::m_exec_conf;
     using PotentialPair<evaluator>::m_sysdef;
     using PotentialPair<evaluator>::m_nlist;
+    using PotentialPair<evaluator>::m_bond_calc; // add bond_calc [RHEOINF]
+    using PotentialPair<evaluator>::m_B; // add B [RHEOINF]
+    using PotentialPair<evaluator>::m_theta_bar; // add theta_bar [RHEOINF]
     using PotentialPair<evaluator>::m_virial;
     using PotentialPair<evaluator>::m_ronsq;
     using PotentialPair<evaluator>::m_rcutsq;
@@ -148,7 +151,7 @@ template<class evaluator, typename extra_pkg, typename alpha_particle_type>
 PotentialPairAlchemical<evaluator, extra_pkg, alpha_particle_type>::PotentialPairAlchemical(
     std::shared_ptr<SystemDefinition> sysdef,
     std::shared_ptr<NeighborList> nlist)
-    : PotentialPair<evaluator>(sysdef, nlist)
+    : PotentialPair<evaluator>(sysdef, nlist, m_bond_calc = false, m_B = 0, m_theta_bar = 0) // add bond_calc [RHEOINF]
     {
     m_alchemy_index = Index2DUpperTriangular(m_pdata->getNTypes());
     m_alchemical_particles.resize(m_alchemy_index.getNumElements()

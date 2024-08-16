@@ -53,7 +53,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     //! Construct the pair potential
     PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<NeighborList> nlist,
-                           bool bond_calc); //~ add bond_calc [RHEOINF]
+                           bool bond_calc, //~ add bond_calc [RHEOINF]
+                           Scalar B, Scalar theta_bar); //~ add angular repulsion [RHEOINF]
     //! Destructor
     virtual ~PotentialPairDPDThermo() {};
 
@@ -72,6 +73,22 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 	{
 	return m_bond_calc;
 	}
+    void setBvalEnabled(Scalar B)
+      {
+      m_B = B;
+      }
+    bool getBvalEnabled()
+      {
+      return m_B;
+      }
+    void setThetaBarEnabled(Scalar theta_bar)
+      {
+      m_theta_bar = theta_bar;
+      }
+    bool getThetaBarEnabled()
+      {
+      return m_theta_bar;
+      }
     //~
 
     //~ add Lifetime [RHEOINF] 
@@ -87,6 +104,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     std::shared_ptr<Variant> m_T; //!< Temperature for the DPD thermostat
 
     bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [RHEOINF]
+    bool m_B; //= 0;              //~!< B value (default 0) [RHEOINF]
+    bool m_theta_bar; //= 0;      //~!< theta_bar value (default 0) [RHEOINF]
 
    //ofstream DiameterFile; //~ print diameters [RHEOINF]
 
@@ -100,8 +119,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 template<class evaluator>
 PotentialPairDPDThermo<evaluator>::PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                                                           std::shared_ptr<NeighborList> nlist,
-                                                          bool bond_calc) //~ add bond_calc [RHEOINF]
-    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc) //~ add bond_calc [RHEOINF]
+                                                          bool bond_calc, Scalar B, Scalar theta_bar) //~ add bond_calc [RHEOINF]
+    : PotentialPair<evaluator>(sysdef, nlist, bond_calc, B, theta_bar) //~ add bond_calc [RHEOINF]
     {
     //~ add bond_calc flag [RHEOINF]
     if(m_bond_calc)
@@ -473,9 +492,13 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
     pybind11::class_<PotentialPairDPDThermo<T>,
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>()) //~ add bool for bond_calc [RHEOINF]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool, Scalar, Scalar>()) //~ add bool for bond_calc [RHEOINF]
         .def_property("bond_calc",  
 		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [RHEOINF]
+        .def_property("B",
+                &PotentialPair<T>::getBvalEnabled, &PotentialPair<T>::setBvalEnabled)  //~ add angular repulsion [RHEOINF]
+        .def_property("theta_bar",
+                &PotentialPair<T>::getThetaBarEnabled, &PotentialPair<T>::setThetaBarEnabled)  //~ add angular repulsion [RHEOINF]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
     }
 

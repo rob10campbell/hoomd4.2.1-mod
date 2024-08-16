@@ -41,40 +41,40 @@ namespace md
 
     //! Define functions that are used to calculate the angular repulsion potential 
 
-    // create the Heaviside step function (2-1)
+    // create the Heaviside step function (2d-r)
     // (this is for the angular repulsion potential)
-    Scalar heaviside(Scalar r) {
-        return (2 - r) < 0 ? 0.0 : 1.0;
+    Scalar heaviside(Scalar r, Scalar radsum) {
+        return (2*radsum - r) < 0 ? 0.0 : 1.0;
     }
 
-    // create the derivative of H(2-r), which is
-    // a Dirac delta function d(H(2-r)/dr=-δ(r - 2)
-    // (this is for the angular repulsion force)
-    Scalar neg_dirac_delta(Scalar r, Scalar epsilon = 1e-5) {
-        return std::abs(r - 2) < epsilon ? -1.0 / epsilon : 0.0;
+    // create the derivative of H(2d-r), which is
+    // a Dirac delta function d(H(2d-r)/dr=-δ(r - 2d)
+    // (this is for the angular repulsion force, effectively a second contact force)
+    Scalar neg_dirac_delta(Scalar r, Scalar radsum, Scalar epsilon = 1e-5) {
+        return std::abs(r - 2*radsum) < epsilon ? -1.0 / epsilon : 0.0;
     }
 
     // create the radial modulation function (Lambda function)
     // Λ(x) = x^-10 * [1-(0.5x)^10]^2 * heaviside(2-x)
     // (this is for the angular repulsion potential)
-    Scalar lambda(Scalar x) {
+    Scalar lambda(Scalar x, Scalar radsum) {
         if (x == 0) return 0;  // Handle x == 0 separately to avoid division by zero
 
-        Scalar h_lambda = heaviside(x);
+        Scalar h_lambda = heaviside(x, radsum);
         Scalar term = std::pow(0.5 * x, 10);
         return std::pow(x, -10) * std::pow(1 - term, 2) * h_lambda;
     }
             
     // and create it's derivative
-    // Λ'(x) = -10x^-11 * [1-(0.5x)^10]^2 * heaviside(2-x)
-    //            + r^-10 * ( 2[1-(r/2)^10]*(-5(r/2)^9 ) * heaviside(2-9)
+    // Λ'(x) = -10x^-11 * [1-(0.5x)^10]^2 * heaviside(2d-x)
+    //            + r^-10 * ( 2[1-(r/2)^10]*(-5(r/2)^9 ) * heaviside(2d-x)
     //               + r^-10 * [1-(r/2)^10]^2 * neg_dirac_delta
     // (this is for the angular repulsion force)
-    Scalar lambda_prime(Scalar x) {
+    Scalar lambda_prime(Scalar x, Scalar radsum) {
         if (x == 0) return 0;  // Handle x == 0 separately to avoid division by zero
 
-        Scalar h_lambdaprime = heaviside(x);
-        Scalar dirac_lambdaprime = neg_dirac_delta(x);
+        Scalar h_lambdaprime = heaviside(x, radsum);
+        Scalar dirac_lambdaprime = neg_dirac_delta(x, radsum);
 
         Scalar halfterm_ten = std::pow(0.5 * x, 10);
         Scalar halfterm_nine = std::pow(0.5 * x, 9);
@@ -327,120 +327,167 @@ class EvaluatorPairMorseAngleLimit
             pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
             //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [RHEOINF]
 
+            //std::cout << "Morse Energy: " << pair_eng << std::endl;
+            //std::cout << "Morse Force: " << force_divr << std::endl;
+            //std::cout << "--" << std::endl;
 
-            //~ check BondMap [RHEOINF]
-            //int currentData = manager.getData(); // if the data in BondMap is an int
-            //std::cout << "CurrentData: " << currentData << std::endl;
-            // ints from map
-            //int value1 = manager.getData("key1");
-            //int value2 = manager.getData("key2");
-            //std::cout << "CurrentData: " << value1 << "," << value2 << std::endl;
-            // bool and vaues from map
-            BondDataManager& manager = BondDataManager::getInstance();
-            //int value1;
-            //int value2;
-            //if (manager.getData(tag_i, value1)) {
-            //    std::cout << "Value for key1: " << value1 << std::endl;
-            //} else {
-            //    std::cerr << "Key for tag " << tag_i << " not found" << std::endl;
-            //}
+            //~ if there is an angular repulsion magnitude
+            if (B != 0) {
+                //~ check BondMap [RHEOINF]
+                //int currentData = manager.getData(); // if the data in BondMap is an int
+                //std::cout << "CurrentData: " << currentData << std::endl;
+                // ints from map
+                //int value1 = manager.getData("key1");
+                //int value2 = manager.getData("key2");
+                //std::cout << "CurrentData: " << value1 << "," << value2 << std::endl;
+                // bool and vaues from map
+                BondDataManager& manager = BondDataManager::getInstance();
+                //int value1;
+                //int value2;
+                //if (manager.getData(tag_i, value1)) {
+                //    std::cout << "Value for key1: " << value1 << std::endl;
+                //} else {
+                //    std::cerr << "Key for tag " << tag_i << " not found" << std::endl;
+                //}
 
-            //if (manager.getData(tag_i, value1)) {
-            //    int result = value1;
-            //    std::cout << "tag_i (" << tag_i << "): " << result << std::endl;
-            //}
-            BondTrackData data;
-            //const BoxDim box = this->m_pdata->getBox(); // get box for scaling
-            Scalar3 rij_vector = p_j-p_i; // calculate r as a vector
-            rij_vector = systembox.minImage(rij_vector); // scale vector within box
+                //if (manager.getData(tag_i, value1)) {
+                //    int result = value1;
+                //    std::cout << "tag_i (" << tag_i << "): " << result << std::endl;
+                //}
+                BondTrackData data;
+                //const BoxDim box = this->m_pdata->getBox(); // get box for scaling
+                Scalar3 rij_vector = p_j-p_i; // calculate r as a vector
+                rij_vector = systembox.minImage(rij_vector); // scale vector within box
 
-            // if bond map data exists
-            if (manager.getData(tag_i, tag_j, data)) {
-                // and if there are more than 1 bonds in the data set
-                int num_bonds = manager.countTagIKeys(tag_i);
-                if (num_bonds > 1) {
-                    //std::cout << num_bonds << " bonds found, calculating many-body angular repulsion" << std::endl;
-                    //std::cout << "tag_i, tag_j (" << tag_i << "," << tag_j<< ") " << num_bonds << " bonds" << std::endl;
+                // if bond map data exists
+                if (manager.getData(tag_i, tag_j, data)) {
+                    // and if there are more than 1 bonds in the data set
+                    int num_bonds = manager.countTagIKeys(tag_i);
+                    if (num_bonds > 1) {
+                        //std::cout << num_bonds << " bonds found, calculating many-body angular repulsion" << std::endl;
+                        //std::cout << "tag_i, tag_j (" << tag_i << "," << tag_j<< ") " << num_bonds << " bonds" << std::endl;
 
-                    // calculate the angular repulsion from each other existing bond
+                        // calculate the angular repulsion from each other existing bond
 
-                    // find all data that includes tag_i
-                    //std::vector<BondTrackData> bondDataVec = manager.getDataForTag(tag_i);
-                    auto bondDataVec = manager.getDataForTag(tag_i);
-                    //for (const auto& data : bondDataVec) {
-                    for (const auto& pair : bondDataVec) {
-                        const auto& key = pair.first;
-                        const auto& data = pair.second;
+                        // find all data that includes tag_i
+                        //std::vector<BondTrackData> bondDataVec = manager.getDataForTag(tag_i);
+                        auto bondDataVec = manager.getDataForTag(tag_i);
+                        //for (const auto& data : bondDataVec) {
+                        for (const auto& pair : bondDataVec) {
+                            const auto& key = pair.first;
+                            const auto& data = pair.second;
   
-                        // bond i-j does not interact with itself 
-                        if (!((key.first == tag_i && key.second == tag_j) || (key.first == tag_j && key.second == tag_i))) { 
-                            //for all other i-k pairs
-                            Scalar3 pi = make_scalar3(0.0,0.0,0.0);
-                            Scalar3 pk = make_scalar3(0.0,0.0,0.0);
-                            if (key.first == tag_i) {
-                                // r_prime is the vector from key.first to key.second
-                                pi = make_scalar3(data.pos1_x, data.pos1_y, data.pos1_z);
-                                pk = make_scalar3(data.pos2_x, data.pos2_y, data.pos2_z);
-                            } else if (key.second == tag_i ){
-                                // r_prime is the vector from key.second to key.first
-                                pi = make_scalar3(data.pos2_x, data.pos2_y, data.pos2_z);
-                                pk = make_scalar3(data.pos1_x, data.pos1_y, data.pos1_z);
-                            }                  
-                            Scalar3 r_prime = pk-pi; // calculate r_prime
-                            r_prime = systembox.minImage(r_prime);
-                            Scalar r_prime_mag = std::sqrt(r_prime.x * r_prime.x + r_prime.y * r_prime.y + r_prime.z * r_prime.z);
+                            // bond i-j does not interact with itself 
+                            if (!((key.first == tag_i && key.second == tag_j) || (key.first == tag_j && key.second == tag_i))) { 
+                                //for all other i-k pairs
+                                Scalar3 pi = make_scalar3(0.0,0.0,0.0);
+                                Scalar3 pk = make_scalar3(0.0,0.0,0.0);
+                                if (key.first == tag_i) {
+                                    // r_prime is the vector from key.first to key.second
+                                    pi = make_scalar3(data.pos1_x, data.pos1_y, data.pos1_z);
+                                    pk = make_scalar3(data.pos2_x, data.pos2_y, data.pos2_z);
+                                } else if (key.second == tag_i ){
+                                    // r_prime is the vector from key.second to key.first
+                                    pi = make_scalar3(data.pos2_x, data.pos2_y, data.pos2_z);
+                                    pk = make_scalar3(data.pos1_x, data.pos1_y, data.pos1_z);
+                                }                  
+                                //std::cout << "(pi_x, pi_y, pi_z): (" << pi.x << "," << pi.y << "," << pi.z << ")" << std::endl;
+                                //std::cout << "(pk_x, pk_y, pk_z): (" << pk.x << "," << pk.y << "," << pk.z << ")" << std::endl;
+ 
+                                Scalar3 r_prime = pk-pi; // calculate r_prime
+                                r_prime = systembox.minImage(r_prime);
+                                Scalar r_prime_mag = std::sqrt(r_prime.x * r_prime.x + r_prime.y * r_prime.y + r_prime.z * r_prime.z);
 
-                            // calculate the vector dot product
-                            Scalar dot_product = rij_vector.x * r_prime.x + rij_vector.y * r_prime.y + rij_vector.z * r_prime.z;
+                                // calculate the vector dot product
+                                Scalar dot_product = rij_vector.x * r_prime.x + rij_vector.y * r_prime.y + rij_vector.z * r_prime.z;
 
-                            // calculate the angle in radians
-                            Scalar cos_theta = dot_product / (r * r_prime_mag);
+                                // calculate the angle in radians
+                                Scalar cos_theta = dot_product / (r * r_prime_mag);
 
-                            // make sure correct -1 <= cos_theta <= 1
-                            if (cos_theta > 1.0)
-                                cos_theta = 1.0;
-                            if (cos_theta < -1.0)
-                                cos_theta= -1.0;  
+                                // make sure correct -1 <= cos_theta <= 1
+                                if (cos_theta > 1.0)
+                                    cos_theta = 1.0;
+                                if (cos_theta < -1.0)
+                                    cos_theta= -1.0;  
 
-                            if (cos_theta != std::cos(theta_bar)) {
-                                //std::cout << "Angular repulsion will be applied" << std::endl;
+                                //std::cout << "r: " << r << std::endl;
+                                //std::cout << "r': " << r_prime_mag << std::endl;
+                                //std::cout << "(r'x, r'y, r'z): (" << r_prime.x << "," << r_prime.y << "," << r_prime.z << ")" << std::endl;
+                                //std::cout << "r dot r': " << dot_product << std::endl;
+                                //std::cout << "cos_theta: " << cos_theta << std::endl;
+                                //std::cout << "cos_theta_bar: " << std::cos(theta_bar) << std::endl;
+                                
 
-                                // calculate energy
-                                Scalar lambda_r = lambda(r);
-                                Scalar lambda_r_prime = lambda(r_prime_mag);
-                                Scalar wsq_inv = (1 / std::pow(w, 2));
-                                Scalar angular_repulsion_exp = fast::exp(-std::pow(cos_theta - std::cos(theta_bar), 2) * wsq_inv ); 
-                                pair_eng += B * lambda_r * lambda_r_prime * angular_repulsion_exp;
 
-                                // calculate force
-                                Scalar lambdaprime_r = lambda_prime(r);
-                                Scalar ddr_cos_theta = ( ((r_prime_mag * cos_theta) * (r * r_prime_mag)) - (dot_product * r_prime_mag) ) / std::pow(r * r_prime_mag , 2);
-                                Scalar ddr_exp_contents = -2 * (cos_theta - std::cos(theta_bar)) * wsq_inv * ddr_cos_theta;
-                                Scalar ddr_full_exp_term = angular_repulsion_exp * ddr_exp_contents;
-                                Scalar first_force_term = lambdaprime_r * angular_repulsion_exp;
-                                Scalar second_force_term = lambda_r * ddr_full_exp_term;
-                                force_divr += B * lambda_r_prime * (first_force_term + second_force_term) / r;
+                                if (cos_theta != std::cos(theta_bar)) {
+                                    //std::cout << "Angular repulsion will be applied" << std::endl;
+
+                                    // calculate energy
+                                    Scalar lambda_r = lambda(r, radsum);
+                                    Scalar lambda_r_prime = lambda(r_prime_mag, radsum);
+                                    Scalar wsq_inv = std::pow(w, -2);
+                                    //Scalar heaviside_r = heaviside(r);
+                                    //Scalar heaviside_r_prime = heaviside(r_prime_mag);
+
+                                    //std::cout << "heaviside(r): " << heaviside_r << std::endl;
+                                    //std::cout << "heaviside(r'): " << heaviside_r_prime << std::endl;
+                                    //std::cout << "lambda(r): " << lambda_r << std::endl;
+                                    //std::cout << "lambda(r'): " << lambda_r_prime << std::endl;
+                                    //std::cout << "1/w^2': " << wsq_inv << std::endl;
+
+                                    Scalar angular_repulsion_exp = fast::exp(-std::pow(cos_theta - std::cos(theta_bar), 2) * wsq_inv ); 
+                                    Scalar angle_potential = B * lambda_r * lambda_r_prime * angular_repulsion_exp; 
+                                    //std::cout << "Morse Energy: " << pair_eng << std::endl;
+                                    //std::cout << "Anglular Repulsion Potential: " << angle_potential << std::endl;
+                                    pair_eng = pair_eng + angle_potential;
+                                    //std::cout << "Total Energy: " << pair_eng << std::endl;
+                                    //std::cout << "--" << std::endl;
+
+                                    // calculate force
+                                    Scalar lambdaprime_r = lambda_prime(r, radsum);
+
+                                    //Scalar neg_dirac_delta_r = neg_dirac_delta(r);
+                                    //Scalar neg_dirac_delta_r_prime = neg_dirac_delta(r_prime_mag);
+                                    //std::cout << "-dirac(r): " << neg_dirac_delta_r << std::endl;
+                                    //std::cout << "-dirac(r'): " << neg_dirac_delta_r_prime << std::endl;
+
+                                    Scalar ddr_cos_theta = ( ((r_prime_mag * cos_theta) * (r * r_prime_mag)) - (dot_product * r_prime_mag) ) / std::pow(r * r_prime_mag , 2);
+                                    Scalar ddr_exp_contents = -2 * (cos_theta - std::cos(theta_bar)) * wsq_inv * ddr_cos_theta;
+                                    Scalar ddr_full_exp_term = angular_repulsion_exp * ddr_exp_contents;
+                                    Scalar first_force_term = lambdaprime_r * angular_repulsion_exp;
+                                    Scalar second_force_term = lambda_r * ddr_full_exp_term;
+                                    Scalar angle_force = B * lambda_r_prime * (first_force_term + second_force_term) / r;
+                                    //std::cout << "Morse Force: " << force_divr << std::endl;
+                                    //std::cout << "Anglular Repulsion Force: " << angle_force << std::endl;
+                                    force_divr = force_divr + angle_force;
+                                    //std::cout << "Total Force: " << force_divr << std::endl;
+                                    //std::cout << "--------" << std::endl;
+
+                                }
+
+
                             }
 
+                            //std::cout << "Key: (" << key.first << ", " << key.second << ")" << std::endl;
+                            //std::cout << "formedTime=" << data.formedTime << "brokeTime=" << data.brokeTime << ", pos1=(" << data.pos1_x << ", "
+                            //      << data.pos1_y << ", " << data.pos1_z << "), pos2=(" << data.pos2_x << ", "
+                            //      << data.pos2_y << ", " << data.pos2_z << "), d1=" << data.d1 << ", d2=" << data.d2 << ", type1=" << data.type1 
+                            //      << ", type2=" << data.type2 << std::endl;
                         }
 
-                        //std::cout << "Key: (" << key.first << ", " << key.second << ")" << std::endl;
-                        //std::cout << "formedTime=" << data.formedTime << "brokeTime=" << data.brokeTime << ", pos1=(" << data.pos1_x << ", "
-                        //      << data.pos1_y << ", " << data.pos1_z << "), pos2=(" << data.pos2_x << ", "
-                        //      << data.pos2_y << ", " << data.pos2_z << "), d1=" << data.d1 << ", d2=" << data.d2 << ", type1=" << data.type1 
-                        //      << ", type2=" << data.type2 << std::endl;
                     }
-
+                //    std::cout << "Data found: formedTime=" << data.formedTime << ", brokeTime=" << data.brokeTime << ", pos1=(" << data.pos1_x << ", " << data.pos1_y << ", " << data.pos1_z << "), pos2=(" << data.pos2_x << ", " << data.pos2_y << ", " << data.pos2_z << "), d1=" << data.d1 << ", d2=" << data.d2 << ", type1" << data.type1 << ", type2=" << data.type2 << std::endl;
+                //} else {
+                //if (!manager.getData(tag_i, tag_j, data)) {
+                //    std::cout << "Data not found for tags (" << tag_i << ", " << tag_j << ")" << std::endl;
                 }
-            //    std::cout << "Data found: formedTime=" << data.formedTime << ", brokeTime=" << data.brokeTime << ", pos1=(" << data.pos1_x << ", " << data.pos1_y << ", " << data.pos1_z << "), pos2=(" << data.pos2_x << ", " << data.pos2_y << ", " << data.pos2_z << "), d1=" << data.d1 << ", d2=" << data.d2 << ", type1" << data.type1 << ", type2=" << data.type2 << std::endl;
-            //} else {
-            //if (!manager.getData(tag_i, tag_j, data)) {
-            //    std::cout << "Data not found for tags (" << tag_i << ", " << tag_j << ")" << std::endl;
-            }
  
-            //std::cout << "-----" << std::endl;
+                //std::cout << "-----" << std::endl;
+            }
             //~
 
+            //std::cout << "Morse Energy: " << pair_eng << std::endl;
+            //std::cout << "Morse Force: " << force_divr << std::endl;
 
 
             if (energy_shift)

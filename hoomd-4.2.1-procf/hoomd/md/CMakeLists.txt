@@ -63,6 +63,8 @@ set(_md_headers ActiveForceComputeGPU.h
                 ActiveForceConstraintComputeGPU.cuh
                 ActiveRotationalDiffusionUpdater.h
                 AlchemyData.h
+                AngleMap.h #[RHEOINF]
+                AngularRepulsion.h #[RHEOINF]
                 AnisoPotentialPairGPU.cuh
                 AnisoPotentialPairGPU.h
                 AnisoPotentialPair.h
@@ -158,6 +160,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 NeighborList.h
                 NeighborListStencil.h
                 NeighborListTree.h
+                NeighborMap.h #[RHEOINF]
                 OPLSDihedralForceComputeGPU.h
                 OPLSDihedralForceCompute.h
                 PotentialBondGPU.h

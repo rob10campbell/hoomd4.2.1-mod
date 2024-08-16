@@ -20,7 +20,10 @@
 #include "hoomd/Index1D.h"
 #include "hoomd/managed_allocator.h"
 #include "hoomd/md/EvaluatorPairLJ.h"
+#include "AngleMap.h" //~ add AngleMap [RHEOINF]
+#include "AngularRepulsion.h" //~ add AngleMap [RHEOINF]
 #include "BondMap.h" //~ add BondMap [RHEOINF]
+#include "NeighborMap.h" //~ add NeighborMap [RHEOINF]
 #include <iostream> //~ add BondMap [RHEOINF]
 
 #ifdef ENABLE_HIP
@@ -95,7 +98,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
     typedef typename evaluator::param_type param_type;
 
     //! Construct the pair potential
-    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist);
+    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, bool bond_calc, Scalar B, Scalar theta_bar); // add bond_calc flag [RHEOINF]
     //! Destructor
     virtual ~PotentialPair();
 
@@ -118,6 +121,33 @@ template<class evaluator> class PotentialPair : public ForceCompute
     virtual void setROnPython(pybind11::tuple types, Scalar r_on);
     /// Validate that types are within Ntypes
     void validateTypes(unsigned int typ1, unsigned int typ2, std::string action);
+
+    //~! Check the bond_calc flag [RHEOINF]
+    void setBondCalcEnabled(bool bond_calc)
+      {
+      m_bond_calc = bond_calc;
+      }
+    bool getBondCalcEnabled()
+      {
+      return m_bond_calc;
+      }
+    void setBvalEnabled(Scalar B)
+      {
+      m_B = B;
+      }
+    bool getBvalEnabled()
+      {
+      return m_B;
+      }
+    void setThetaBarEnabled(Scalar theta_bar)
+      {
+      m_theta_bar = theta_bar;
+      }
+    bool getThetaBarEnabled()
+      {
+      return m_theta_bar;
+      }
+    //~
 
     //! Shifting modes that can be applied to the energy
     enum energyShiftMode
@@ -233,6 +263,9 @@ template<class evaluator> class PotentialPair : public ForceCompute
     protected:
     //BondDataManager manager; // Implementation of BondDataManager object [RHEOINF]
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
+    bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [RHEOINF]
+    Scalar m_B; //= 0;            //~!< B value (default 0) [RHEOINF]
+    Scalar m_theta_bar; //= 0;    //~!< theta_bar value (default 0) [RHEOINF]
     energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
     Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
     GlobalArray<Scalar> m_rcutsq; //!< Cutoff radius squared per type pair
@@ -360,8 +393,9 @@ template<class evaluator> class PotentialPair : public ForceCompute
 */
 template<class evaluator>
 PotentialPair<evaluator>::PotentialPair(std::shared_ptr<SystemDefinition> sysdef,
-                                        std::shared_ptr<NeighborList> nlist)
-    : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift),
+                                        std::shared_ptr<NeighborList> nlist,
+                                        bool bond_calc, Scalar B, Scalar theta_bar) // add bond_calc flag [RHEOINF]
+    : ForceCompute(sysdef), m_nlist(nlist), m_bond_calc(bond_calc), m_B(B), m_theta_bar(theta_bar), m_shift_mode(no_shift), // add bond_calc [RHEOINF]
       m_typpair_idx(m_pdata->getNTypes())
     {
     m_exec_conf->msg->notice(5) << "Constructing PotentialPair<" << evaluator::getName() << ">"
@@ -624,7 +658,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
     //~
 
-    //~ access particle tags
+    //~ access particle tags [RHEOINF]
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
     //~
 
@@ -653,9 +687,26 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     //~
 
     //~ clear map data from the previous timestep [RHEOINF]
+    NeighborManager& neighbor_manager = NeighborManager::getInstance();
+    neighbor_manager.clearNeighbors();
+    //AngleManager& angle_manager = AngleManager::getInstance();
+    //angle_manager.clearAngles();
     BondDataManager& manager = BondDataManager::getInstance();
     manager.clearData();
     //~
+
+    // count number of colloids [RHEOINF]
+    //unsigned int colloid_typeid = 0;
+    //unsigned int num_colloid = 0;
+    //for (unsigned int i = 0; i < m_pdata->getN(); i++)
+    //    {
+    //    unsigned int typei_temp = __scalar_as_int(h_pos.data[i].w);
+    //    if (typei_temp == colloid_typeid)
+    //        {
+    //        num_colloid += 1;
+    //        }
+    //    }
+    //
 
     //~ get old keys from BondMap [RHEOINF]
     //std::vector<std::tuple<unsigned int, unsigned int>> old_keys = manager.getAllKeys();
@@ -739,34 +790,38 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             Scalar rcutsq = h_rcutsq.data[typpair_idx]; 
 
             if (rsq < rcutsq) {
+
+                // fill tag-specific neighborlists
+                neighbor_manager.addNeighbor(h_tag.data[i], h_tag.data[j]);
+
                 //int value;
                 //unsigned int key = h_tag.data[i];
                 // if the key exists, then increase the value +1
-                BondTrackData value; // Initialize with default values 
+               // BondTrackData value; // Initialize with default values 
                 // count multiple bonds between these particles
                 //if (manager.getData(h_tag.data[j], h_tag.data[j], value)) {
                 //    manager.incrementNbonds(h_tag.data[i], h_tag.data[j]);
                 //if (manager.getData(key, value)) {
                 //    manager.setData(key, value + 1);
                 //} else {
-                if (!manager.getData(h_tag.data[j], h_tag.data[j], value)) {
+               // if (!manager.getData(h_tag.data[i], h_tag.data[j], value)) {
                     // otherwise, create the key with the value of 1
                     //value.nbonds = 1;
-                    value.formedTime = timestep;
+               //     value.formedTime = timestep;
                     //value.brokeTime = 0;
-                    value.pos1_x = h_pos.data[j].x;
-                    value.pos1_y = h_pos.data[j].y;
-                    value.pos1_z = h_pos.data[j].z;
-                    value.pos2_x = h_pos.data[j].x;
-                    value.pos2_y = h_pos.data[j].y;
-                    value.pos2_z = h_pos.data[j].z;
-                    value.d1 = h_diameter.data[i];
-                    value.d2 = h_diameter.data[j];
-                    value.type1 = typei;
-                    value.type2 = typej;
-                    manager.setData(h_tag.data[i], h_tag.data[j], value);
+               //     value.pos1_x = h_pos.data[i].x;
+               //     value.pos1_y = h_pos.data[i].y;
+               //     value.pos1_z = h_pos.data[i].z;
+               //     value.pos2_x = h_pos.data[j].x;
+               //     value.pos2_y = h_pos.data[j].y;
+               //     value.pos2_z = h_pos.data[j].z;
+               //     value.d1 = h_diameter.data[i];
+               //     value.d2 = h_diameter.data[j];
+               //     value.type1 = typei;
+               //     value.type2 = typej;
+               //     manager.setData(h_tag.data[i], h_tag.data[j], value);
                 //    manager.setData(key, 1);
-                }
+               // }
             } 
         }
         //std::cout << "Values have been set for particle i." << std::endl;
@@ -883,6 +938,149 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
               eval.setBox(box);
             //~
 
+            //~ update angle map [RHEOINF]
+
+            //// get neighbors (k_i) of i
+            //std::vector<unsigned int> neighbors_i;
+            //neighbors_i = neighbor_manager.getNeighborsForTag(h_tag.data[i]);
+            //unsigned int tag_i = h_tag.data[i];
+            //unsigned int tag_j = h_tag.data[j];
+            //// check if i has more than 1 neighbor
+            //if (neighbors_i.size() > 1)
+            //  {
+            //  // calculate and save all angles theta_j_i_ki
+
+            //  // for k in neighbors_i != j:
+            //  for (std::size_t k = 0; k < neighbors_i.size(); ++k) 
+            //      {
+            //      unsigned int tag_k = neighbors_i[k];
+
+            //      if (tag_k != h_tag.data[j]) 
+            //          {
+
+            //          // get k particle data
+            //          Scalar3 pk;
+            //          //Scalar dk;
+            //          //unsigned int typek; 
+            //          // making sure you have the right tag
+            //          for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+            //              {
+            //              if (h_tag.data[M] == tag_k) 
+            //                  {
+            //                  pk = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+            //                  //dk = h_diameter.data[M];
+            //                  //typek = __scalar_as_int(h_pos.data[M].w);
+            //                  assert(typek < m_pdata->getNTypes());
+            //                  break; 
+            //                  }
+            //              }
+
+            //          // Calculate vectors between particles
+            //          Scalar3 rij = pj-pi;
+            //          Scalar3 rik = pk-pi;
+            //          rij = box.minImage(rij);
+            //          rik = box.minImage(rik);
+
+            //          // Calculate magnitudes of vectors
+            //          Scalar rij_mag = std::sqrt(rij.x * rij.x + rij.y * rij.y + rij.z * rij.z);
+            //          Scalar rik_mag = std::sqrt(rik.x * rik.x + rik.y * rik.y + rik.z * rik.z);
+
+            //          // Calculate dot product
+            //          Scalar dot_product = rij.x * rik.x + rij.y * rik.y + rij.z * rik.z;
+
+            //          // Calculate angle in radians
+            //          Scalar cos_theta = dot_product / (rij_mag * rik_mag);
+
+            //          if (cos_theta > 1.0)
+            //              cos_theta = 1.0;
+            //          if (cos_theta < -1.0)
+            //              cos_theta= -1.0;
+
+            //          // sort particle tags and create a unique tag
+            //          unsigned int var1 = tag_i;
+            //          unsigned int var3 = std::max(tag_j, tag_k);
+            //          unsigned int var2 = std::min(tag_j, tag_k);
+ 
+            //          unsigned int n = num_colloid; 
+            //          unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+            //          angle_manager.setAngle(angle_index, acos(cos_theta));
+            //          }
+            //      }
+
+            //  }
+
+            //// get neighbors (k_j) of j
+            //std::vector<unsigned int> neighbors_j;
+            //neighbors_j = neighbor_manager.getNeighborsForTag(h_tag.data[j]);
+            //// check if j has more than 1 neighbor
+            //if (neighbors_j.size() > 1)
+            //  {
+            //  // calculate and save all angles theta_i_j_kj
+
+            //  // for k in neighbors_j != i:
+            //  for (std::size_t k = 0; k < neighbors_j.size(); ++k) 
+            //      {
+            //      unsigned int tag_k = neighbors_j[k];
+
+            //      if (tag_k != h_tag.data[i]) 
+            //          {
+
+            //          // get k particle data
+            //          Scalar3 pk;
+            //          //Scalar dk;
+            //          //unsigned int typek; 
+            //          // making sure you have the right tag
+            //          for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+            //              {
+            //              if (h_tag.data[M] == tag_k) 
+            //                  {
+            //                  pk = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+            //                  //dk = h_diameter.data[M];
+            //                  //typek = __scalar_as_int(h_pos.data[M].w);
+            //                  assert(typek < m_pdata->getNTypes());
+            //                  break; 
+            //                  }
+            //              }
+
+            //          // Calculate vectors between particles
+            //          Scalar3 rji = pi-pj;
+            //          Scalar3 rjk = pk-pj;
+            //          rji = box.minImage(rji);
+            //          rjk = box.minImage(rjk);
+
+            //          // Calculate magnitudes of vectors
+            //          Scalar rji_mag = std::sqrt(rji.x * rji.x + rji.y * rji.y + rji.z * rji.z);
+            //          Scalar rjk_mag = std::sqrt(rjk.x * rjk.x + rjk.y * rjk.y + rjk.z * rjk.z);
+
+            //          // Calculate dot product
+            //          Scalar dot_product = rji.x * rjk.x + rji.y * rjk.y + rji.z * rjk.z;
+
+            //          // Calculate angle in radians
+            //          Scalar cos_theta = dot_product / (rji_mag * rjk_mag);
+
+            //          if (cos_theta > 1.0)
+            //              cos_theta = 1.0;
+            //          if (cos_theta < -1.0)
+            //              cos_theta= -1.0;
+
+            //          // sort particle tags and create a unique tag
+            //          unsigned int var1 = tag_j;
+            //          unsigned int var3 = std::max(tag_i, tag_k);
+            //          unsigned int var2 = std::min(tag_i, tag_k);
+ 
+            //          unsigned int n = num_colloid; 
+            //          unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+            //          angle_manager.setAngle(angle_index, acos(cos_theta));
+            //          }
+            //      }
+
+
+            //  }
+            //~
+
+
             bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift);
 
             if (evaluated)
@@ -973,6 +1171,317 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             }
         }
 
+    //~ check all pairs and computer angle force [RHEOINF] 
+    AngularRepulsionManager& angular_repulsion_manager = angular_repulsion;
+
+    // for each particle i
+    for (int i = 0; i < (int)this->m_pdata->getN(); i++)
+        {
+        // get tag_i, typei, position_i, and neighbors
+        //unsigned int tag_i = h_tag.data[i];
+        //unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+        Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+        //if (typei) 
+        //    {
+            std::vector<unsigned int> neighbors_i;
+            neighbors_i = neighbor_manager.getNeighborsForTag(h_tag.data[i]); 
+            // if i has more than one neighbor
+            if (neighbors_i.size() > 1)
+                { 
+                // loop through all sets of 2 neighbors, a and b
+
+                // get particle-a data
+                for (std::size_t a = 0; a < neighbors_i.size(); ++a) 
+                    {
+                    unsigned int tag_a = neighbors_i[a];
+
+                    Scalar3 pa;
+                    Scalar da = 0;
+                    //unsigned int typea; 
+                    // making sure you have the right tag
+                    for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+                        {
+                        if (h_tag.data[M] == tag_a) 
+                            {
+                            pa = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                            da = h_diameter.data[M];
+                            //typea = __scalar_as_int(h_pos.data[M].w);
+                            //assert(typea < m_pdata->getNTypes());
+                            break; 
+                            }
+                         }
+
+                    // get particle-b data
+                    //for (std::size_t b = 0; b < neighbors_i.size(); ++b) 
+                    // avoid double counting by picking b from range(a+1, size)
+                    for (std::size_t b = a + 1; b < neighbors_i.size(); ++b)
+                        {
+                        unsigned int tag_b = neighbors_i[b];
+
+                        if (tag_b != tag_a) 
+                            {
+                            // get b particle data
+                            Scalar3 pb;
+                            Scalar db = 0;
+                            //unsigned int typeb; 
+                            // making sure you have the right tag
+                            for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+                                {
+                                if (h_tag.data[M] == tag_b) 
+                                    {
+                                    pb = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                    db = h_diameter.data[M];
+                                    //typeb = __scalar_as_int(h_pos.data[M].w);
+                                    //assert(typeb < m_pdata->getNTypes());
+                                    break; 
+                                    }
+                                }
+
+
+                            // sort particles and calculate the unique tag for this angle a-i-b 
+                            //unsigned int var1 = tag_i;
+                            //unsigned int var3 = std::max(tag_a, tag_b);
+                            //unsigned int var2 = std::min(tag_a, tag_b);
+ 
+                            //unsigned int n = num_colloid; 
+                            //unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+                            // retrieve the angle a-i-b                                
+                            //Scalar theta = 0.0;
+                            //angle_manager.getAngle(angle_index, theta);
+
+                            //if (!theta) 
+                            //    {
+                            //    std::cout << "ERROR: No theta recorded for expected triad: i=" << tag_i << " a=" << tag_a << " b=" << tag_b << std::endl;
+                            //    }
+
+                            // caluclate angular repulsion for a, i, and b
+                            // hard code repulsion parameters
+                            //Scalar B = 10;
+                            //Scalar theta_bar = 120 * M_PI / 180.0;
+                            Scalar w = 5;
+
+                            //~ if there is an angular repulsion magnitude
+                            if (m_B != 0) 
+                                {
+                                if (da == 0)
+                                    {
+                                    std::cout << "ERROR: particle " << tag_a << " has diameter=0, cannot calculate angular repulsion" << std::endl;
+                                    }
+                                if (db == 0)
+                                    {
+                                    std::cout << "ERROR: particle " << tag_b << " has diameter=0, cannot calculate angular repulsion" << std::endl;
+                                    }
+                                else
+                                {
+
+                                Scalar radsum = 0.5*(da+db);
+
+                                Scalar3 ria = make_scalar3(pa.x - pi.x, pa.y - pi.y, pa.z - pi.z);
+                                Scalar3 rib = make_scalar3(pb.x - pi.x, pb.y - pi.y, pb.z - pi.z);
+                                ria = box.minImage(ria);
+                                rib = box.minImage(rib);
+
+                                Scalar ria_mag = std::sqrt(ria.x * ria.x + ria.y * ria.y + ria.z * ria.z);
+                                Scalar rib_mag = std::sqrt(rib.x * rib.x + rib.y * rib.y + rib.z * rib.z);
+
+                                Scalar dot_product = ria.x * rib.x + ria.y * rib.y + ria.z * rib.z;
+
+                                Scalar cos_theta = dot_product / (ria_mag * rib_mag);
+                                //Scalar current_cos_theta = dot_product / (ria_mag * rib_mag);
+                                //Scalar cos_theta = std::cos(theta)
+
+                                //if (current_cos_theta > 1.0)
+                                //    current_cos_theta = 1.0;
+                                //if (current_cos_theta < -1.0)
+                                //    current_cos_theta = -1.0;
+                                if (cos_theta > 1.0)
+                                    cos_theta = 1.0;
+                                if (cos_theta < -1.0)
+                                    cos_theta = -1.0;
+
+                                // harmonic calc only
+                                //Scalar current_sin_theta = std::sqrt(1.0 - current_cos_theta * current_cos_theta);
+                                //if (current_sin_theta < Scalar(0.001))
+                                //    current_sin_theta = Scalar(0.001);                            
+
+                                //current_sin_theta = 1.0 / current_sin_theta;
+                                //
+
+                                Scalar theta = acos(cos_theta);
+                                //Scalar theta = acos(current_cos_theta);
+
+                                // harmonic calc only
+                                //Scalar dth;
+                                //Scalar m_K = m_B; //5;
+				//dth = theta - m_theta_bar;
+                                //Scalar tk = m_K * dth;
+
+                                // Calculate force magnitude
+                                //Scalar vab = -1.0 * tk * current_sin_theta;
+                                //Scalar a11 = vab * current_cos_theta / (ria_mag * ria_mag);
+                                //Scalar a12 = -vab / (ria_mag * rib_mag);
+                                //Scalar a22 = vab * current_cos_theta / (rib_mag * rib_mag);
+
+                                // Calculate forces
+                                //Scalar3 fia = make_scalar3(a11 * ria.x + a12 * rib.x,
+                                //                            a11 * ria.y + a12 * rib.y,
+                                //                            a11 * ria.z + a12 * rib.z);
+
+                                //Scalar3 fib = make_scalar3(a22 * ria.x + a12 * rib.x,
+                                //                            a22 * ria.y + a12 * rib.y,
+                                //                            a22 * ria.z + a12 * rib.z);
+
+                                // Calculate the energy for each atom in the angle
+                                //Scalar angle_eng = (tk * dth) * Scalar(1.0 / 6.0);
+
+                                //Scalar angle_virial[6];
+                                //angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
+                                //angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x);
+                                //angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x);
+                                //angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y);
+                                //angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y);
+                                //angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z);
+
+
+                                // Update forces and virials for particle i, a, and b
+                                ////if (a < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
+                                //if (a < (std::size_t)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
+                                //    h_force.data[a].x += fia.x;
+                                //    h_force.data[a].y += fia.y;
+                                //    h_force.data[a].z += fia.z;
+                                //    h_force.data[a].w += angle_eng;
+                                //    for (int l = 0; l < 6; l++)
+                                //        h_virial.data[l * this->m_virial_pitch + a] += angle_virial[l]; 
+                                //}
+                                
+                                //if (i < (int)this->m_pdata->getN()) {
+                                //    h_force.data[i].x -= fia.x + fib.x; 
+                                //    h_force.data[i].y -= fia.y + fib.y;
+                                //    h_force.data[i].z -= fia.z + fib.z;
+                                //    h_force.data[i].w += angle_eng;
+                                //    for (int l = 0; l < 6; l++)
+                                //        h_virial.data[l * this->m_virial_pitch + i] += angle_virial[l]; 
+                                //}
+
+                                ////if (b < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
+                                //if (b < (std::size_t)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
+                                //    h_force.data[b].x += fib.x;
+                                //    h_force.data[b].y += fib.y;
+                                //    h_force.data[b].z += fib.z;
+                                //    h_force.data[b].w += angle_eng;
+                                //    for (int l = 0; l < 6; l++)
+                                //        h_virial.data[l * this->m_virial_pitch + b] += angle_virial[l]; 
+                                //} 
+
+                                // Calculate U(r_ia, r_ib) and U(r_ib, r_ia) and apply both in this step
+                                // probably incorrect??
+                                Scalar ria_angle_potential = 0.0;
+                                Scalar ria_angle_force = 0.0;
+
+                                angular_repulsion_manager.getEnergyAndForce(ria_mag, rib_mag, dot_product, radsum, m_B, m_theta_bar, w, theta, ria_angle_potential, ria_angle_force);
+
+                                Scalar rib_angle_potential = 0.0;
+                                Scalar rib_angle_force = 0.0;
+
+                                angular_repulsion_manager.getEnergyAndForce(rib_mag, ria_mag, dot_product, radsum, m_B, m_theta_bar, w, theta, rib_angle_potential, rib_angle_force);
+
+                                // decompose the forces along r_ia and r_ib
+                                Scalar a11 = ria_angle_force * cos_theta / (ria_mag * ria_mag); // force on a from i
+                                Scalar a12_ria = - ria_angle_force / ria_mag; // force on i from a
+                                Scalar a12_rib = - rib_angle_force / rib_mag; // force on i from b
+                                Scalar a22 = rib_angle_force * cos_theta / (rib_mag * rib_mag); // force on b from i
+
+                                // calculate force in each direction / particle
+                                // force on a from i
+                                Scalar3 fia = make_scalar3(a11 * ria.x,
+                                                            a11 * ria.y,
+                                                            a11 * ria.z);
+
+                                // force on b from i
+                                Scalar3 fib = make_scalar3(a22 * rib.x,
+                                                            a22 * rib.y,
+                                                            a22 * rib.z);
+
+                                // force on i from a
+                                Scalar3 fai = make_scalar3(a12_ria * ria.x,
+                                                            a12_ria * ria.y,
+                                                            a12_ria * ria.z);
+
+                                // force on i from b
+                                Scalar3 fbi = make_scalar3(a12_rib * rib.x,
+                                                            a12_rib * rib.y,
+                                                            a12_rib * rib.z);
+
+                                // Total force on i
+                                Scalar3 fi = make_scalar3(fai.x + fbi.x,
+                                                            fai.y + fbi.y,
+                                                            fai.z + fbi.z);
+
+
+                                // calculate the total contribution to each particle's potential energy
+                                Scalar total_angular_potential = ria_angle_potential + rib_angle_potential;
+                                Scalar energy_a = 0.5 * total_angular_potential;
+                                Scalar energy_b = 0.5 * total_angular_potential;
+                                Scalar energy_i = total_angular_potential;
+
+                                // calculate the virial
+                                Scalar angle_virial[6];
+                                angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x + (ria.x + rib.x) * fi.x);
+                                angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x + (ria.y + rib.y) * fi.x);
+                                angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x + (ria.z + rib.z) * fi.x);
+                                angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y + (ria.y + rib.y) * fi.y);
+                                angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y + (ria.z + rib.z) * fi.y);
+                                angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z + (ria.z + rib.z) * fi.z);
+
+                                // AND FINALLY, update the force, virial, and energy of each particle
+                                // particle a:
+                                //if (a < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) 
+                                if (a < (this->m_pdata->getN()+ this->m_pdata->getNGhosts())) 
+                                    {
+                                    h_force.data[a].x += fia.x;
+                                    h_force.data[a].y += fia.y;
+                                    h_force.data[a].z += fia.z;
+                                    h_force.data[a].w += energy_a;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * this->m_virial_pitch + a] += angle_virial[l]; 
+                                    }
+                                
+                                // particle i:
+                                if (i < (int)this->m_pdata->getN()) 
+                                    {
+                                    h_force.data[i].x -= fi.x;
+                                    h_force.data[i].y -= fi.y;
+                                    h_force.data[i].z -= fi.z;
+                                    h_force.data[i].w += energy_i;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * this->m_virial_pitch + i] += angle_virial[l]; 
+                                    }
+
+                                // particle b:
+                                //if (b < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) 
+                                if (b < (this->m_pdata->getN()+ this->m_pdata->getNGhosts())) 
+                                    {
+                                    h_force.data[b].x += fib.x;
+                                    h_force.data[b].y += fib.y;
+                                    h_force.data[b].z += fib.z;
+                                    h_force.data[b].w += energy_b;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * this->m_virial_pitch + b] += angle_virial[l]; 
+
+                                    }
+                                }
+                                }
+
+                            }
+
+                        }
+                    }
+                }
+            //}
+        }
+    //~
+
     computeTailCorrection();
     }
 
@@ -1058,6 +1567,10 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
     ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
     //~
 
+    //~ access particle tags  [RHEOINF]
+    ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+    //~
+
     const BoxDim box = m_pdata->getGlobalBox();
     ArrayHandle<Scalar> h_ronsq(m_ronsq, access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_rcutsq(m_rcutsq, access_location::host, access_mode::read);
@@ -1086,6 +1599,76 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
         Scalar qi = Scalar(0.0);
         if (evaluator::needsCharge())
             qi = h_charge.data[i];
+
+        //~ save neighbor data to the BondMap [RHEOINF]
+        //BondDataManager& manager = BondDataManager::getInstance();
+        //std::vector<std::tuple<unsigned int, unsigned int>> new_keys; // track new keys
+        //for (InputIterator iter = first2; iter != last2; ++iter)
+          //  { 
+            // access the index of this neighbor (MEM TRANSFER: 1 scalar)
+          //  unsigned int j = h_rtags.data[*iter];
+         //   if (j >= m_pdata->getN() + m_pdata->getNGhosts()) // not on this processor at all
+          //      continue;
+
+            // calculate dr_ji (MEM TRANSFER: 3 scalars / FLOPS: 3)
+          //  Scalar3 pj = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+          //  Scalar3 dx = pi - pj;
+
+            // access the type of the neighbor particle (MEM TRANSFER: 1 scalar)
+          //  unsigned int typej = __scalar_as_int(h_pos.data[j].w);
+          //  assert(typej < m_pdata->getNTypes());
+
+            //~ access diameter (if needed) 
+            //Scalar dj = Scalar(0.0); 
+            //dj = h_diameter.data[j];
+            //~
+
+            // apply periodic boundary conditions
+          //  dx = box.minImage(dx);
+
+            // calculate r_ij squared (FLOPS: 5)
+          //  Scalar rsq = dot(dx, dx);
+
+            // get parameters for this type pair
+          //  unsigned int typpair_idx = m_typpair_idx(typei, typej);
+          //  Scalar rcutsq = h_rcutsq.data[typpair_idx]; 
+
+            //if (rsq < rcutsq) {
+
+                // fill tag-specific neighborlists
+              //  neighbor_manager.addNeighbor(h_tag.data[i], h_tag.data[j]);
+
+                //int value;
+                //unsigned int key = h_tag.data[i];
+                // if the key exists, then increase the value +1
+              //  BondTrackData value; // Initialize with default values 
+                // count multiple bonds between these particles
+                //if (manager.getData(h_tag.data[j], h_tag.data[j], value)) {
+                //    manager.incrementNbonds(h_tag.data[i], h_tag.data[j]);
+                //if (manager.getData(key, value)) {
+                //    manager.setData(key, value + 1);
+                //} else {
+              //  if (!manager.getData(h_tag.data[i], h_tag.data[j], value)) {
+                    // otherwise, create the key with the value of 1
+                    //value.nbonds = 1;
+                    //value.formedTime = timestep;
+                    //value.brokeTime = 0;
+              //      value.pos1_x = h_pos.data[i].x;
+              //      value.pos1_y = h_pos.data[i].y;
+             //       value.pos1_z = h_pos.data[i].z;
+             //       value.pos2_x = h_pos.data[j].x;
+             //       value.pos2_y = h_pos.data[j].y;
+             //       value.pos2_z = h_pos.data[j].z;
+             //       value.d1 = h_diameter.data[i];
+             //       value.d2 = h_diameter.data[j];
+             //       value.type1 = typei;
+             //       value.type2 = typej;
+             //       manager.setData(h_tag.data[i], h_tag.data[j], value);
+                //    manager.setData(key, 1);
+             //   }
+          //  } 
+        //}
+        //~
 
         // loop over all particles in tags2
         for (InputIterator iter = first2; iter != last2; ++iter)
@@ -1158,6 +1741,17 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             //~
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
+
+            //~ set tags and timestep for new bond calc [RHEOINF]
+            if (evaluator::needsTags())
+              eval.setTags(h_tag.data[i], h_tag.data[j]);
+            //if (evaluator::needsTimestep())
+            //  eval.setTimestep(timestep);
+            if (evaluator::needsIJPos())
+              eval.setIJPos(pi, pj);
+            if (evaluator::needsBox())
+              eval.setBox(box);
+            //~
 
             bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift);
 
@@ -1237,13 +1831,19 @@ template<class T> void export_PotentialPair(pybind11::module& m, const std::stri
     pybind11::class_<PotentialPair<T>, ForceCompute, std::shared_ptr<PotentialPair<T>>>
         potentialpair(m, name.c_str());
     potentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool, Scalar, Scalar>()) //~ add bool for bond_calc [RHEOINF]
         .def("setParams", &PotentialPair<T>::setParamsPython)
         .def("getParams", &PotentialPair<T>::getParams)
         .def("setRCut", &PotentialPair<T>::setRCutPython)
         .def("getRCut", &PotentialPair<T>::getRCut)
         .def("setROn", &PotentialPair<T>::setROnPython)
         .def("getROn", &PotentialPair<T>::getROn)
+        .def_property("bond_calc",
+                &PotentialPair<T>::getBondCalcEnabled, &PotentialPair<T>::setBondCalcEnabled)  //~ add bond_calc [RHEOINF]
+        .def_property("B",
+                &PotentialPair<T>::getBvalEnabled, &PotentialPair<T>::setBvalEnabled)  //~ add angular repulsion [RHEOINF]
+        .def_property("theta_bar",
+                &PotentialPair<T>::getThetaBarEnabled, &PotentialPair<T>::setThetaBarEnabled)  //~ add angular repulsion [RHEOINF]
         .def_property("mode",
                       &PotentialPair<T>::getShiftMode,
                       &PotentialPair<T>::setShiftModePython)

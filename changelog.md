@@ -230,6 +230,7 @@ Adding a new potential that limits three-body colloid structures to angles aroun
 (based on Bantawa, Fontaine-Seiler, Olmstead, Del Gado (2021, JPhys Condensed Matt) [DOI 10.1088/1361-648X/ac14f6](https://doi.org/10.1088/1361-648X/ac14f6))
 - **MorseAngleLimit**: A new Evaluator that combines BD Morse with "effective bond rigidity" from a multi-body bonding angle limit
 - **BondMap**: A new file that creates and stores bonded neighbor information for all colloids each timestep (can be modified to track bond formation/breaking?)
+- **NeighborMap**: A new file that creates and stores a list of neighbors for all colloids each timestep
 - **tags**: set/get particle tags for interacting with BondMap
 - **timestep**: set/get timestep (legacy from other tests)
 - **positions**: set/get xyz components of position for current particle pair for angle calculations
@@ -241,7 +242,7 @@ Adding a new potential that limits three-body colloid structures to angles aroun
 			* [x] EvaluatorPairExample.h : **tags, timestep, positions, VectorMath**
 	* [ ] `md/`
 		* [x] **[ADD NEW FILE]** BondMap.h
-		* [x] CMakeLists.txt : **set new file (EvaluatorPairMorseAngleLimit.h)**
+		* [x] CMakeLists.txt : **set new files (BondMap.h, NeighborMap.h, EvaluatorPairMorseAngleLimit.h)**
 		* [x] EvaluatorPairBuckingham.h : **tags, timestep, positions, VectorMath** 
 		* [x] EvaluatorPairDLVO.h : **tags, timestep, positions, VectorMath**
 		* [x] EvaluatorPairDPDThermoDPD.h : **tags, timestep, positions, VectorMath**
@@ -270,11 +271,19 @@ Adding a new potential that limits three-body colloid structures to angles aroun
 		* [x] EvaluatorPairZBL.h : **tags, timestep, positions, VectorMath**
 		* [x] EvaluatorWalls.h : **tags, timestep, positions, VectorMath**
 		* [x] module-md.cc : **call MorseAngleLimit**
-		* [x] PotentialPair.h : **set/call BondMap, tags, timestep**
+		* [x] **[ADD NEW FILE]** NeighbborMap.h
+		* [x] PotentialPair.h : **set/call BondMap, NeighborMap, tags, timestep**
 		* [x] `pair`
 			* [x] \_\_init\_\_.py **call MorseAngleLimit**
 			* [x] pair.py : **call MorseAngleLimit**
 
+* [ ] `hoomd/`
+	* [ ] `md/`
+		* [ ] PotentialPairAlchemical.h : **pass angular repulsion params**
+		* [ ] PotentialPair.h : **pass angular repulsion params**
+		* [ ] PotentialPairDPDThermo.h : **pass angular repulsion params**
+		* [ ] `pair/`
+			* [ ] pair.py : **pass params from Python :facepalm:**
 
 ## Rotation Restriction
 Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and Gelb (Soft Matter, 2020), DOI: 10.1039/c9sm01755k (Rob) <br>

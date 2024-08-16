@@ -73,7 +73,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [RHEOINF]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False, B=0, theta_bar=0): ##~ default bond_calc to False [RHEOINF]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -96,11 +96,17 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         self.mode = mode
         self.nlist = nlist
         self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [RHEOINF]
+        self._B = B ##~ Store angular repulsion magnitude B as an instance variable [RHEOINF]
+        self._theta_bar = theta_bar ##~ Store reference angle theta_bar as an instance variable [RHEOINF]
 
     ##~ add a property to access _bond_calc instance variable
     @property
     def bond_calc(self):
         return self._bond_calc
+    def B(self):
+        return self._B
+    def theta_bar(self):
+        return self._theta_bar
     ##~
 
     def compute_energy(self, tags1, tags2):
@@ -158,10 +164,11 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
                 _md.NeighborList.storageMode.full)
 
         ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [RHEOINF]
-        if "PotentialPairDPDThermo" in self._cpp_class_name:
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
-        else: 
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
+        self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self.B, self._theta_bar)
+        ##if "PotentialPairDPDThermo" in self._cpp_class_name:
+        ##    self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
+        ##else: 
+        ##    self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
         ##~ 
         #self._cpp_obj = cls(self._simulation.state._cpp_sys_def,
         #                    self.nlist._cpp_obj) ##~ comment out [RHEOINF]
@@ -650,6 +657,8 @@ class Morse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
         default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
+        B (float): The magnitude of angular repulsion, B (defaults to zero) [RHEOINF]
+        theta_bar (floar): the reference angle for calculating angular repulsion, in radians (defaults to zero) [RHEOINF]
         scaled_D0 (bool): on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2) [RHEOINF]
 
     `Morse` computes the Morse pair force on every particle in the simulation
@@ -663,7 +672,7 @@ class Morse(Pair):
     Example::
 
         nl = nlist.Cell()
-        morse = pair.Morse(default_r_cut=3.0, nlist=nl)
+        morse = pair.Morse(default_r_cut=3.0, nlist=nl, B=0, theta_bar=0)
         morse.params[('A', 'A')] = dict(D0=1.0, alpha=3.0, r0=1.0)
         morse.r_cut[('A', 'B')] = 3.0
 
@@ -693,16 +702,50 @@ class Morse(Pair):
     _cpp_class_name = "PotentialPairMorse"
     _default_scaled_D0 = False ##~ add scaled_D0 [RHEOINF]
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', B=0, theta_bar=0, scaled_D0=None): ##~ add angular repulsion [RHEOINF] 
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         ##~ add scaled_D0 [RHEOINF]
         if scaled_D0 is None:
             scaled_D0 = self._default_scaled_D0
         ##~
+        ##~ add angular repulsion [RHEOINF]
+        self._B = B
+        self._theta_bar = theta_bar
+        ##~
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [RHEOINF]
         self._add_typeparam(params)
+
+    ##~ add angular repulsion [RHEOINF]
+    @property
+    def B(self):
+        """
+        Getter method for the B property.
+        """
+        return self._B
+
+    @B.setter
+    def B(self, value):
+        """
+        Setter method for the B property.
+        """
+        self._B = value
+
+    @property
+    def theta_bar(self):
+        """
+        Getter method for the theta_bar property.
+        """
+        return self._theta_bar
+
+    @theta_bar.setter
+    def theta_bar(self, value):
+        """
+        Setter method for the theta_bar property.
+        """
+        self._theta_bar = value
+    ##~
 
 class DPD(Pair):
     r"""Dissipative Particle Dynamics.
@@ -1912,6 +1955,8 @@ class DPDMorse(Pair):
         default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`. 
         mode (str): Energy shifting/smoothing mode.
         bond_calc (bool): Record bond lifetimes (True) or don't record bond lifetimes (False).
+        B (float): The magnitude of angular repulsion, B (defaults to zero)
+        theta_bar (floar): the reference angle for calculating angular repulsion, in radians (defaults to zero) 
         scaled_D0 (bool): defauly value for on/off class attribute used to scale D0 by particle size (D0*((radius_i_radius_j)/2) [RHEOINF]
         a1 (float): default value for a1; NOTE: this is legacy code from before polydispersity, a1 is NO LONGER USED [RHEOINF]
         a2 (float): default value for a2; NOTE: this is legacy code from before polydispersity, a2 is NO LONGER USED [RHEOINF]
@@ -1936,8 +1981,8 @@ class DPDMorse(Pair):
 
     Example::
         nl = nlist.Tree()
-        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True)
-         morse.params[('A','A')] = dict(A0=25.0, gamma=45, D0=0, alpha=3.0, r0=0, eta=1.1, f_contact=0.0, a1=0.0, a2=0.0, rcut=1.0)
+        morse = pair.Morse(nlist=nl, kT=KT, default_r_cut=1.0, bond_calc=True, B=0, theta_bar=0)
+        morse.params[('A','A')] = dict(A0=25.0, gamma=45, D0=0, alpha=3.0, r0=0, eta=1.1, f_contact=0.0, a1=0.0, a2=0.0, rcut=1.0)
         morse.r_cut[('A', 'B')] = 1.0
 
     .. py:attribute:: params
@@ -1980,7 +2025,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _default_a2 = 0.0
     _default_sys_kT = 0.1
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, sys_kT=None):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, B=0, theta_bar=0, scaled_D0=None, a1=None, a2=None, sys_kT=None):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
@@ -1996,6 +2041,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
             sys_kT = self._default_sys_kT
         ##~
         self._bond_calc = bond_calc
+        self._B = B
+        self._theta_bar = theta_bar
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(A0=float,
@@ -2041,6 +2088,34 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         Setter method for the bond_calc property.
         """
         self._bond_calc = value
+
+    @property
+    def B(self):
+        """
+        Getter method for the B property.
+        """
+        return self._B
+
+    @bond_calc.setter
+    def B(self, value):
+        """
+        Setter method for the B property.
+        """
+        self._B = value
+
+    @property
+    def theta_bar(self):
+        """
+        Getter method for the theta_bar property.
+        """
+        return self._theta_bar
+
+    @theta_bar.setter
+    def theta_bar(self, value):
+        """
+        Setter method for the theta_bar property.
+        """
+        self._theta_bar = value
 ##~
 
 
