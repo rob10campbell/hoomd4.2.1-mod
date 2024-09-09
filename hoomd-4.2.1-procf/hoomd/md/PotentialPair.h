@@ -1117,6 +1117,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                 Scalar force_div2r = force_divr * Scalar(0.5);
                 // add the force, potential energy and virial to the particle i
                 // (FLOPS: 8)
+                //std::cout << "force_ij = " << force_divr << std::endl;
+
                 fi += dx * force_divr;
                 pei += pair_eng * Scalar(0.5);
                 if (compute_virial)
@@ -1172,7 +1174,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         }
 
     //~ check all pairs and computer angle force [RHEOINF] 
-    AngularRepulsionManager& angular_repulsion_manager = angular_repulsion;
+    //AngularRepulsionManager& angular_repulsion_manager = angular_repulsion;
 
     // for each particle i
     for (int i = 0; i < (int)this->m_pdata->getN(); i++)
@@ -1259,7 +1261,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                             // hard code repulsion parameters
                             //Scalar B = 10;
                             //Scalar theta_bar = 120 * M_PI / 180.0;
-                            Scalar w = 5;
+                            Scalar w = 0.3; //0.3, 5
 
                             //~ if there is an angular repulsion magnitude
                             if (m_B != 0) 
@@ -1300,6 +1302,14 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                 if (cos_theta < -1.0)
                                     cos_theta = -1.0;
 
+                                // for angular force = dU/dtheta NOT dU/dr
+                                Scalar sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
+                                if (sin_theta < Scalar(0.001))
+                                    sin_theta = Scalar(0.001);
+                            
+                                sin_theta = 1.0 / sin_theta;
+                                //
+
                                 // harmonic calc only
                                 //Scalar current_sin_theta = std::sqrt(1.0 - current_cos_theta * current_cos_theta);
                                 //if (current_sin_theta < Scalar(0.001))
@@ -1308,7 +1318,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                 //current_sin_theta = 1.0 / current_sin_theta;
                                 //
 
-                                Scalar theta = acos(cos_theta);
+                           //     Scalar theta = acos(cos_theta);
                                 //Scalar theta = acos(current_cos_theta);
 
                                 // harmonic calc only
@@ -1374,65 +1384,95 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                 //        h_virial.data[l * this->m_virial_pitch + b] += angle_virial[l]; 
                                 //} 
 
+                                Scalar Lambda_ia = pow(ria_mag/radsum, -10) * pow(1 - pow(0.5 * (ria_mag / radsum), 10), 2);
+                                Scalar Lambda_ib = pow(rib_mag/radsum, -10) * pow(1 - pow(0.5 * (rib_mag / radsum), 10), 2);
+
+                                Scalar exp_term = exp(-pow((cos_theta - cos(m_theta_bar)) / w, 2));
+
+                                Scalar vab = (-2 * m_B * sin_theta / pow(w, 2)) * Lambda_ia * Lambda_ib * exp_term * (cos_theta - cos(m_theta_bar));
+
+
                                 // Calculate U(r_ia, r_ib) and U(r_ib, r_ia) and apply both in this step
                                 // probably incorrect??
-                                Scalar ria_angle_potential = 0.0;
-                                Scalar ria_angle_force = 0.0;
+                           //     Scalar ria_angle_potential = 0.0;
+                           //     Scalar ria_angle_force = 0.0;
 
-                                angular_repulsion_manager.getEnergyAndForce(ria_mag, rib_mag, dot_product, radsum, m_B, m_theta_bar, w, theta, ria_angle_potential, ria_angle_force);
+                           //     angular_repulsion_manager.getEnergyAndForce(ria_mag, rib_mag, dot_product, radsum, m_B, m_theta_bar, w, theta, ria_angle_potential, ria_angle_force);
 
-                                Scalar rib_angle_potential = 0.0;
-                                Scalar rib_angle_force = 0.0;
+                           //     Scalar rib_angle_potential = 0.0;
+                           //     Scalar rib_angle_force = 0.0;
 
-                                angular_repulsion_manager.getEnergyAndForce(rib_mag, ria_mag, dot_product, radsum, m_B, m_theta_bar, w, theta, rib_angle_potential, rib_angle_force);
+                           //     angular_repulsion_manager.getEnergyAndForce(rib_mag, ria_mag, dot_product, radsum, m_B, m_theta_bar, w, theta, rib_angle_potential, rib_angle_force);
 
                                 // decompose the forces along r_ia and r_ib
-                                Scalar a11 = ria_angle_force * cos_theta / (ria_mag * ria_mag); // force on a from i
-                                Scalar a12_ria = - ria_angle_force / ria_mag; // force on i from a
-                                Scalar a12_rib = - rib_angle_force / rib_mag; // force on i from b
-                                Scalar a22 = rib_angle_force * cos_theta / (rib_mag * rib_mag); // force on b from i
+                                Scalar a11 = vab * cos_theta / (ria_mag * ria_mag);
+                                Scalar a12 = -vab / (ria_mag * rib_mag);
+                                Scalar a22 = vab * cos_theta / (rib_mag * rib_mag);
+                           //     Scalar a11 = ria_angle_force * cos_theta / (ria_mag * ria_mag); // force on a from i
+                           //     Scalar a12_ria = - ria_angle_force / ria_mag; // force on i from a
+                           //     Scalar a12_rib = - rib_angle_force / rib_mag; // force on i from b
+                           //     Scalar a22 = rib_angle_force * cos_theta / (rib_mag * rib_mag); // force on b from i
 
                                 // calculate force in each direction / particle
+                                Scalar3 fia = make_scalar3(a11 * ria.x + a12 * rib.x,
+                                                            a11 * ria.y + a12 * rib.y,
+                                                            a11 * ria.z + a12 * rib.z);
+
+                                Scalar3 fib = make_scalar3(a22 * ria.x + a12 * rib.x,
+                                                            a22 * ria.y + a12 * rib.y,
+                                                            a22 * ria.z + a12 * rib.z);
+
                                 // force on a from i
-                                Scalar3 fia = make_scalar3(a11 * ria.x,
-                                                            a11 * ria.y,
-                                                            a11 * ria.z);
+                           //     Scalar3 fia = make_scalar3(a11 * ria.x,
+                           //                                 a11 * ria.y,
+                           //                                 a11 * ria.z);
 
                                 // force on b from i
-                                Scalar3 fib = make_scalar3(a22 * rib.x,
-                                                            a22 * rib.y,
-                                                            a22 * rib.z);
+                           //     Scalar3 fib = make_scalar3(a22 * rib.x,
+                           //                                 a22 * rib.y,
+                           //                                 a22 * rib.z);
 
                                 // force on i from a
-                                Scalar3 fai = make_scalar3(a12_ria * ria.x,
-                                                            a12_ria * ria.y,
-                                                            a12_ria * ria.z);
+                           //     Scalar3 fai = make_scalar3(a12_ria * ria.x,
+                           //                                 a12_ria * ria.y,
+                           //                                 a12_ria * ria.z);
 
                                 // force on i from b
-                                Scalar3 fbi = make_scalar3(a12_rib * rib.x,
-                                                            a12_rib * rib.y,
-                                                            a12_rib * rib.z);
+                           //     Scalar3 fbi = make_scalar3(a12_rib * rib.x,
+                           //                                 a12_rib * rib.y,
+                           //                                 a12_rib * rib.z);
 
                                 // Total force on i
-                                Scalar3 fi = make_scalar3(fai.x + fbi.x,
-                                                            fai.y + fbi.y,
-                                                            fai.z + fbi.z);
+                           //     Scalar3 fi = make_scalar3(fai.x + fbi.x,
+                           //                                 fai.y + fbi.y,
+                           //                                 fai.z + fbi.z);
 
 
                                 // calculate the total contribution to each particle's potential energy
-                                Scalar total_angular_potential = ria_angle_potential + rib_angle_potential;
-                                Scalar energy_a = 0.5 * total_angular_potential;
-                                Scalar energy_b = 0.5 * total_angular_potential;
-                                Scalar energy_i = total_angular_potential;
+                                Scalar angle_potential = (m_B * Lambda_ia * Lambda_ib * exp_term)/3;
+                           //     Scalar total_angular_potential = ria_angle_potential + rib_angle_potential;
+                           //     Scalar energy_a = 0.5 * total_angular_potential;
+                           //     Scalar energy_b = 0.5 * total_angular_potential;
+                           //     Scalar energy_i = total_angular_potential;
+
 
                                 // calculate the virial
                                 Scalar angle_virial[6];
-                                angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x + (ria.x + rib.x) * fi.x);
-                                angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x + (ria.y + rib.y) * fi.x);
-                                angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x + (ria.z + rib.z) * fi.x);
-                                angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y + (ria.y + rib.y) * fi.y);
-                                angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y + (ria.z + rib.z) * fi.y);
-                                angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z + (ria.z + rib.z) * fi.z);
+                                angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
+                                angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x);
+                                angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x);
+                                angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y);
+                                angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y);
+                                angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z);
+
+                                // calculate the virial
+                           //     Scalar angle_virial[6];
+                           //     angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x + (ria.x + rib.x) * fi.x);
+                           //     angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x + (ria.y + rib.y) * fi.x);
+                           //     angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x + (ria.z + rib.z) * fi.x);
+                           //     angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y + (ria.y + rib.y) * fi.y);
+                           //     angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y + (ria.z + rib.z) * fi.y);
+                           //     angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z + (ria.z + rib.z) * fi.z);
 
                                 // AND FINALLY, update the force, virial, and energy of each particle
                                 // particle a:
@@ -1442,7 +1482,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                     h_force.data[a].x += fia.x;
                                     h_force.data[a].y += fia.y;
                                     h_force.data[a].z += fia.z;
-                                    h_force.data[a].w += energy_a;
+                                    h_force.data[a].w += angle_potential;
+                           //         h_force.data[a].w += energy_a;
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * this->m_virial_pitch + a] += angle_virial[l]; 
                                     }
@@ -1450,10 +1491,14 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                 // particle i:
                                 if (i < (int)this->m_pdata->getN()) 
                                     {
-                                    h_force.data[i].x -= fi.x;
-                                    h_force.data[i].y -= fi.y;
-                                    h_force.data[i].z -= fi.z;
-                                    h_force.data[i].w += energy_i;
+                                    h_force.data[i].x -= fia.x + fib.x;
+                                    h_force.data[i].y -= fia.y + fib.y;
+                                    h_force.data[i].z -= fia.z + fib.z;
+                                    h_force.data[i].w += angle_potential;
+                            //        h_force.data[i].x -= fi.x;
+                            //        h_force.data[i].y -= fi.y;
+                            //        h_force.data[i].z -= fi.z;
+                            //        h_force.data[i].w += energy_i;
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * this->m_virial_pitch + i] += angle_virial[l]; 
                                     }
@@ -1465,7 +1510,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                     h_force.data[b].x += fib.x;
                                     h_force.data[b].y += fib.y;
                                     h_force.data[b].z += fib.z;
-                                    h_force.data[b].w += energy_b;
+                                    h_force.data[b].w += angle_potential;
+                             //       h_force.data[b].w += energy_b;
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * this->m_virial_pitch + b] += angle_virial[l]; 
 

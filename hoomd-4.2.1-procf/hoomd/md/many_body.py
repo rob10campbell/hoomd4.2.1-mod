@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 r"""Implement many body potentials.
 
 Triplet force classes apply a force and virial on every particle in the
@@ -449,3 +451,98 @@ class SquareDensity(Triplet):
         params = TypeParameter('params', 'particle_types',
                                TypeParameterDict(A=0.0, B=float, len_keys=2))
         self._add_typeparam(params)
+
+
+##~ add AngularRepulsion [RHEOINF]
+class AngularRepulsion(Triplet):
+    r"""Angular repulsion three-body force.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+
+    `AngularRepulsion` computes the angle-based three-body force on every particle in the
+    simulation state. Despite the fact that this potential accounts for
+    the effects of third bodies, it is actually just a combination of two body
+    potential terms. It can thus use type-pair parameters similar to those of
+    the pair potentials.
+
+    The AngularRepulsion potential is based on the Stillinger-Weber (SW) potential, and
+    was  developed by Minaspi Bantawa, Wayan Fontaine-Seiler, Peter Olmsted, and 
+    Emanuela Del Gado for coarse-grained gel structure analysis. It is described 
+    in M. Bantawa et.al. 2021 <https://doi.org/10.1088/1361-648X/ac14f6>
+
+    It has been modified to include a 2-body Morse potential:
+
+    .. math::
+        U_{ij},(r_{ij}) =
+        \begin{cases}
+        D_0 \left[ \exp \left(-2\alpha\left(
+            r_ij - \left( a_i + a_j \right) - r_0 \right)\right) 
+            - 2 \exp \left(-\alpha\left(r_ij -
+            \left( a_i + a_j \right) - r_0 \right)
+            \right) \right]
+        \end{cases}
+
+    Then an additional three-body angular repulsion is evaluated:
+
+    .. math::
+
+        U_{ij},(\vec{r}_{ij},\vec{r}_{ik}) =
+        \begin{cases}
+        B \Lambda \left( r \right) \Lambda \left( r' \right) \exp \left[
+            - \left( \frac{{r}_{ij} \dot \vec{r}_{ik}}{r_{ij}r_{ik}}
+            - \cos \bar{\theta} \right)^2 / w^2 \right]
+        \end{cases}
+
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following
+        keys:
+
+        * ``D0`` (`float`, **required**) - depth of the potential at its
+          minimum :math:`D_0` :math:`[\mathrm{energy}]`
+        * ``alpha`` (`float`, **required**) - the width of the potential well
+          :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
+        * ``r0`` (`float`, **required**) - position of the minimum
+          :math:`r_0` :math:`[\mathrm{length}]`
+        * ``scaled_D0`` (bool) - on/off class attribute for scaling D0 by particle size (D0*((radius_i_radius_j)/2); defaults to False [RHEOINF]
+          :math: `scaled_D0` :math: `[true/false]` [RHEOINF]
+
+        * ``theta_bar`` (`float`, **required**) - size of the reference angle limit (in radians)
+          :math:`theta_bar` :math:`[\mathrm{radians}]`
+        * ``B`` (`float`, **required**) - magnitude of angular repulsion 
+          :math:`B` :math:`[\mathrm{energy}]`
+        * ``w`` (`float`, **required**) - width of the angular repulsion potential (about peak B at position theta_bar)
+          :math:`w` :math:`[\mathrm{length?}]`
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    Example::
+
+        nl = md.nlist.Cell()
+        angular = md.many_body.AngularRepulsion(default_r_cut=3.0,nlist=nl)
+        angular.params[('A', 'A'), ('B', 'B')] = {
+            "D0": 1.0,"alpha": 3.0, "r0": 1.0, "theta_bar":1.13446, "B":3, "w":0.30, "scaled_D0":false}
+        angular.params[('A','B')] = {
+            "D0": 1.0,"alpha": 3.0, "r0": 1.0, "theta_bar":1.13446, "B":1, "w":5, "scaled_D0":false}
+
+    """
+    _cpp_class_name = "PotentialAngularRepulsion"
+
+    def __init__(self, nlist, default_r_cut=None):
+        super().__init__(nlist, default_r_cut)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float,
+                              alpha=float,
+                              r0=float,
+                              theta_bar=float,
+                              B=float,
+                              w=float,
+                              scaled_D0=bool,
+                              len_keys=2))
+        self._add_typeparam(params)
+##~

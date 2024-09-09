@@ -415,7 +415,7 @@ foreach(_pair ${_pairs})
     endif()
 endforeach()
 
-set(_triplets Tersoff SquareDensity RevCross)
+set(_triplets Tersoff SquareDensity RevCross AngularRepulsion) # add AngularRepulsion [RHEOINF]
 
 foreach(_evaluator ${_triplets})
     configure_file(export_PotentialTersoff.cc.inc

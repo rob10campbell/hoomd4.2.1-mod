@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #ifndef __EVALUATOR_TERSOFF__
 #define __EVALUATOR_TERSOFF__
 
@@ -121,8 +123,8 @@ class EvaluatorTersoff
         \param _rcutsq Squared distance at which the potential goes to zero
         \param _params Per type-pair parameters for this potential
     */
-    DEVICE EvaluatorTersoff(Scalar _rij_sq, Scalar _rcutsq, const param_type& _params)
-        : rij_sq(_rij_sq), rcutsq(_rcutsq), cutoff_shell_thickness(_params.cutoff_thickness),
+    DEVICE EvaluatorTersoff(Scalar _rij_sq, Scalar _rcutsq, Scalar _diam_i, Scalar _diam_j, Scalar _diam_k, const param_type& _params) // add diameters [RHEOINF]
+        : rij_sq(_rij_sq), rcutsq(_rcutsq), diam_i(_diam_i), diam_j(_diam_j), diam_k(_diam_k), cutoff_shell_thickness(_params.cutoff_thickness), // add diameters [RHEOINF]
           tersoff_A(_params.coeffs.x), tersoff_B(_params.coeffs.y), lambda_R(_params.exp_consts.x),
           lambda_A(_params.exp_consts.y), dimer_separation(_params.dimer_r),
           tersoff_n(_params.tersoff_n), gamman(_params.gamman), lambda_h3(_params.lambda_cube),
@@ -142,6 +144,40 @@ class EvaluatorTersoff
         {
         rik_sq = rsq;
         }
+
+    //~ checks for AngularRepulsion Potential [RHEOINF]
+    //! Check if the potential needs the diameters of i and j
+    DEVICE static bool needsDiDj()
+        {
+        return false;
+        }
+    //! No need for diameters
+    DEVICE void setDiDj(Scalar di, Scalar dj) { }
+
+    //! Check if the potential needs the rij vector
+    DEVICE static bool needsRijVec()
+        {
+        return false;
+        }
+    //! No need for rij vecotr
+    DEVICE void setRijVec(Scalar3 _rij_vec) { }
+
+    //! Check if the potential needs diameter k
+    DEVICE static bool needsDk()
+        {
+        return false;
+        }
+    //! No need for diameter k
+    DEVICE void setDk(Scalar dk) { }
+
+    //! Check if the potential needs the rik vector
+    DEVICE static bool needsRikVec()
+        {
+        return false;
+        }
+    //! No need for rik vecotr
+    DEVICE void setRikVec(Scalar3 _rik_vec) { }
+    //~
 
     //! This is a pure pair potential
     DEVICE static bool hasPerParticleEnergy()
@@ -433,12 +469,16 @@ class EvaluatorTersoff
         }
 #endif
 
+    static const bool flag_for_AngularRepulsion = false; //~ add AngularRepulsion flag [RHEOINF]
     static const bool flag_for_RevCross = false;
 
     protected:
     Scalar rij_sq;                 //!< Stored rij_sq from the constructor
     Scalar rik_sq;                 //!< Stored rik_sq from the constructor
     Scalar rcutsq;                 //!< Stored rcutsq from the constructor
+    Scalar diam_i;                 // unused diameter [RHEOINF]
+    Scalar diam_j;                 // unused diameter [RHEOINF]
+    Scalar diam_k;                 // unused diameter [RHEOINF]
     Scalar cos_th;                 //!< Cosine of the angle between rij and rik
     Scalar cutoff_shell_thickness; //!< Thickness of the cutoff shell in which the cutoff function
                                    //!< applies

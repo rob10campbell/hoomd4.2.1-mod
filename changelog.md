@@ -285,6 +285,18 @@ Adding a new potential that limits three-body colloid structures to angles aroun
 		* [ ] `pair/`
 			* [ ] pair.py : **pass params from Python :facepalm:**
 
+* [ ] `hoomd/`
+	* [ ] `md/`
+		* [x] CMakeLists.txt : **AngularRepulsion**
+		* [ ] **[ADD NEW FILE]** EvaluatorAngularRepulsion.h
+		* [x] EvaluatorRevCross.h : **AngularRepulsion flag + checks**
+		* [x] EvaluatorTersoff.h : **AngularRepulsion flag + checks**
+		* [x] EvaluatorSquareDensity.h : **AngularRepulsion flag + checks**
+		* [ ] PotentialTersoff.h : **AngularRepulsion variant**
+		* [x] many_body.py : **AngularRepulsion**
+		* [x] module-md.cc : **AngularRepulsion**
+
+
 ## Rotation Restriction
 Restrict particle rotation with a potential based on Nguyen, Graham, Koenig, and Gelb (Soft Matter, 2020), DOI: 10.1039/c9sm01755k (Rob) <br>
 *WARNING*: unfinished (does not actually calculate forces, only tests the new RotationMap class) ...also seems like the Evaluator is not properly activated? No print statements are generated from wihin in, despite printing correctly from other Evaluators...

@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 //
 
 #ifndef __EVALUATOR_REVCROSS__
@@ -77,8 +79,9 @@ class EvaluatorRevCross
     */
     DEVICE EvaluatorRevCross(Scalar _rij_sq,
                              Scalar _rcutsq,
+                             Scalar _diam_i, Scalar _diam_j, Scalar _diam_k, // add diameter [RHEOINF]
                              const param_type& _params) // here it receives also r cutoff
-        : rij_sq(_rij_sq), rcutsq(_rcutsq), sigma_dev(_params.sigma), n_dev(_params.n),
+        : rij_sq(_rij_sq), rcutsq(_rcutsq), diam_i(_diam_i), diam_j(_diam_j), diam_k(_diam_k), sigma_dev(_params.sigma), n_dev(_params.n), // add diameter [RHEOINF]
           epsilon_dev(_params.epsilon), lambda3_dev(_params.lambda3)
         {
         }
@@ -94,6 +97,40 @@ class EvaluatorRevCross
         {
         rik_sq = rsq;
         }
+
+    //~ checks for AngularRepulsion Potential [RHEOINF]
+    //! Check if the potential needs the diameters of i and j
+    DEVICE static bool needsDiDj()
+        {
+        return false;
+        }
+    //! No need for diameters
+    DEVICE void setDiDj(Scalar di, Scalar dj) { }
+
+    //! Check if the potential needs the rij vector
+    DEVICE static bool needsRijVec()
+        {
+        return false;
+        }
+    //! No need for rij vecotr
+    DEVICE void setRijVec(Scalar3 _rij_vec) { }
+
+    //! Check if the potential needs diameter k
+    DEVICE static bool needsDk()
+        {
+        return false;
+        }
+    //! No need for diameter k
+    DEVICE void setDk(Scalar dk) { }
+
+    //! Check if the potential needs the rik vector
+    DEVICE static bool needsRikVec()
+        {
+        return false;
+        }
+    //! No need for rik vecotr
+    DEVICE void setRikVec(Scalar3 _rik_vec) { }
+    //~
 
     //! This is a pure pair potential
     DEVICE static bool hasPerParticleEnergy()
@@ -250,12 +287,16 @@ class EvaluatorRevCross
         }
 #endif
 
+    static const bool flag_for_AngularRepulsion = false; //~ add AngularRepulsion flag [RHEOINF]
     static const bool flag_for_RevCross = true;
 
     protected:
     Scalar rij_sq; //!< Stored rij_sq from the constructor
     Scalar rik_sq; //!< Stored rik_sq from the constructor
     Scalar rcutsq; //!< Stored rcutsq from the constructor
+    Scalar diam_i; // unused diam [RHEOINF]
+    Scalar diam_j; // unused diam [RHEOINF]
+    Scalar diam_k; // unused diam [RHEOINF]
     Scalar sigma_dev;
     Scalar n_dev;
     Scalar epsilon_dev;

@@ -94,6 +94,7 @@ void export_PotentialSpecialPairCoulomb(pybind11::module& m);
 void export_PotentialTersoff(pybind11::module& m);
 void export_PotentialSquareDensity(pybind11::module& m);
 void export_PotentialRevCross(pybind11::module& m);
+void export_PotentialAngularRepulsion(pybind11::module& m); //~ add AngularRepulsion [RHEOINF]
 
 void export_PotentialExternalPeriodic(pybind11::module& m);
 void export_PotentialExternalElectricField(pybind11::module& m);
@@ -354,6 +355,7 @@ PYBIND11_MODULE(_md, m)
     export_PotentialTersoff(m);
     export_PotentialSquareDensity(m);
     export_PotentialRevCross(m);
+    export_PotentialAngularRepulsion(m); //~ add AngularRepulsion [RHEOINF]
 
     export_AnisoPotentialPairALJ2D(m);
     export_AnisoPotentialPairALJ3D(m);
