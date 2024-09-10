@@ -1,8 +1,6 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-########## Modified by Rheoinformatic //~ [RHEOINF] ##########
-
 """Access simulation state data directly."""
 
 from abc import ABC, abstractmethod
@@ -169,7 +167,6 @@ class ParticleLocalAccessBase(_LocalAccess):
         'net_force': 'getNetForce',
         'net_torque': 'getNetTorque',
         'net_virial': 'getNetVirial',
-        'particle_n_list': 'getParticleNList' ##~ many-body neighbors [RHEOINF]
         'net_energy': 'getNetEnergy',
         'particle_n_list': 'getParticleNList'
     }
