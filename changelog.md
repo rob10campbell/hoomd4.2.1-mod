@@ -10,6 +10,7 @@ File lists are formatted as: `folder/`; file
 * [Polydispersity](/changelog.md#polydispersity) : Track and use particle radii for surface-surface distance (h_ij) calculations, option to scale D0 by particle size to mimic size-dependent depletion (Rob)
 * [On/Off Contact Force](/changelog.md#on-off-contact-force) : Add the ability to remove contact force and replace it with Morse repulsion (Sasha)
 * [Bond tracking](/changelog.md#bond-tracking) : Track bond formation and breaking (Nabi, Deepak, and Rob)
+* [Dynamic Multi-body Bond Rigidity](/changelog.md#bond-rigidity) : Track many-body neighbors and calculate an effective bond rigidity from these interactions (Paniz)
 * [Walls](/changelog.md#walls) : Wall options: flat or converging diverging (Josh)
 * [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
@@ -186,6 +187,34 @@ Track bond formation and breaking (Nabi, Deepak, and Rob)
 * [x] `hoomd/`
 	* [x] `md/`
 		* [x] PotentialPairDPDThermo.h : **charge**
+
+## Bond Rigidity
+Dynamically track many-body neighbors (20 per particle) and, if K!=0, calculate an effective bond rigidity that is added to these interactions (effectively adding a short-range repulsion that reduces contact number)
+- **many-body neighbors** : track the neighbors of each particle (20)
+- **print angles** : options to print and check angles (commented out by default)
+- **K** : magnitude of the angular repulsion
+- **Harmoic** : use a Harmonic force and dynamic angle tracking to calculate the effective bond rigidity
+- **Angular Repulsion** : use a fixed reference angle and the angular repulsion from [Bantawa et.al.](https://doi.org/10.1088/1361-648X/ac14f6) to calculate the effective bond rigidity
+* [ ] `hoomd/`
+	* [x] AngleMap.h : **many-body angles**
+	* [x] Communicator.cc : **many-body neighbors**
+	* [x] Communicator.h : **many-body neighbors**
+	* [x] CommunicatorGPU.cc : **many-body neighbors**
+	* [x] CommunicatorGPU.cu : **many-body neighbors**
+	* [x] CommunicatorGPU.cuh : **many-body neighbors**
+	* [x] CommunicatorGPU.h : **many-body neighbors**
+	* [x] GSDDumpWriter.cc : **print angles** 
+	* [x] ParticleData.cc : **many-body neighbors**
+	* [x] ParticleData.cu : **many-body neighbors**
+	* [x] ParticleData.cu : **many-body neighbors**
+	* [x] ParticleData.h : **many-body neighbors**
+	* [x] `data/`
+		* [x] local_access.py : **many-body neighbors**
+        * [ ] `md/`
+		* [x] `pair/`
+			* [x] pair.py : **K**
+		* [x] PotentialPair.h : **many-body neighbors, K, Harmonic, Angular Repulsion**
+		* [x] PotentialPairDPDThermo.h : **many-body neighbors, K, Harmonic**
 
 ## Walls
 Wall options: flat or converging diverging (Josh)

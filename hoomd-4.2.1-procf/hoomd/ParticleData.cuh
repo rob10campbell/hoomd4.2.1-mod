@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #pragma once
 
 #ifdef ENABLE_HIP
@@ -48,6 +50,7 @@ struct pdata_element
     Scalar4 net_force;    //!< net force
     Scalar4 net_torque;   //!< net torque
     Scalar net_virial[6]; //!< net virial
+    Scalar particle_n_list[20];  //~!< many-body neighbors [RHEOINF] 
     };
 #else
 //! Forward declaration
@@ -74,6 +77,8 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                               const Scalar4* d_net_torque,
                               const Scalar* d_net_virial,
                               unsigned int net_virial_pitch,
+                              const Scalar* d_particle_n_list, //~ many-body neighbors [RHEOINF]
+                              unsigned int particle_n_list_pitch, //~ many-body neighbors [RHEOINF]
                               const unsigned int* d_tag,
                               unsigned int* d_rtag,
                               Scalar4* d_pos_alt,
@@ -89,6 +94,7 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                               Scalar4* d_net_force_alt,
                               Scalar4* d_net_torque_alt,
                               Scalar* d_net_virial_alt,
+                              Scalar* d_particle_n_list_alt, //~ many-body neighbors [RHEOINF]
                               unsigned int* d_tag_alt,
                               detail::pdata_element* d_out,
                               unsigned int* d_comm_flags,
@@ -115,6 +121,8 @@ void gpu_pdata_add_particles(const unsigned int old_nparticles,
                              Scalar4* d_net_torque,
                              Scalar* d_net_virial,
                              unsigned int net_virial_pitch,
+                             Scalar* d_particle_n_list, //~ many-body neighbors [RHEOINF]
+                             unsigned int particle_n_list_pitch, //~ many-body neighbors [RHEOINF]
                              unsigned int* d_tag,
                              unsigned int* d_rtag,
                              const detail::pdata_element* d_in,

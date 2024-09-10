@@ -266,6 +266,7 @@ struct pdata_element
     Scalar4 net_torque;   //!< net torque
     Scalar net_virial[6]; //!< net virial
     Scalar net_virial_ind[5]; //~!< net virial_ind [RHEOINF]
+    Scalar particle_n_list[20]; //~!< many-body neighbors [RHEOINF]
     };
 
     } // end namespace detail
@@ -804,6 +805,17 @@ class PYBIND11_EXPORT ParticleData
         }
     //~
 
+    //~ many-body neighbors [RHEOINF]
+    const GlobalArray<Scalar>& getAltParticleNList() const
+        {
+        return m_particle_n_list_alt;
+        }
+    inline void swapParticleNList()
+        {
+        m_particle_n_list.swap(m_particle_n_list_alt);
+        }
+    //~
+
     //! Get the net torque array (alternate array)
     const GlobalArray<Scalar4>& getAltNetTorqueArray() const
         {
@@ -941,6 +953,13 @@ class PYBIND11_EXPORT ParticleData
         }
     //~
 
+    //~ many-body neighbors [RHEOINF]
+    const GlobalArray<Scalar>& getParticleNList() const
+        {
+        return m_particle_n_list;
+        }
+    //~
+
     //! Get the net torque array
     const GlobalArray<Scalar4>& getNetTorqueArray() const
         {
@@ -1062,6 +1081,10 @@ class PYBIND11_EXPORT ParticleData
 
     //~! Get the net virial_ind for a given particle [RHEOINF] 
     Scalar getPNetVirialInd(unsigned int tag, unsigned int component) const;
+    //~
+
+    //~! Many-body neighbors [RHEOINF]
+    Scalar getPParticleNList(unsigned int tag, unsigned int component) const;
     //~
 
     //! Set the current position of a particle
@@ -1356,12 +1379,14 @@ class PYBIND11_EXPORT ParticleData
     GlobalArray<Scalar4> m_net_force_alt;  //!< Net force (swap-in)
     GlobalArray<Scalar> m_net_virial_alt;  //!< Net virial (swap-in)
     GlobalArray<Scalar> m_net_virial_ind_alt; //~!< Net virial_ind (swap-in) [RHEOINF]
+    GlobalArray<Scalar> m_particle_n_list_alt; //~!< Many-body neighbors (swap-in)  [RHEOINF]
     GlobalArray<Scalar4> m_net_torque_alt; //!< Net torque (swap-in)
 
     GlobalArray<Scalar4> m_net_force;  //!< Net force calculated for each particle
     GlobalArray<Scalar> m_net_virial;  //!< Net virial calculated for each particle (2D GPU array of
                                        //!< dimensions 6*number of particles)
-   GlobalArray<Scalar> m_net_virial_ind; //~!< Net virial_ind calculated for each particle (dims 5*number of particles) [RHEOINF] 
+    GlobalArray<Scalar> m_net_virial_ind; //~!< Net virial_ind calculated for each particle (dims 5*number of particles) [RHEOINF] 
+    GlobalArray<Scalar> m_particle_n_list; //~!< Many-body neighbors [RHEOINF]
     GlobalArray<Scalar4> m_net_torque; //!< Net torque calculated for each particle
 
     Scalar m_external_virial[6]; //!< External potential contribution to the virial
@@ -1427,6 +1452,7 @@ class PYBIND11_EXPORT LocalParticleData : public GhostLocalDataAccess<Output, Pa
           m_charge_handle(), m_diameter_handle(), m_image_handle(), m_tag_handle(), m_rtag_handle(),
           m_rigid_body_ids_handle(), m_net_force_handle(), m_net_virial_handle(),
           m_net_virial_ind_handle(), //~ add virial_ind [RHEOINF]
+          m_particle_n_list_handle(), //~ many-body neighbors [RHEOINF]
           m_net_torque_handle()
         {
         }
@@ -1601,6 +1627,21 @@ class PYBIND11_EXPORT LocalParticleData : public GhostLocalDataAccess<Output, Pa
         }
     //~
 
+    //~ many-body neighbors [RHEOINF]
+    Output getParticleNList(GhostDataFlag flag)
+        {
+        return this->template getLocalBuffer<Scalar, Scalar>(
+            m_particle_n_list_handle,
+            &ParticleData::getParticleNList,
+            flag,
+            true,
+            20,
+            0,
+            std::vector<size_t>({20 * sizeof(Scalar), sizeof(Scalar)}));
+        }
+    //~
+
+
     Output getNetEnergy(GhostDataFlag flag)
         {
         return this->template getLocalBuffer<Scalar4, Scalar>(m_net_force_handle,
@@ -1630,6 +1671,7 @@ class PYBIND11_EXPORT LocalParticleData : public GhostLocalDataAccess<Output, Pa
         m_net_virial_handle.reset(nullptr);
         m_net_torque_handle.reset(nullptr);
         m_net_virial_ind_handle.reset(nullptr); //~ add virial_ind [RHEOINF]
+        m_particle_n_list_handle.reset(nullptr); //~ many-body neighbors [RHEOINF]
         }
 
     private:
@@ -1652,6 +1694,7 @@ class PYBIND11_EXPORT LocalParticleData : public GhostLocalDataAccess<Output, Pa
     std::unique_ptr<ArrayHandle<Scalar4>> m_net_force_handle;
     std::unique_ptr<ArrayHandle<Scalar>> m_net_virial_handle;
     std::unique_ptr<ArrayHandle<Scalar>> m_net_virial_ind_handle; //~ add virial_ind [RHEOINF]
+    std::unique_ptr<ArrayHandle<Scalar>> m_particle_n_list_handle; //~ many-body neighbors [RHEOINF]
     std::unique_ptr<ArrayHandle<Scalar4>> m_net_torque_handle;
     };
 
@@ -1684,6 +1727,7 @@ template<class Output> void export_LocalParticleData(pybind11::module& m, std::s
         .def("getRTags", &LocalParticleData<Output>::getRTags)
         .def("getBodies", &LocalParticleData<Output>::getBodies)
         .def("getNetForce", &LocalParticleData<Output>::getNetForce)
+        .def("getParticleNList", &LocalParticleData<Output>::getParticleNList) //~ many-body neighbors [RHEOINF]
         .def("getNetVirial", &LocalParticleData<Output>::getNetVirial)
         .def("getNetTorque", &LocalParticleData<Output>::getNetTorque)
         .def("getNetEnergy", &LocalParticleData<Output>::getNetEnergy)

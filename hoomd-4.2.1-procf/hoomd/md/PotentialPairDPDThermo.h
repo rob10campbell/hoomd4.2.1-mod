@@ -10,6 +10,17 @@
 #include "hoomd/Variant.h"
 #include "Lifetime.h" //~ add Lifetime.h [RHEOINF]
 
+//~ access for angle managmenet [RHEOINF]
+#include "hoomd/HOOMDMPI.h"
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <math.h>
+#include <cmath>
+
+// _write
+//~
+
 /*! \file PotentialPairDPDThermo.h
     \brief Defines the template class for a dpd thermostat and LJ pair potential
     \note This header cannot be compiled by nvcc
@@ -53,7 +64,8 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     //! Construct the pair potential
     PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                            std::shared_ptr<NeighborList> nlist,
-                           bool bond_calc); //~ add bond_calc [RHEOINF]
+                           bool bond_calc, //~ add bond_calc [RHEOINF]
+                           Scalar K); //~ add K [RHEOINF]
     //! Destructor
     virtual ~PotentialPairDPDThermo() {};
 
@@ -74,8 +86,23 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 	}
     //~
 
+    //~ Check the K value [RHEOINF]
+    void setK(Scalar K) {
+        m_K = K;
+    }
+    Scalar getK() const {
+        return m_K;
+    }
+
+    //~
+
     //~ add Lifetime [RHEOINF] 
     std::shared_ptr<Lifetime> LTIME;
+    //~
+
+    //~ add AngleMap [RHEOINF]
+    std::map<unsigned int, Scalar> angle_map;
+    std::map<unsigned int, Scalar> angle_map_temp2;
     //~
 
 #ifdef ENABLE_MPI
@@ -86,13 +113,26 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
     protected:
     std::shared_ptr<Variant> m_T; //!< Temperature for the DPD thermostat
 
-    bool m_bond_calc; //= false;      //~!< bond_calc flag (default false) [RHEOINF]
+    bool m_bond_calc; //= false; //~!< bond_calc flag (default false) [RHEOINF]
+    Scalar m_K;                  //~!< K value [RHEOINF]
 
    //ofstream DiameterFile; //~ print diameters [RHEOINF]
 
     //! Actually compute the forces (overwrites PotentialPair::computeForces())
     virtual void computeForces(uint64_t timestep);
+
+    //~! get system information for multi-body angle calculation [RHEOINF]
+    const std::shared_ptr<SystemDefinition> m_sysdef;
+    //std::shared_ptr<ParticleData> m_p;
+    std::shared_ptr<const ExecutionConfiguration> m_exec_conf;
+    //~
     };
+
+//~ multi-body neighbors [RHEOINF]
+// Initialize the static member variable outside the class definition
+//template<class evaluator>
+//std::vector<std::vector<Scalar>> PotentialPairDPDThermo<evaluator>::accumulated_neighbor_lists;
+//~
 
 /*! \param sysdef System to compute forces on
     \param nlist Neighborlist to use for computing the forces
@@ -100,15 +140,21 @@ template<class evaluator> class PotentialPairDPDThermo : public PotentialPair<ev
 template<class evaluator>
 PotentialPairDPDThermo<evaluator>::PotentialPairDPDThermo(std::shared_ptr<SystemDefinition> sysdef,
                                                           std::shared_ptr<NeighborList> nlist,
-                                                          bool bond_calc) //~ add bond_calc [RHEOINF]
-    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc) //~ add bond_calc [RHEOINF]
+                                                          bool bond_calc, //~ add bond_calc [RHEOINF]
+                                                          Scalar K) //~ add K [RHEOINF]
+    : PotentialPair<evaluator>(sysdef, nlist), m_bond_calc(bond_calc), m_K(K), m_sysdef(sysdef) //~ add bond_calc, K, and sysdef [RHEOINF]
     {
-    //~ add bond_calc flag [RHEOINF]
-    if(m_bond_calc)
+    //~ add bond_calc flag AND access lifetime if m_K!=0.0 even without a bond_calc [RHEOINF]
+    if (m_bond_calc || m_K != 0.0)
 	{
         LTIME = std::shared_ptr<Lifetime>(new Lifetime(sysdef));
 	}
     //~
+
+    //~ get particle data for many-body angle calc [RHEOINF]
+    m_exec_conf = m_sysdef->getParticleData()->getExecConf();
+    //~
+
     }
 
 /*! \param T the temperature the system is thermostated on this time step.
@@ -170,6 +216,82 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                                    access_mode::read);
     //~
 
+    //~ get many-body neighbors [RHEOINF]
+    //S
+    ArrayHandle<Scalar> h_current_neighbor_list( this->m_pdata->getParticleNList(),
+                                                 access_location::host,
+                                                 access_mode::readwrite);                        
+    assert(h_current_neighbor_list.data);
+    size_t p_neighbor_pitch = this->m_pdata->getParticleNList().getPitch();
+
+    // Copy the previous neighbor list to a new variable
+    int tot_particles = (int)(this->m_pdata->getN());  
+    std::vector<Scalar> h_previous_neighbor_temp(20 * tot_particles );
+    std::vector<Scalar> h_previous_neighbor_list;
+
+    if (m_K != 0.0 ){
+        for ( int i = 0; i < tot_particles; i++) {
+            if(h_current_neighbor_list.data[i] != -2){
+                for (size_t j = 0; j < 20; j++) { // 20 is the count of neighbors used
+                    h_previous_neighbor_temp[j * tot_particles + i] = h_current_neighbor_list.data[j * p_neighbor_pitch + i];
+                }
+            }
+        }
+        #ifdef ENABLE_MPI
+            if (m_sysdef->isDomainDecomposed()) {
+                // Calculate the total number of particles across all ranks
+                MPI_Allreduce(MPI_IN_PLACE,
+                            &tot_particles,
+                            1,
+                            MPI_INT,
+                            MPI_SUM,
+                            m_exec_conf->getMPICommunicator());
+            }
+        #endif
+
+        #ifdef ENABLE_MPI
+        unsigned int num_ranks = this->LTIME->num_rank;
+        // Initialize a buffer to store gathered data on the root rank  
+        std::vector<std::vector<Scalar>> gathered_previous_neighbor_lists(num_ranks);
+        std::vector<int> displacements(gathered_previous_neighbor_lists.size());
+        if (m_sysdef->isDomainDecomposed()) 
+            {   
+                // Gather data onto the root rank
+                all_gather_v(h_previous_neighbor_temp, gathered_previous_neighbor_lists, m_exec_conf->getMPICommunicator());
+                // 
+                h_previous_neighbor_list.resize(20 * tot_particles);
+                int offset = 0;
+                for (unsigned int i = 0; i < num_ranks; i++) {
+                    unsigned int ni = static_cast<int>(gathered_previous_neighbor_lists[i].size() / 20); // Number of particles in the current rank
+                    for (unsigned int p = 0; p < ni; ++p) {
+                        for (int j = 0; j < 20; j++) {
+                            h_previous_neighbor_list[j * tot_particles + offset + p] = gathered_previous_neighbor_lists[i][j * ni + p];
+                        }
+                    }
+                offset += ni;
+                }
+        }else{
+                h_previous_neighbor_list.resize(h_previous_neighbor_temp.size());
+                std::copy(h_previous_neighbor_temp.begin(), h_previous_neighbor_temp.end(), h_previous_neighbor_list.begin());
+            } 
+        #endif 
+    }
+
+    // start the connected neighbors with zero
+    //memset((void*)h_current_neighbor_list.data, 0, sizeof(Scalar) * this->m_pdata->getParticleNList().getNumElements());
+    for (size_t i = 0; i <  this->m_pdata->getParticleNList().getNumElements(); ++i) {
+        h_current_neighbor_list.data[i] = -2 ;
+    }
+    // start the neighbors with tag of the particle so that the particle can be found
+    for (int i = 0; i < (int)this->m_pdata->getN(); i++){
+        unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+        if(typei){
+        h_current_neighbor_list.data[i] = h_tag.data[i];
+        }
+    }
+    //F
+    //~
+
     // force arrays
     ArrayHandle<Scalar4> h_force(this->m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(this->m_virial, access_location::host, access_mode::overwrite);
@@ -195,14 +317,35 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 
     uint16_t seed = this->m_sysdef->getSeed();
 
+    size_t idx_pi = -1; //~ set the neighbor index for pi [RHEOINF] 
+
     // for each particle
     for (int i = 0; i < (int)this->m_pdata->getN(); i++)
         {
-        // access the particle's position, velocity, and type (MEM TRANSFER: 7 scalars)
+
+        //~ get many-body neighbors [RHEOINF]
+        unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+        //find the particle in the previous time step particle neighbor list
+        if (m_K != 0.0){
+            if(typei){
+                //bool wasnt_found = true;
+                for(int p_i = 0; p_i < tot_particles; p_i++){
+                    if (h_previous_neighbor_list[p_i] == h_tag.data[i]) {
+                        idx_pi = p_i;
+                        //wasnt_found = false;
+                        break;
+                    }else{idx_pi = 0;}
+                }
+
+            }
+        }
+        //~
+
+        // access the particle's p(siti(n, velocity, and type (MEM TRANSFER: 7 scalars)
         Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
         Scalar3 vi = make_scalar3(h_vel.data[i].x, h_vel.data[i].y, h_vel.data[i].z);
 
-        unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+        //unsigned int typei = __scalar_as_int(h_pos.data[i].w); //~ already found above [RHEOINF]
         const size_t head_i = h_head_list.data[i];
 
         // sanity check
@@ -345,6 +488,364 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 		}
 	    //~
 
+            //~ force diameter to 2.0 [RHEOINF]
+            h_diameter.data[i] = Scalar (2.0);
+            h_diameter.data[j] = Scalar (2.0);
+            //~
+
+            //~ calculate angular rigidity [RHEOINF]
+            //S
+            if (m_K != 0.0){
+                if (typei && typej)
+                {   
+                    Scalar rsq_root = std::sqrt(rsq) - Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+                    if (rsq_root < Scalar(0.1))
+                    {
+                        // Check and update neighbors for particle i
+                        size_t idx_i = 0;
+                        bool not_saved = true;
+                        while (idx_i < 20){
+
+                            // Check if tag[j] already exists
+                            if (h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] == h_tag.data[j])
+                            {
+                                not_saved = false;
+                                break; 
+                            }
+
+                            // If current entry is empty, save tag[j]
+                            if (h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] == -2)
+                            {
+                                h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] = h_tag.data[j];
+                                break; 
+                            }
+
+                            idx_i++; 
+                        }
+
+                        if (not_saved)
+                        {
+                            // Check and update neighbors for particle j
+                            size_t idx_j = 0;
+                            while (idx_j < 20)
+                            {
+                                // Check if tag[i] already exists
+                                if (h_current_neighbor_list.data[idx_j * p_neighbor_pitch + j] == h_tag.data[i])
+                                {
+                                    break; 
+                                }
+
+                                // If current entry is empty, save tag[i]
+                                if (h_current_neighbor_list.data[idx_j * p_neighbor_pitch + j] == -2)
+                                {
+                                    h_current_neighbor_list.data[idx_j * p_neighbor_pitch + j] = h_tag.data[i];
+                                    break; 
+                                }
+
+                                idx_j++; 
+                            }
+                        }
+
+
+                            // save angles
+                            bool new_connection = true;
+                            size_t is_idx = 0;
+                            while ( is_idx < 20)
+                            {
+                                if (h_previous_neighbor_list[is_idx * tot_particles + idx_pi] == h_tag.data[j])
+                                {
+                                    new_connection = false;
+                                    break;
+                                }
+                                is_idx++;
+                            }
+
+                            if (new_connection)
+                            {   
+                                // Calculate angle between j and all previous neighbors of i
+                                for (size_t idx_si = 1; idx_si < 20 ; ++idx_si)
+                                {
+                                    if (h_previous_neighbor_list[idx_si * tot_particles + idx_pi] != -2)
+                                    {  
+                                        unsigned int tagk = static_cast<unsigned int>(h_previous_neighbor_list[idx_si * tot_particles + idx_pi]);
+                                        Scalar3 pk;
+                                        //bool ff = false;
+                                        for (int M = 0; M < (int)(this->m_pdata->getN()+this->m_pdata->getNGhosts()); M++) 
+                                        {
+                                            // Check if the tag matches the desired tag
+                                            if (h_tag.data[M] == tagk) {
+                                                // Access the position of the particle with the matching tag
+                                                pk = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                                //ff = true;
+                                                break; 
+                                            }
+                                        }
+
+                                        // Calculate vectors between particles
+                                        Scalar3 rij = pj-pi;
+                                        Scalar3 rik = pk-pi;
+                                        rij = box.minImage(rij);
+                                        rik = box.minImage(rik);
+
+                                        // Calculate magnitudes of vectors
+                                        Scalar rij_mag = std::sqrt(rij.x * rij.x + rij.y * rij.y + rij.z * rij.z);
+                                        Scalar rik_mag = std::sqrt(rik.x * rik.x + rik.y * rik.y + rik.z * rik.z);
+
+                                        // Calculate dot product
+                                        Scalar dot_product = rij.x * rik.x + rij.y * rik.y + rij.z * rik.z;
+
+                                        // Calculate angle in radians
+                                        Scalar cos_theta = dot_product / (rij_mag * rik_mag);
+
+                                        if (cos_theta > 1.0)
+                                            cos_theta = 1.0;
+                                        if (cos_theta < -1.0)
+                                            cos_theta= -1.0;
+
+                                        unsigned int vari = tagi - this->LTIME->num_solvent;
+                                        unsigned int varj = tagj - this->LTIME->num_solvent;
+                                        unsigned int vark = tagk - this->LTIME->num_solvent;
+
+                                        // sort them so var3>var3>var 
+                                        unsigned int var1 = vari;
+                                        unsigned int var3 = std::max({varj, vark});
+                                        unsigned int var2 = std::min({varj, vark});
+
+
+                                        unsigned int n = this->LTIME->num_colloid; 
+                                        unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+
+                                        angle_map[angle_index] = acos(cos_theta);
+
+                                    }
+                                }
+
+
+
+                                // Calculate angle between j and all current neighbors of i
+                                for (size_t idx_si = 1; idx_si < 20 ; ++idx_si)
+                                {
+                                    if (h_current_neighbor_list.data[idx_si * p_neighbor_pitch + i] != -2 && h_current_neighbor_list.data[idx_si * p_neighbor_pitch + i] != h_tag.data[j])
+                                        {
+                                        unsigned int tagk = static_cast<unsigned int>(h_current_neighbor_list.data[idx_si * p_neighbor_pitch + i]);
+                                        Scalar3 pk;
+                                        //bool f2 =false;
+
+                                        for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+                                        {
+                                            // Check if the tag matches the desired tag
+                                            if (h_tag.data[M] == tagk) {
+                                                // Access the position of the particle with the matching tag
+                                                pk = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                                //f2= true;
+                                                break; 
+                                            }
+                                        }
+                                        // Check if the current neighbor is also a previous neighbor
+                                        bool is_previous_neighbor = false;
+                                        for (size_t idx_prev = 1; idx_prev < 20 ; ++idx_prev)
+                                        {
+                                            if (h_previous_neighbor_list[idx_prev * tot_particles + idx_pi] == tagk)
+                                            {
+                                                is_previous_neighbor = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!is_previous_neighbor)
+                                        {
+                                            // Calculate vectors between particles
+                                            Scalar3 rij = pj-pi;
+                                            Scalar3 rik = pk-pi;
+                                            rij = box.minImage(rij);
+                                            rik = box.minImage(rik);
+
+                                            // Calculate magnitudes of vectors
+                                            Scalar rij_mag = std::sqrt(rij.x * rij.x + rij.y * rij.y + rij.z * rij.z);
+                                            Scalar rik_mag = std::sqrt(rik.x * rik.x + rik.y * rik.y + rik.z * rik.z);
+
+                                            // Calculate dot product
+                                            Scalar dot_product = rij.x * rik.x + rij.y * rik.y + rij.z * rik.z;
+
+                                            // Calculate angle in radians
+                                            Scalar cos_theta = dot_product / (rij_mag * rik_mag);
+
+                                            if (cos_theta > 1.0)
+                                                cos_theta = 1.0;
+                                            if (cos_theta < -1.0)
+                                                cos_theta= -1.0;
+
+                                            // Calculate angle index
+                                            unsigned int varj = tagj - this->LTIME->num_solvent;
+                                            unsigned int vark = tagk - this->LTIME->num_solvent;
+
+                                            unsigned int var1 = vari;
+                                            unsigned int var3 = std::max({varj, vark});
+                                            unsigned int var2 = std::min({varj, vark});
+
+                                            unsigned int n = this->LTIME->num_colloid; 
+                                            unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+                                            // Save the angle
+                                            angle_map[angle_index] = acos(cos_theta);
+                                        }
+
+                                    }
+
+                                }
+                                //bool j_wasnt_found = true;
+                                size_t idx_pj = -1;
+                                for(int p_j = 0; p_j < tot_particles; p_j++){
+                                    if (h_previous_neighbor_list[p_j] == h_tag.data[j]) {
+                                        idx_pj = p_j;
+                                        //j_wasnt_found = false;
+                                        break;
+                                    }
+                                }
+                                // Calculate angle between i and all previous neighbors of j
+                                for (size_t idx_sj = 1; idx_sj < 20 ; ++idx_sj)
+                                {
+                                    if (h_previous_neighbor_list[idx_sj* tot_particles + idx_pj] != -2)
+                                    {  
+
+                                        unsigned int tagk = static_cast<unsigned int>(h_previous_neighbor_list[idx_sj* tot_particles + idx_pj]);
+                                        Scalar3 pk;
+                                        bool f3=false;
+                                        for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+                                        {
+                                            // Check if the tag matches the desired tag
+                                            if (h_tag.data[M] == tagk) {
+                                                // Access the position of the particle with the matching tag
+                                                pk = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                                f3 = true;
+                                                break; 
+                                            } 
+                                        }
+
+                                        if (f3){
+                                            // Calculate vectors between particles
+                                            Scalar3 rji = pi-pj;
+                                            Scalar3 rjk = pk-pj;
+                                            rji = box.minImage(rji);
+                                            rjk = box.minImage(rjk);
+
+                                            // Calculate magnitudes of vectors
+                                            Scalar rji_mag = std::sqrt(rji.x * rji.x + rji.y * rji.y + rji.z * rji.z);
+                                            Scalar rjk_mag = std::sqrt(rjk.x * rjk.x + rjk.y * rjk.y + rjk.z * rjk.z);
+
+                                            // Calculate dot product
+                                            Scalar dot_product = rji.x * rjk.x + rji.y * rjk.y + rji.z * rjk.z;
+
+                                            // Calculate angle in radians
+                                            Scalar cos_theta = dot_product / (rji_mag * rjk_mag);
+
+                                            if (cos_theta > 1.0)
+                                                cos_theta = 1.0;
+                                            if (cos_theta < -1.0)
+                                                cos_theta= -1.0;
+
+                                            unsigned int vari = tagi - this->LTIME->num_solvent;
+                                            unsigned int varj = tagj - this->LTIME->num_solvent;
+                                            unsigned int vark = tagk - this->LTIME->num_solvent;
+
+                                            // sort them so var3>var3>var1
+                                            unsigned int var1 = varj;
+                                            unsigned int var3 = std::max({vari, vark});
+                                            unsigned int var2 = std::min({vari, vark});
+
+                                            unsigned int n = this->LTIME->num_colloid; 
+                                            unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+                                            angle_map[angle_index] = acos(cos_theta);
+
+                                        }
+                                    }
+                                }
+
+
+
+                                // Calculate angle between i and all current neighbors of j
+
+                                for (size_t idx_sj = 1; idx_sj < 20 ; ++idx_sj)
+                                {
+                                    if (h_current_neighbor_list.data[idx_sj* p_neighbor_pitch + j] != -2 && h_current_neighbor_list.data[idx_sj* p_neighbor_pitch + j] != h_tag.data[i])
+                                        {
+                                        unsigned int tagk = static_cast<unsigned int>(h_current_neighbor_list.data[idx_sj* p_neighbor_pitch + j]);
+                                        Scalar3 pk;
+                                        //bool f4=false;
+
+                                        for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++) 
+                                        {
+                                            // Check if the tag matches the desired tag
+                                            if (h_tag.data[M] == tagk) {
+                                                // Access the position of the particle with the matching tag
+                                                pk = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                                //f4=true;
+                                                break; 
+                                            }
+                                        }
+                                        // Check if the current neighbor is also a previous neighbor
+                                        bool is_previous_neighbor = false;
+                                        for (size_t idx_prev = 1; idx_prev < 20 ; ++idx_prev)
+                                        {
+                                            if (h_previous_neighbor_list[idx_prev* tot_particles + idx_pj] == tagk)
+                                            {
+                                                is_previous_neighbor = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!is_previous_neighbor)
+                                        {
+                                            // Calculate vectors between particles
+                                            Scalar3 rji = pi-pj;
+                                            Scalar3 rjk = pk-pj;
+                                            rji = box.minImage(rji);
+                                            rjk = box.minImage(rjk);
+
+                                            // Calculate magnitudes of vectors
+                                            Scalar rji_mag = std::sqrt(rji.x * rji.x + rji.y * rji.y + rji.z * rji.z);
+                                            Scalar rjk_mag = std::sqrt(rjk.x * rjk.x + rjk.y * rjk.y + rjk.z * rjk.z);
+
+                                            // Calculate dot product
+                                            Scalar dot_product = rji.x * rjk.x + rji.y * rjk.y + rji.z * rjk.z;
+
+                                            // Calculate angle in radians
+                                            Scalar cos_theta = dot_product / (rji_mag * rjk_mag);
+
+                                            if (cos_theta > 1.0)
+                                                cos_theta = 1.0;
+                                            if (cos_theta < -1.0)
+                                                cos_theta= -1.0;
+
+                                            unsigned int vari = tagi - this->LTIME->num_solvent;
+                                            unsigned int varj = tagj - this->LTIME->num_solvent;
+                                            unsigned int vark = tagk - this->LTIME->num_solvent;
+
+                                            // sort them so var3>var3>var 
+                                            unsigned int var1 = varj;
+                                            unsigned int var3 = std::max({vari, vark});
+                                            unsigned int var2 = std::min({vari, vark});
+
+
+                                            unsigned int n = this->LTIME->num_colloid; 
+                                            unsigned int angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+
+                                            angle_map[angle_index] = acos(cos_theta);
+                                        }
+
+                                    }
+
+                                }
+
+                            }
+
+                    }
+                }
+            }
+            //F
+            //~
+
             bool evaluated
                 = eval.evalForceEnergyThermo(force_divr, force_divr_cons, 
                   //~ add virial_ind terms [RHEOINF]
@@ -438,6 +939,211 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 	}
     //~
 
+    //~ update AngleMap [RHEOINF]
+    if (m_K != 0.0){
+    //MPI_Barrier(m_exec_conf->getMPICommunicator());
+    #ifdef ENABLE_MPI
+        unsigned int num_rank = this->LTIME->num_rank;
+        //unsigned int my_rank = m_exec_conf->getRank();
+        vector<map<unsigned int, Scalar>> angle_map_temp1(num_rank);
+
+        if (m_sysdef->isDomainDecomposed()) 
+        {
+            all_gather_v(angle_map, angle_map_temp1, m_exec_conf->getMPICommunicator()); 
+            // Iterate over the vector of maps from different ranks and merge into angle_map_temp2
+            for (unsigned int i = 0; i < num_rank; ++i) {
+                for (const auto& entry : angle_map_temp1[i]) {
+                    angle_map_temp2[entry.first] = entry.second;
+                }
+            }
+            angle_map_temp1.clear();
+            angle_map.clear();     
+
+        }
+
+    	this->LTIME->updatebondtime(timestep); //~ get timestep from Lifetime file [RHEOINF]
+
+    //
+    #endif
+    for (int i = 0; i < (int)this->m_pdata->getN(); i++){
+        unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+        Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+        if (typei) {
+                //Scalar kk =0;
+                size_t nonzero_count = 0;
+                unsigned int tagi = h_tag.data[i]; 
+                for (size_t idx_i = 1; idx_i < 20 ; ++idx_i)
+                {
+                    // check if i has more than 1 neighbor
+                    if (h_current_neighbor_list.data[idx_i* p_neighbor_pitch +i] != -2)
+                    {
+                        nonzero_count++; //count the neighbors
+                    }
+                }
+                if (nonzero_count > 1)
+                {
+                    #define SMALL Scalar(0.001)
+                    // go over each angle between two different neighbors of i and apply angle force 
+                    // find the first neighbor a
+                    for (size_t idx_a = 1; idx_a < (nonzero_count); ++idx_a)
+                    {
+                        unsigned int taga = static_cast<unsigned int>(h_current_neighbor_list.data[idx_a* p_neighbor_pitch +i]);
+                        Scalar3 pa;
+                        int a = -1;
+                        //bool f5=false;
+                        for (int M = 0; M < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); M++)
+                        {
+                            if (h_tag.data[M] == taga) {
+                            // Access the position of the particle with the matching tag
+                                pa = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                a = M; 
+                                //f5=true;
+                                break; 
+                                }
+                        }
+
+                        //unsigned int typea = __scalar_as_int(h_pos.data[a].w);
+                        // find the second neighbor b
+                        for (size_t idx_b = (idx_a+1) ; idx_b < (nonzero_count+1); ++idx_b)
+                        {
+                            unsigned int tagb = static_cast<unsigned int>(h_current_neighbor_list.data[idx_b* p_neighbor_pitch +i]);
+                            Scalar3 pb;
+                            int b = -1;
+                            //bool f6=false;
+                            for (int N = 0; N < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts()); N++)
+                            {
+                                if (h_tag.data[N] == tagb) {
+                                    // Access the position of the particle with the matching tag
+                                    pb = make_scalar3(h_pos.data[N].x, h_pos.data[N].y, h_pos.data[N].z);
+                                    b = N;
+                                    //f6 = true;
+                                    break; 
+                                    }
+
+                            }
+                            //unsigned int typeb = __scalar_as_int(h_pos.data[b].w);
+
+
+                            //if (tagb != taga  && taga != tagi && tagb != tagi && typea && typeb){}
+
+                                // Calculate angle index
+                                unsigned int vari = tagi - this->LTIME->num_solvent;
+                                unsigned int vara = taga - this->LTIME->num_solvent;
+                                unsigned int varb = tagb - this->LTIME->num_solvent;
+
+                                unsigned int var1 = vari;
+                                unsigned int var3 = std::max({vara, varb});
+                                unsigned int var2 = std::min({vara, varb});
+
+                                unsigned int n = this->LTIME->num_colloid; 
+                                unsigned int current_angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+                                Scalar3 ria = make_scalar3(pa.x - pi.x, pa.y - pi.y, pa.z - pi.z);
+                                Scalar3 rib = make_scalar3(pb.x - pi.x, pb.y - pi.y, pb.z - pi.z);
+                                ria = box.minImage(ria);
+                                rib = box.minImage(rib);
+
+                                // Calculate magnitudes of vectors
+                                Scalar ria_mag = std::sqrt(ria.x * ria.x + ria.y * ria.y + ria.z * ria.z);
+                                Scalar rib_mag = std::sqrt(rib.x * rib.x + rib.y * rib.y + rib.z * rib.z);
+
+                                // Calculate dot product
+                                Scalar dot_product = ria.x * rib.x + ria.y * rib.y + ria.z * rib.z;
+
+                                // Calculate cosine of the angle 
+                                Scalar current_cos_theta = dot_product / (ria_mag * rib_mag);
+
+
+                                if (current_cos_theta > 1.0)
+                                    current_cos_theta = 1.0;
+                                if (current_cos_theta < -1.0)
+                                    current_cos_theta = -1.0;
+
+                                Scalar current_sin_theta = std::sqrt(1.0 - current_cos_theta * current_cos_theta);
+                                if (current_sin_theta < SMALL)
+                                    current_sin_theta = SMALL;
+
+                                current_sin_theta = 1.0 / current_sin_theta;
+
+
+
+                                assert(angle_map);
+                                // Calculate deviation from equilibrium angle which was saved previously 
+                                Scalar dth;
+                                if (m_sysdef->isDomainDecomposed()){
+                                    dth = acos(current_cos_theta) - angle_map_temp2[current_angle_index];
+                                }else{
+                                    dth = acos(current_cos_theta) - angle_map[current_angle_index];
+                                }
+                                Scalar tk = m_K * dth;
+
+
+
+                                // Calculate force magnitude
+                                Scalar vab = -1.0 * tk * current_sin_theta;
+                                Scalar a11 = vab * current_cos_theta / (ria_mag * ria_mag);
+                                Scalar a12 = -vab / (ria_mag * rib_mag);
+                                Scalar a22 = vab * current_cos_theta / (rib_mag * rib_mag);
+
+                                // Calculate forces
+                                Scalar3 fia = make_scalar3(a11 * ria.x + a12 * rib.x,
+                                                            a11 * ria.y + a12 * rib.y,
+                                                            a11 * ria.z + a12 * rib.z);
+
+                                Scalar3 fib = make_scalar3(a22 * ria.x + a12 * rib.x,
+                                                            a22 * ria.y + a12 * rib.y,
+                                                            a22 * ria.z + a12 * rib.z);
+
+                                // compute the energy, for each atom in the angle
+                                Scalar angle_eng = (tk * dth) * Scalar(1.0 / 6.0);
+
+                                Scalar angle_virial[6];
+                                angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
+                                angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x);
+                                angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x);
+                                angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y);
+                                angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y);
+                                angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z);
+
+
+                                // Update forces and virials for particle i, a and b
+                                if (a < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
+                                    h_force.data[a].x += fia.x;
+                                    h_force.data[a].y += fia.y;
+                                    h_force.data[a].z += fia.z;
+                                    h_force.data[a].w += angle_eng;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * this->m_virial_pitch + a] += angle_virial[l]; 
+                                }
+
+                                if (i < (int)this->m_pdata->getN()) {
+                                    h_force.data[i].x -= fia.x + fib.x; 
+                                    h_force.data[i].y -= fia.y + fib.y;
+                                    h_force.data[i].z -= fia.z + fib.z;
+                                    h_force.data[i].w += angle_eng;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * this->m_virial_pitch + i] += angle_virial[l]; 
+                                }
+
+                                if (b < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
+                                    h_force.data[b].x += fib.x;
+                                    h_force.data[b].y += fib.y;
+                                    h_force.data[b].z += fib.z;
+                                    h_force.data[b].w += angle_eng;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * this->m_virial_pitch + b] += angle_virial[l]; 
+                                }                       
+
+                        }
+                    }
+                } 
+            }
+        }
+
+    //F 
+    }
+    //~
+
     }
 
 #ifdef ENABLE_MPI
@@ -454,6 +1160,13 @@ CommFlags PotentialPairDPDThermo<evaluator>::getRequestedCommFlags(uint64_t time
     flags[comm_flag::tag] = 1;
     //~ add particle diameter [RHEOINF]
     flags[comm_flag::diameter]=1; 
+    //~
+
+    //~ add flags for many-body neighbors [RHEOINF]
+    flags[comm_flag::position] = 1;
+    flags[comm_flag::net_force] = 1;
+    flags[comm_flag::net_virial] = 1;
+    flags[comm_flag::particle_n_list] = 1;
     //~
 
     flags |= PotentialPair<evaluator>::getRequestedCommFlags(timestep);
@@ -473,10 +1186,11 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
     pybind11::class_<PotentialPairDPDThermo<T>,
                      PotentialPair<T>,
                      std::shared_ptr<PotentialPairDPDThermo<T>>>(m, name.c_str())
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool>()) //~ add bool for bond_calc [RHEOINF]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool, Scalar>()) //~ add bool for bond_calc, Scalar for K [RHEOINF]
         .def_property("bond_calc",  
 		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [RHEOINF]
         .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
+        .def_property("K", &PotentialPairDPDThermo<T>::getK, &PotentialPairDPDThermo<T>::setK); //~ add K [RHEOINF]
     }
 
     } // end namespace detail

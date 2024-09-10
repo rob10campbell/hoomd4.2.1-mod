@@ -75,6 +75,7 @@ struct comm_flag
         net_torque,        //! Communicate net torque
         net_virial,         //! Communicate net virial
         net_virial_ind     //~! Communicate net virial components [RHEOINF]
+        particle_n_list    //~! Communicate multi-body neighbors [RHEOINF]
         };
     };
 
@@ -514,6 +515,8 @@ class PYBIND11_EXPORT Communicator
     GlobalVector<Scalar> m_netvirial_recvbuf;    //!< Buffer for net virial (receive)
     GlobalVector<Scalar> m_netvirial_ind_copybuf;//~!< Buffer for net virial_ind [RHEOINF] 
     GlobalVector<Scalar> m_netvirial_ind_recvbuf;//~!< Buffer for net virial_ind (receive) [RHEOINF] 
+    GlobalVector<Scalar> m_particlenlist_copybuf;//~!< Buffer for multi-body neighbors [RHEOINF]
+    GlobalVector<Scalar> m_particlenlist_recvbuf;//~!< Buffer for multi-body neighbors (receive) [RHEOINF]
 
     GlobalVector<unsigned int>
         m_copy_ghosts[6]; //!< Per-direction list of indices of particles to send as ghosts

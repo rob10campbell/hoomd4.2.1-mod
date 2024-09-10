@@ -1191,6 +1191,9 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
       //~ add virial_ind [RHEOINF]
       m_netvirial_ind_copybuf(m_exec_conf), m_netvirial_ind_recvbuf(m_exec_conf),
       //~
+      //~ add multi-body neighbor tracking [RHEOINF]
+      m_particlenlist_copybuf(m_exec_conf), m_particlenlist_recvbuf(m_exec_conf),
+      //~
       m_plan(m_exec_conf), m_plan_reverse(m_exec_conf),
       m_tag_reverse(m_exec_conf), m_netforce_reverse_copybuf(m_exec_conf),
       m_netforce_reverse_recvbuf(m_exec_conf), m_r_ghost_max(Scalar(0.0)), m_ghosts_added(0),
@@ -1304,10 +1307,10 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
     initializeNeighborArrays();
 
     /* create a type for pdata_element */
-    //~ increase 14->15 (for virial_ind) in this block (no added blocklength)
-    const int nitems = 15;
-    int blocklengths[15] = {4, 4, 3, 1, 1, 3, 1, 4, 4, 3, 1, 4, 4, 6};
-    MPI_Datatype types[15] = {MPI_HOOMD_SCALAR,
+    //~ increase 14->16 (for virial_ind and multi-body neighbors) in this block (no added blocklength) [RHEOINF]
+    const int nitems = 16;
+    int blocklengths[16] = {4, 4, 3, 1, 1, 3, 1, 4, 4, 3, 1, 4, 4, 6, 5, 20};
+    MPI_Datatype types[16] = {MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR,
@@ -1321,8 +1324,9 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
                               MPI_HOOMD_SCALAR,
                               MPI_HOOMD_SCALAR, 
                               MPI_HOOMD_SCALAR, //~ add virial_ind [RHEOINF] 
+                              MPI_HOOMD_SCALAR, //~ add multi-body neighbors [RHEOINF]
                               MPI_HOOMD_SCALAR};
-    MPI_Aint offsets[15]; 
+    MPI_Aint offsets[16]; 
     //~
 
     offsets[0] = offsetof(detail::pdata_element, pos);
@@ -1340,6 +1344,7 @@ Communicator::Communicator(std::shared_ptr<SystemDefinition> sysdef,
     offsets[12] = offsetof(detail::pdata_element, net_torque);
     offsets[13] = offsetof(detail::pdata_element, net_virial);
     offsets[14] = offsetof(detail::pdata_element, net_virial_ind); //~ add virial_ind [RHEOINF]
+    offsets[15] = offsetof(detail::pdata_element, particle_n_list); //~ add multi-body neighbors [RHEOINF]
 
     MPI_Datatype tmp;
     MPI_Type_create_struct(nitems, blocklengths, offsets, types, &tmp);
@@ -2888,7 +2893,7 @@ void Communicator::updateNetForce(uint64_t timestep)
     {
     CommFlags flags = getFlags();
     if (!flags[comm_flag::net_force] && !flags[comm_flag::reverse_net_force]
-        && !flags[comm_flag::net_torque] && !flags[comm_flag::net_virial] && !flags[comm_flag::net_virial_ind]) //~ add virial_ind
+        && !flags[comm_flag::net_torque] && !flags[comm_flag::net_virial] && !flags[comm_flag::net_virial_ind] && !flags[comm_flag::particle_n_list]) //~ add virial_ind and multi-body neighbors [RHEOINF]
         return;
 
     // we have a current m_copy_ghosts list which contain the indices of particles
@@ -2917,6 +2922,13 @@ void Communicator::updateNetForce(uint64_t timestep)
         oss << "virial_ind";
         }
     //~
+    //~ add multi-body neighbors [RHEOINF]
+    if (flags[comm_flag::particle_n_list])
+        {
+        oss << "particle_n_list";
+        }
+    //~
+
 
     m_exec_conf->msg->notice(7) << oss.str() << std::endl;
 
@@ -2948,6 +2960,12 @@ void Communicator::updateNetForce(uint64_t timestep)
     if (flags[comm_flag::net_virial_ind])
         {
         m_netvirial_ind_copybuf.clear();
+        }
+    //~
+    //~ add multi-body neighbors [RHEOINF]
+    if (flags[comm_flag::particle_n_list])
+        {
+        m_particlenlist_copybuf.clear();
         }
     //~
 
@@ -2992,6 +3010,14 @@ void Communicator::updateNetForce(uint64_t timestep)
             m_netvirial_ind_copybuf.resize(old_size + 5 * m_num_copy_ghosts[dir]);
             }
 	//~
+
+        //~ add multi-body neighbors [RHEOINF]
+        if (flags[comm_flag::particle_n_list])
+        {
+        old_size = (unsigned int)m_particlenlist_copybuf.size();
+        m_particlenlist_copybuf.resize(old_size+ 20 + m_num_copy_ghosts[dir]);
+        }
+        //~
 
         // Copy data into send buffers
         if (flags[comm_flag::net_force])
@@ -3158,6 +3184,56 @@ void Communicator::updateNetForce(uint64_t timestep)
                 }
             }
 	//~
+
+        //~ add multi-body neighbor tracking [RHEOINF]
+        if (flags[comm_flag::particle_n_list])
+            {
+            ArrayHandle<Scalar> h_particlenlist(m_pdata->getParticleNList(),
+                                            access_location::host,
+                                            access_mode::read);
+            ArrayHandle<Scalar> h_particlenlist_copybuf(m_particlenlist_copybuf,
+                                                    access_location::host,
+                                                    access_mode::overwrite);                                   
+            ArrayHandle<unsigned int> h_copy_ghosts(m_copy_ghosts[dir],
+                                                    access_location::host,
+                                                    access_mode::read);
+            ArrayHandle<unsigned int> h_rtag(m_pdata->getRTags(),
+                                             access_location::host,
+                                             access_mode::read);
+
+            unsigned int pitch = (unsigned int)m_pdata->getParticleNList().getPitch();
+
+            // copy net torques of ghost particles
+            for (unsigned int ghost_idx = 0; ghost_idx < m_num_copy_ghosts[dir]; ghost_idx++)
+                {
+                unsigned int idx = h_rtag.data[h_copy_ghosts.data[ghost_idx]];
+
+                assert(idx < m_pdata->getN() + m_pdata->getNGhosts());
+
+                // copy net force into send buffer, transposing
+                h_particlenlist_copybuf.data[20 * ghost_idx + 0] = h_particlenlist.data[0 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 1] = h_particlenlist.data[1 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 2] = h_particlenlist.data[2 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 3] = h_particlenlist.data[3 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 4] = h_particlenlist.data[4 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 5] = h_particlenlist.data[5 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 6] = h_particlenlist.data[6 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 7] = h_particlenlist.data[7 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 8] = h_particlenlist.data[8 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 9] = h_particlenlist.data[9 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 10] = h_particlenlist.data[10 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 11] = h_particlenlist.data[11 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 12] = h_particlenlist.data[12 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 13] = h_particlenlist.data[13 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 14] = h_particlenlist.data[14 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 15] = h_particlenlist.data[15 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 16] = h_particlenlist.data[16 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 17] = h_particlenlist.data[17 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 18] = h_particlenlist.data[18 * pitch + idx];
+                h_particlenlist_copybuf.data[20 * ghost_idx + 19] = h_particlenlist.data[19 * pitch + idx];
+                }
+            }
+        //~
 
         unsigned int send_neighbor = m_decomposition->getNeighborRank(dir);
 
@@ -3380,14 +3456,14 @@ void Communicator::updateNetForce(uint64_t timestep)
                                                     access_mode::read);
 
             MPI_Isend(h_netvirial_ind_copybuf.data,
-                      (unsigned int)(5 * m_num_copy_ghosts[dir] * sizeof(Scalar)),
+                      (unsigned int)(20 * m_num_copy_ghosts[dir] * sizeof(Scalar)), //~ 5->20 neighbors [RHEOINF]
                       MPI_BYTE,
                       send_neighbor,
                       3,
                       m_mpi_comm,
                       &m_reqs[0]);
             MPI_Irecv(h_netvirial_ind_recvbuf.data,
-                      (unsigned int)(5 * m_num_recv_ghosts[dir] * sizeof(Scalar)),
+                      (unsigned int)(20 * m_num_recv_ghosts[dir] * sizeof(Scalar)), //~ 5->20 neighbors [RHEOINF]
                       MPI_BYTE,
                       recv_neighbor,
                       3,
@@ -3418,6 +3494,74 @@ void Communicator::updateNetForce(uint64_t timestep)
                 }
             }
 	//~
+
+        //~ multi-body neighbor tracking [RHEOINF]
+        if (flags[comm_flag::particle_n_list])
+            {
+            m_particlenlist_recvbuf.resize(5 * m_num_recv_ghosts[dir]);
+            m_reqs.resize(2);
+            m_stats.resize(2);
+
+            ArrayHandle<Scalar> h_particlenlist_recvbuf(m_particlenlist_recvbuf,
+                                                    access_location::host,
+                                                    access_mode::overwrite);
+            ArrayHandle<Scalar> h_particlenlist_copybuf(m_particlenlist_copybuf,
+                                                    access_location::host,
+                                                    access_mode::read);
+
+            MPI_Isend(h_particlenlist_copybuf.data,
+                      (unsigned int)(20 * m_num_copy_ghosts[dir] * sizeof(Scalar)),
+                      MPI_BYTE,
+                      send_neighbor,
+                      3,
+                      m_mpi_comm,
+                      &m_reqs[0]);
+            MPI_Irecv(h_particlenlist_recvbuf.data,
+                      (unsigned int)(20 * m_num_recv_ghosts[dir] * sizeof(Scalar)),
+                      MPI_BYTE,
+                      recv_neighbor,
+                      3,
+                      m_mpi_comm,
+                      &m_reqs[1]);
+            MPI_Waitall(2, &m_reqs.front(), &m_stats.front());
+            }
+
+        if (flags[comm_flag::particle_n_list])
+            {
+            unsigned int pitch = (unsigned int)(m_pdata->getParticleNList().getPitch());
+
+            ArrayHandle<Scalar> h_particlenlist_recvbuf(m_particlenlist_recvbuf,
+                                                    access_location::host,
+                                                    access_mode::read);
+            ArrayHandle<Scalar> h_particlenlist(m_pdata->getParticleNList(),
+                                            access_location::host,
+                                            access_mode::read);
+
+            for (unsigned int i = 0; i < m_num_recv_ghosts[dir]; ++i)
+                {
+                h_particlenlist.data[0 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 0];
+                h_particlenlist.data[1 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 1];
+                h_particlenlist.data[2 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 2];
+                h_particlenlist.data[3 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 3];
+                h_particlenlist.data[4 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 4];
+                h_particlenlist.data[5 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 5];
+                h_particlenlist.data[6 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 6];
+                h_particlenlist.data[7 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 7];
+                h_particlenlist.data[8 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 8];
+                h_particlenlist.data[9 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 9];
+                h_particlenlist.data[10 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 10];
+                h_particlenlist.data[11 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 11];
+                h_particlenlist.data[12 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 12];
+                h_particlenlist.data[13 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 13];
+                h_particlenlist.data[14 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 14];
+                h_particlenlist.data[15 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 15];
+                h_particlenlist.data[16 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 16];
+                h_particlenlist.data[17 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 17];
+                h_particlenlist.data[18 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 18];
+                h_particlenlist.data[19 * pitch + start_idx + i] = h_particlenlist_recvbuf.data[20 * i + 19];
+                }
+            }
+        //~ 
 
         } // end dir loop
     }

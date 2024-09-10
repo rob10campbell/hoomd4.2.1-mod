@@ -73,7 +73,7 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False): ##~ default bond_calc to False [RHEOINF]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False, K=0.0): ##~ default bond_calc to False, add angular rigidity K [RHEOINF]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -96,11 +96,18 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         self.mode = mode
         self.nlist = nlist
         self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [RHEOINF]
+        self._K = K ##~ Store angular rigidity K values as instance variable [RHEOINF]
 
-    ##~ add a property to access _bond_calc instance variable
+    ##~ add a property to access _bond_calc instance variable [RHEOINF]
     @property
     def bond_calc(self):
         return self._bond_calc
+    ##~
+
+    ##~ add a property to access _K [RHEOINF]
+    @property
+    def K(self):
+        return self._K
     ##~
 
     def compute_energy(self, tags1, tags2):
@@ -159,9 +166,9 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
 
         ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [RHEOINF]
         if "PotentialPairDPDThermo" in self._cpp_class_name:
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc)
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self._K)
         else: 
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj)
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._K)
         ##~ 
         #self._cpp_obj = cls(self._simulation.state._cpp_sys_def,
         #                    self.nlist._cpp_obj) ##~ comment out [RHEOINF]
@@ -693,7 +700,7 @@ class Morse(Pair):
     _cpp_class_name = "PotentialPairMorse"
     _default_scaled_D0 = False ##~ add scaled_D0 [RHEOINF]
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None):
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None, K=0.0): ##~ add scaled_D0 and K [RHEOINF]
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         ##~ add scaled_D0 [RHEOINF]
         if scaled_D0 is None:
@@ -703,6 +710,23 @@ class Morse(Pair):
             'params', 'particle_types',
             TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [RHEOINF]
         self._add_typeparam(params)
+        self._K = K ##~ add K [RHEOINF]
+
+    ##~ add angular rigidity K [RHEOINF]
+    @property
+    def K(self):
+        """
+        Getter method for the K property.
+        """
+        return self._K
+
+    @K.setter
+    def K(self, value):
+        """
+        Setter method for the K property.
+        """
+        self._K = value
+    ##~
 
 class DPD(Pair):
     r"""Dissipative Particle Dynamics.
@@ -1980,7 +2004,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _default_a2 = 0.0
     _default_sys_kT = 0.1
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, sys_kT=None):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, sys_kT=None, K=0.0):
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
@@ -1996,6 +2020,7 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
             sys_kT = self._default_sys_kT
         ##~
         self._bond_calc = bond_calc
+        self._K = K ##~ add K [RHEOINF]
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(A0=float,
@@ -2041,6 +2066,20 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         Setter method for the bond_calc property.
         """
         self._bond_calc = value
+
+    @property
+    def K(self):
+        """
+        Getter method for the K property.
+        """
+        return self._K
+
+    @K.setter
+    def K(self, value):
+        """
+        Setter method for the K property.
+        """
+        self._K = value
 ##~
 
 
