@@ -39,8 +39,6 @@ __global__ void gpu_scatter_particle_data_kernel(const unsigned int nwork,
                                                  const Scalar4* d_net_torque,
                                                  const Scalar* d_net_virial,
                                                  unsigned int net_virial_pitch,
-                                                 const Scalar* d_particle_n_list,
-                                                 unsigned int particle_n_list_pitch,
                                                  const unsigned int* d_tag,
                                                  unsigned int* d_rtag,
                                                  Scalar4* d_pos_alt,
@@ -56,8 +54,6 @@ __global__ void gpu_scatter_particle_data_kernel(const unsigned int nwork,
                                                  Scalar4* d_net_force_alt,
                                                  Scalar4* d_net_torque_alt,
                                                  Scalar* d_net_virial_alt,
-                                                 Scalar* d_particle_n_list_alt,
-                                                 Scalar* d_particle_n_list,
                                                  unsigned int* d_tag_alt,
                                                  detail::pdata_element* d_out,
                                                  unsigned int* d_comm_flags,
@@ -92,8 +88,6 @@ __global__ void gpu_scatter_particle_data_kernel(const unsigned int nwork,
         p.net_torque = d_net_torque[idx];
         for (unsigned int j = 0; j < 6; ++j)
             p.net_virial[j] = d_net_virial[j * net_virial_pitch + idx];
-        for (unsigned int j = 0; j < 20; ++j)
-            p.particle_n_list[j] = d_particle_n_list[j * particle_n_list_pitch + idx];
         p.tag = d_tag[idx];
         d_out[scan_remove] = p;
         d_comm_flags_out[scan_remove] = d_comm_flags[idx];
@@ -120,11 +114,7 @@ __global__ void gpu_scatter_particle_data_kernel(const unsigned int nwork,
         d_net_torque_alt[scan_keep] = d_net_torque[idx];
         for (unsigned int j = 0; j < 6; ++j)
             d_net_virial_alt[j * net_virial_pitch + scan_keep]
-                = d_net_virial[j * net_virial_pitch + scan_keep];
-        
-        for (unsigned int j = 0; j < 20; ++j)
-            d_particle_n_list_alt[j* particle_n_list_pitch + scan_keep]
-                = d_particle_n_list[j* particle_n_list_pitch + scan_keep];
+                = d_net_virial[j * net_virial_pitch + idx];
         unsigned int tag = d_tag[idx];
         d_tag_alt[scan_keep] = tag;
 
@@ -158,9 +148,6 @@ gpu_select_sent_particles(unsigned int N, unsigned int* d_comm_flags, unsigned i
     \param d_net_torque Net torque
     \param d_net_virial Net virial
     \param net_virial_pitch Pitch of net virial array
-    \param d_particle_n_list_pitch 
-    \param particle_n_list_pitch 
-    \param particle_n_list_pitch
     \param d_tag Device array of particle tags
     \param d_rtag Device array for reverse-lookup table
     \param d_pos_alt Device array of particle positions (output)
@@ -176,7 +163,6 @@ gpu_select_sent_particles(unsigned int N, unsigned int* d_comm_flags, unsigned i
     \param d_net_force Net force (output)
     \param d_net_torque Net torque (output)
     \param d_net_virial Net virial (output)
-    \param d_particle_n_list
     \param d_out Output array for packed particle data
     \param max_n_out Maximum number of elements to write to output array
 
@@ -197,8 +183,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                               const Scalar4* d_net_torque,
                               const Scalar* d_net_virial,
                               unsigned int net_virial_pitch,
-                              const Scalar* d_particle_n_list,
-                              unsigned int particle_n_list_pitch,
                               const unsigned int* d_tag,
                               unsigned int* d_rtag,
                               Scalar4* d_pos_alt,
@@ -214,7 +198,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                               Scalar4* d_net_force_alt,
                               Scalar4* d_net_torque_alt,
                               Scalar* d_net_virial_alt,
-                              Scalar* d_particle_n_list_alt,
                               unsigned int* d_tag_alt,
                               detail::pdata_element* d_out,
                               unsigned int* d_comm_flags,
@@ -240,7 +223,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
     assert(d_net_force);
     assert(d_net_torque);
     assert(d_net_virial);
-    assert(d_particle_n_list);
     assert(d_tag);
     assert(d_rtag);
     assert(d_pos_alt);
@@ -256,7 +238,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
     assert(d_net_force_alt);
     assert(d_net_torque_alt);
     assert(d_net_virial_alt);
-    assert(d_particle_n_list);
     assert(d_tag_alt);
     assert(d_out);
     assert(d_comm_flags);
@@ -339,8 +320,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                                d_net_torque,
                                d_net_virial,
                                net_virial_pitch,
-                               d_particle_n_list,
-                               particle_n_list_pitch,
                                d_tag,
                                d_rtag,
                                d_pos_alt,
@@ -356,7 +335,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                                d_net_force_alt,
                                d_net_torque_alt,
                                d_net_virial_alt,
-                               d_particle_n_list_alt,
                                d_tag_alt,
                                d_out,
                                d_comm_flags,
@@ -389,8 +367,6 @@ __global__ void gpu_pdata_add_particles_kernel(unsigned int old_nparticles,
                                                Scalar4* d_net_torque,
                                                Scalar* d_net_virial,
                                                unsigned int net_virial_pitch,
-                                               Scalar* d_particle_n_list,
-                                               unsigned int particle_n_list_pitch,
                                                unsigned int* d_tag,
                                                unsigned int* d_rtag,
                                                const detail::pdata_element* d_in,
@@ -418,8 +394,6 @@ __global__ void gpu_pdata_add_particles_kernel(unsigned int old_nparticles,
     d_net_torque[add_idx] = p.net_torque;
     for (unsigned int j = 0; j < 6; ++j)
         d_net_virial[j * net_virial_pitch + add_idx] = p.net_virial[j];
-    for (unsigned int j = 0; j < 20; ++j)
-        d_particle_n_list[j* net_virial_pitch + add_idx] = p.particle_n_list[j];
     d_tag[add_idx] = p.tag;
     d_rtag[p.tag] = add_idx;
     d_comm_flags[add_idx] = 0;
@@ -440,7 +414,6 @@ __global__ void gpu_pdata_add_particles_kernel(unsigned int old_nparticles,
     \param d_net_force Net force
     \param d_net_torque Net torque
     \param d_net_virial Net virial
-    \param d_particle_n_list
     \param d_tag Device array of particle tags
     \param d_rtag Device array for reverse-lookup table
     \param d_in Device array of packed input particle data
@@ -462,8 +435,6 @@ void gpu_pdata_add_particles(const unsigned int old_nparticles,
                              Scalar4* d_net_torque,
                              Scalar* d_net_virial,
                              unsigned int net_virial_pitch,
-                             Scalar* d_particle_n_list,
-                             unsigned int particle_n_list_pitch,
                              unsigned int* d_tag,
                              unsigned int* d_rtag,
                              const detail::pdata_element* d_in,
@@ -482,7 +453,6 @@ void gpu_pdata_add_particles(const unsigned int old_nparticles,
     assert(d_net_force);
     assert(d_net_torque);
     assert(d_net_virial);
-    assert(d_particle_n_list);
     assert(d_tag);
     assert(d_rtag);
     assert(d_in);
@@ -511,8 +481,6 @@ void gpu_pdata_add_particles(const unsigned int old_nparticles,
                        d_net_torque,
                        d_net_virial,
                        net_virial_pitch,
-                       d_particle_n_list,
-                       particle_n_list_pitch,
                        d_tag,
                        d_rtag,
                        d_in,

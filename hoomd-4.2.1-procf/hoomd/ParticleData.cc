@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
 
 /*! \file ParticleData.cc
     \brief Contains all code for ParticleData, and SnapshotParticleData.
@@ -415,15 +415,11 @@ void ParticleData::allocate(unsigned int N)
     GlobalArray<Scalar> net_virial(N, 6, m_exec_conf);
     m_net_virial.swap(net_virial);
     TAG_ALLOCATION(m_net_virial);
-    //~ add virial_ind [PROCF2023] 
+    //~ add virial_ind [RHEOINF] 
     GlobalArray<Scalar> net_virial_ind(N, 5, m_exec_conf);
     m_net_virial_ind.swap(net_virial_ind);
     TAG_ALLOCATION(m_net_virial_ind);
     //~
-    GlobalArray<Scalar> particle_n_list(N, 20, m_exec_conf);
-    m_particle_n_list.swap(particle_n_list);
-    TAG_ALLOCATION(m_particle_n_list);
-    //(Paniz)
     GlobalArray<Scalar4> net_torque(N, m_exec_conf);
     m_net_torque.swap(net_torque);
     TAG_ALLOCATION(m_net_torque);
@@ -438,21 +434,16 @@ void ParticleData::allocate(unsigned int N)
         ArrayHandle<Scalar> h_net_virial(m_net_virial,
                                          access_location::host,
                                          access_mode::overwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(m_net_virial_ind,
                                          access_location::host,
                                          access_mode::overwrite);
-
-        ArrayHandle<Scalar> h_particle_n_list(m_particle_n_list,access_location::host,access_mode::overwrite);
-        // (Paniz)
 	//~
         memset(h_net_force.data, 0, sizeof(Scalar4) * m_net_force.getNumElements());
         memset(h_net_torque.data, 0, sizeof(Scalar4) * m_net_torque.getNumElements());
         memset(h_net_virial.data, 0, sizeof(Scalar) * m_net_virial.getNumElements());
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         memset(h_net_virial_ind.data, 0, sizeof(Scalar) * m_net_virial_ind.getNumElements());
-        //memset(h_particle_n_list.data, 0, sizeof(Scalar) * m_particle_n_list.getNumElements());
-        // (Paniz)
 	//~
         }
 
@@ -602,15 +593,12 @@ void ParticleData::allocateAlternateArrays(unsigned int N)
     m_net_virial_alt.swap(net_virial_alt);
     TAG_ALLOCATION(m_net_virial_alt);
 
-    //~ Net virial_ind [PROCF2023] 
+    //~ Net virial_ind [RHEOINF] 
     GlobalArray<Scalar> net_virial_ind_alt(N, 5, m_exec_conf);
     m_net_virial_ind_alt.swap(net_virial_ind_alt);
     TAG_ALLOCATION(m_net_virial_ind_alt);
     //~
-    // (Paniz)
-    GlobalArray<Scalar> particle_n_list_alt(N, 20, m_exec_conf);
-    m_particle_n_list_alt.swap(particle_n_list_alt);
-    TAG_ALLOCATION(m_particle_n_list_alt);
+
     // Net torque
     GlobalArray<Scalar4> net_torque_alt(N, m_exec_conf);
     m_net_torque_alt.swap(net_torque_alt);
@@ -626,19 +614,16 @@ void ParticleData::allocateAlternateArrays(unsigned int N)
         ArrayHandle<Scalar> h_net_virial_alt(m_net_virial_alt,
                                              access_location::host,
                                              access_mode::overwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind_alt(m_net_virial_ind_alt,
                                              access_location::host,
                                              access_mode::overwrite);
-        ArrayHandle<Scalar> h_particle_n_list_alt(m_particle_n_list_alt,access_location::host,access_mode::overwrite);
 	//~
         memset(h_net_force_alt.data, 0, sizeof(Scalar4) * m_net_force_alt.getNumElements());
         memset(h_net_torque_alt.data, 0, sizeof(Scalar4) * m_net_torque_alt.getNumElements());
         memset(h_net_virial_alt.data, 0, sizeof(Scalar) * m_net_virial_alt.getNumElements());
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         memset(h_net_virial_ind_alt.data, 0, sizeof(Scalar) * m_net_virial_ind_alt.getNumElements());
-        //memset(h_particle_n_list_alt.data, 0, sizeof(Scalar) * m_particle_n_list_alt.getNumElements());
-        // (Paniz)
 	//~
         }
 
@@ -793,8 +778,7 @@ void ParticleData::reallocate(unsigned int max_n)
 
     m_net_force.resize(max_n);
     m_net_virial.resize(max_n, 6);
-    m_net_virial_ind.resize(max_n, 5); //~ add virial_ind [PROCF2023]
-    m_particle_n_list.resize(max_n, 20); // (Paniz)
+    m_net_virial_ind.resize(max_n, 5); //~ add virial_ind [RHEOINF]
     m_net_torque.resize(max_n);
         {
         ArrayHandle<Scalar4> h_net_force(m_net_force,
@@ -806,22 +790,16 @@ void ParticleData::reallocate(unsigned int max_n)
         ArrayHandle<Scalar> h_net_virial(m_net_virial,
                                          access_location::host,
                                          access_mode::readwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(m_net_virial_ind,
                                          access_location::host,
                                          access_mode::readwrite);
-
-        ArrayHandle<Scalar> h_particle_n_list(m_particle_n_list,access_location::host,access_mode::readwrite);
-        // (Paniz)
-	
-    //~
+	//~
         memset(h_net_force.data, 0, sizeof(Scalar4) * m_net_force.getNumElements());
         memset(h_net_torque.data, 0, sizeof(Scalar4) * m_net_torque.getNumElements());
         memset(h_net_virial.data, 0, sizeof(Scalar) * m_net_virial.getNumElements());
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         memset(h_net_virial_ind.data, 0, sizeof(Scalar) * m_net_virial_ind.getNumElements());
-        //memset(h_particle_n_list.data, 0, sizeof(Scalar) * m_particle_n_list.getNumElements());
-        // (Paniz)
 	//~
         }
 
@@ -898,8 +876,7 @@ void ParticleData::reallocate(unsigned int max_n)
         m_net_force_alt.resize(max_n);
         m_net_torque_alt.resize(max_n);
         m_net_virial_alt.resize(max_n, 6);
-        m_net_virial_ind_alt.resize(max_n, 5); //~ add virial_ind [PROCF2023]
-        m_particle_n_list_alt.resize(max_n, 20); // (Paniz)
+        m_net_virial_ind_alt.resize(max_n, 5); //~ add virial_ind [RHEOINF]
 
             {
             ArrayHandle<Scalar4> h_net_force_alt(m_net_force_alt,
@@ -911,20 +888,16 @@ void ParticleData::reallocate(unsigned int max_n)
             ArrayHandle<Scalar> h_net_virial_alt(m_net_virial_alt,
                                                  access_location::host,
                                                  access_mode::overwrite);
-            //~ add virial_ind [PROCF2023] 
+            //~ add virial_ind [RHEOINF] 
             ArrayHandle<Scalar> h_net_virial_ind_alt(m_net_virial_ind_alt,
                                                  access_location::host,
                                                  access_mode::overwrite);
-            //(Paniz)
-            ArrayHandle<Scalar> h_particle_n_list_alt(m_particle_n_list_alt,access_location::host,access_mode::overwrite);
 	    //~
             memset(h_net_force_alt.data, 0, sizeof(Scalar4) * m_net_force_alt.getNumElements());
             memset(h_net_torque_alt.data, 0, sizeof(Scalar4) * m_net_torque_alt.getNumElements());
             memset(h_net_virial_alt.data, 0, sizeof(Scalar) * m_net_virial_alt.getNumElements());
-            //~ add virial_ind [PROCF2023] 
+            //~ add virial_ind [RHEOINF] 
             memset(h_net_virial_ind_alt.data, 0, sizeof(Scalar) * m_net_virial_ind_alt.getNumElements());
-            //memset(h_particle_n_list_alt.data, 0, sizeof(Scalar) * m_particle_n_list_alt.getNumElements());
-            // (Paniz)
 	    //~
             }
 
@@ -2156,7 +2129,7 @@ Scalar ParticleData::getPNetVirial(unsigned int tag, unsigned int component) con
     return result;
     }
 
-//~ add virial_ind [PROCF2023]
+//~ add virial_ind [RHEOINF]
 Scalar ParticleData::getPNetVirialInd(unsigned int tag, unsigned int component) const
     {
     unsigned int i = getRTag(tag);
@@ -2177,27 +2150,6 @@ Scalar ParticleData::getPNetVirialInd(unsigned int tag, unsigned int component) 
     return result;
     }
 //~
-
-// (Paniz)
-Scalar ParticleData::getPParticleNList(unsigned int tag, unsigned int component) const
-    {
-    unsigned int i = getRTag(tag);
-    bool found = (i < getN());
-    Scalar result = Scalar(0.0);
-    if (found)
-        {
-        ArrayHandle<Scalar> h_particle_n_list(m_particle_n_list, access_location::host, access_mode::read);
-        result = h_particle_n_list.data[m_particle_n_list.getPitch() * component + i];
-        }
-#ifdef ENABLE_MPI
-    if (m_decomposition)
-        {
-        unsigned int owner_rank = getOwnerRank(tag);
-        MPI_Bcast(&result, sizeof(Scalar), MPI_BYTE, owner_rank, m_exec_conf->getMPICommunicator());
-        }
-#endif
-    return result;
-    }
 
 //! Set the current position of a particle
 /* \post In parallel simulations, the particle is moved to a new domain if necessary.
@@ -2914,8 +2866,7 @@ void export_ParticleData(pybind11::module& m)
         .def("getPNetForce", &ParticleData::getPNetForce)
         .def("getNetTorque", &ParticleData::getNetTorque)
         .def("getPNetVirial", &ParticleData::getPNetVirial)
-        .def("getPNetVirialInd", &ParticleData::getPNetVirialInd) //~ add virial_ind [PROCF2023] 
-        .def("getPParticleNList", &ParticleData::getPParticleNList) // (Paniz)
+        .def("getPNetVirialInd", &ParticleData::getPNetVirialInd) //~ add virial_ind [RHEOINF] 
         .def("getMomentsOfInertia", &ParticleData::getMomentsOfInertia)
         .def("setPosition", &ParticleData::setPosition)
         .def("setVelocity", &ParticleData::setVelocity)
@@ -3089,15 +3040,11 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
         ArrayHandle<Scalar> h_net_virial(getNetVirial(),
                                          access_location::host,
                                          access_mode::readwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(getNetVirialInd(),
                                          access_location::host,
                                          access_mode::readwrite);
 	//~
-        ArrayHandle<Scalar> h_particle_n_list(getParticleNList(),
-                                         access_location::host,
-                                         access_mode::readwrite);
-        //(Paniz)                                    
 
         ArrayHandle<unsigned int> h_tag(getTags(), access_location::host, access_mode::readwrite);
 
@@ -3140,15 +3087,11 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
         ArrayHandle<Scalar> h_net_virial_alt(m_net_virial_alt,
                                              access_location::host,
                                              access_mode::overwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind_alt(m_net_virial_ind_alt,
                                              access_location::host,
                                              access_mode::overwrite);
         //~
-        ArrayHandle<Scalar> h_particle_n_list_alt(m_particle_n_list_alt,
-                                             access_location::host,
-                                             access_mode::overwrite);
-        // (Paniz)                                    
         ArrayHandle<unsigned int> h_tag_alt(m_tag_alt,
                                             access_location::host,
                                             access_mode::overwrite);
@@ -3156,9 +3099,8 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
         unsigned int n = 0;
         unsigned int m = 0;
         unsigned int net_virial_pitch = (unsigned int)m_net_virial.getPitch();
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch();
-        unsigned int particle_n_list_pitch = (unsigned int)m_particle_n_list.getPitch(); // (Paniz)
 	//~
         for (unsigned int i = 0; i < old_nparticles; ++i)
             {
@@ -3181,14 +3123,11 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
                 for (unsigned int j = 0; j < 6; ++j)
                     h_net_virial_alt.data[net_virial_pitch * j + n]
                         = h_net_virial.data[net_virial_pitch * j + i];
-                //~ add virial_ind [PROCF2023] 
+                //~ add virial_ind [RHEOINF] 
                 for (unsigned int j = 0; j < 5; ++j)
                     h_net_virial_ind_alt.data[net_virial_ind_pitch * j + n]
                         = h_net_virial_ind.data[net_virial_ind_pitch * j + i];
 		//~
-                for (unsigned int j = 0; j < 20; ++j)
-                    h_particle_n_list_alt.data[particle_n_list_pitch * j + n]
-                        = h_particle_n_list.data[particle_n_list_pitch * j + i];        
 
                 h_tag_alt.data[n] = h_tag.data[i];
                 ++n;
@@ -3211,13 +3150,10 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
                 p.net_torque = h_net_torque.data[i];
                 for (unsigned int j = 0; j < 6; ++j)
                     p.net_virial[j] = h_net_virial.data[net_virial_pitch * j + i];
-                //~ add virial_ind [PROCF2023] 
+                //~ add virial_ind [RHEOINF] 
                 for (unsigned int j = 0; j < 5; ++j)
                     p.net_virial_ind[j] = h_net_virial_ind.data[net_virial_ind_pitch * j + i];
 		//~
-                for (unsigned int j = 0; j < 20; ++j)
-                    p.particle_n_list[j] = h_particle_n_list.data[particle_n_list_pitch * j + i]; 
-
                 p.tag = h_tag.data[i];
                 out[m++] = p;
                 }
@@ -3247,8 +3183,7 @@ void ParticleData::removeParticles(std::vector<detail::pdata_element>& out,
     swapNetForce();
     swapNetTorque();
     swapNetVirial();
-    swapNetVirialInd(); //~ add virial_ind [PROCF2023]
-    swapParticleNList(); // (Paniz)
+    swapNetVirialInd(); //~ add virial_ind [RHEOINF]
     swapTags();
 
         {
@@ -3313,15 +3248,10 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
         ArrayHandle<Scalar> h_net_virial(getNetVirial(),
                                          access_location::host,
                                          access_mode::readwrite);
-        //~ add virial_ind [PROCF2023] 
+        //~ add virial_ind [RHEOINF] 
         ArrayHandle<Scalar> h_net_virial_ind(getNetVirialInd(),
                                          access_location::host,
                                          access_mode::readwrite);
-        // (Paniz)
-        ArrayHandle<Scalar> h_particle_n_list(getParticleNList(),
-                                         access_location::host,
-                                         access_mode::readwrite);
-
 	//~
         ArrayHandle<unsigned int> h_tag(getTags(), access_location::host, access_mode::readwrite);
         ArrayHandle<unsigned int> h_rtag(getRTags(), access_location::host, access_mode::readwrite);
@@ -3330,8 +3260,8 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
                                                access_mode::readwrite);
 
         unsigned int net_virial_pitch = (unsigned int)m_net_virial.getPitch();
-        unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch(); //~ add virial_ind [PROCF2023]
-        unsigned int particle_n_list_pitch = (unsigned int)m_particle_n_list.getPitch(); // (Paniz)
+        unsigned int net_virial_ind_pitch = (unsigned int)m_net_virial_ind.getPitch(); //~ add virial_ind [RHEOINF]
+
         // add new particles at the end
         unsigned int n = old_nparticles;
         for (std::vector<detail::pdata_element>::const_iterator it = in.begin(); it != in.end();
@@ -3352,13 +3282,10 @@ void ParticleData::addParticles(const std::vector<detail::pdata_element>& in)
             h_net_torque.data[n] = p.net_torque;
             for (unsigned int j = 0; j < 6; ++j)
                 h_net_virial.data[net_virial_pitch * j + n] = p.net_virial[j];
-            //~ add virial_ind [PROCF2023] 
+            //~ add virial_ind [RHEOINF] 
             for (unsigned int j = 0; j < 5; ++j)
                 h_net_virial_ind.data[net_virial_ind_pitch * j + n] = p.net_virial_ind[j];
 	    //~
-            for (unsigned int j = 0; j < 20; ++j)
-                h_particle_n_list.data[particle_n_list_pitch * j + n] = p.particle_n_list[j];
-
             h_tag.data[n] = p.tag;
             n++;
             }
@@ -3438,9 +3365,6 @@ void ParticleData::removeParticlesGPU(GlobalVector<detail::pdata_element>& out,
         ArrayHandle<Scalar> d_net_virial(getNetVirial(),
                                          access_location::device,
                                          access_mode::read);
-        ArrayHandle<Scalar> d_particle_n_list(getParticleNList()),
-                                         access_location::device,
-                                         access_mode::read);                                 
         ArrayHandle<unsigned int> d_tag(getTags(), access_location::device, access_mode::read);
 
         // access alternate particle data arrays to write to
@@ -3477,9 +3401,6 @@ void ParticleData::removeParticlesGPU(GlobalVector<detail::pdata_element>& out,
         ArrayHandle<Scalar> d_net_virial_alt(m_net_virial_alt,
                                              access_location::device,
                                              access_mode::overwrite);
-        ArrayHandle<Scalar> d_particle_n_list_alt(m_particle_n_list_alt,
-                                             access_location::device,
-                                             access_mode::overwrite);                                     
         ArrayHandle<unsigned int> d_tag_alt(m_tag_alt,
                                             access_location::device,
                                             access_mode::overwrite);
@@ -3522,8 +3443,6 @@ void ParticleData::removeParticlesGPU(GlobalVector<detail::pdata_element>& out,
                                              d_net_torque.data,
                                              d_net_virial.data,
                                              (unsigned int)getNetVirial().getPitch(),
-                                             d_particle_n_list.data,
-                                             (unsigned int)getParticleNList().getPitch(),
                                              d_tag.data,
                                              d_rtag.data,
                                              d_pos_alt.data,
@@ -3539,7 +3458,6 @@ void ParticleData::removeParticlesGPU(GlobalVector<detail::pdata_element>& out,
                                              d_net_force_alt.data,
                                              d_net_torque_alt.data,
                                              d_net_virial_alt.data,
-                                             d_particle_n_list_alt.data,
                                              d_tag_alt.data,
                                              d_out.data,
                                              d_comm_flags.data,
@@ -3585,7 +3503,6 @@ void ParticleData::removeParticlesGPU(GlobalVector<detail::pdata_element>& out,
     swapNetForce();
     swapNetTorque();
     swapNetVirial();
-    swapParticleNList();
     swapTags();
 
     // notify subscribers
@@ -3637,9 +3554,6 @@ void ParticleData::addParticlesGPU(const GlobalVector<detail::pdata_element>& in
         ArrayHandle<Scalar> d_net_virial(getNetVirial(),
                                          access_location::device,
                                          access_mode::readwrite);
-        ArrayHandle<Scalar> d_particle_n_list(getParticleNList(),
-                                         access_location::device,
-                                         access_mode::readwrite);                                
         ArrayHandle<unsigned int> d_tag(getTags(), access_location::device, access_mode::readwrite);
         ArrayHandle<unsigned int> d_rtag(getRTags(),
                                          access_location::device,
@@ -3668,8 +3582,6 @@ void ParticleData::addParticlesGPU(const GlobalVector<detail::pdata_element>& in
                                         d_net_torque.data,
                                         d_net_virial.data,
                                         (unsigned int)getNetVirial().getPitch(),
-                                        d_particle_n_list.data, //(Paniz)
-                                        (unsigned int)getParticleNList().getPitch(),
                                         d_tag.data,
                                         d_rtag.data,
                                         d_in.data,
@@ -3764,13 +3676,6 @@ void ParticleData::setGPUAdvice()
                               sizeof(Scalar) * nelem,
                               cudaMemAdviseSetPreferredLocation,
                               gpu_map[idev]);
-            
-            for (unsigned int i = 0; i < 20; ++i)
-                cudaMemAdvise(m_particle_n_list.get() + i * m_particle_n_list.getPitch() + range.first,
-                              sizeof(Scalar) * nelem,
-                              cudaMemAdviseSetPreferredLocation,
-                              gpu_map[idev]);
-
             cudaMemAdvise(m_net_torque.get() + range.first,
                           sizeof(Scalar4) * nelem,
                           cudaMemAdviseSetPreferredLocation,
@@ -3811,11 +3716,6 @@ void ParticleData::setGPUAdvice()
                 cudaMemPrefetchAsync(m_net_virial.get() + i * m_net_virial.getPitch() + range.first,
                                      sizeof(Scalar) * nelem,
                                      gpu_map[idev]);
-            for (unsigned int i = 0; i < 20; ++i)
-                cudaMemPrefetchAsync(m_particle_n_list.get() + i * m_particle_n_list.getPitch() + range.first,
-                                     sizeof(Scalar) * nelem,
-                                     gpu_map[idev]);
-                                     
             cudaMemPrefetchAsync(m_net_torque.get() + range.first,
                                  sizeof(Scalar4) * nelem,
                                  gpu_map[idev]);
@@ -3886,12 +3786,6 @@ void ParticleData::setGPUAdvice()
                                   sizeof(Scalar) * nelem,
                                   cudaMemAdviseSetPreferredLocation,
                                   gpu_map[idev]);
-                for (unsigned int i = 0; i < 20; ++i)
-                    cudaMemAdvise(m_particle_n_list_alt.get() + i * m_particle_n_list_alt.getPitch()
-                                      + range.first,
-                                  sizeof(Scalar) * nelem,
-                                  cudaMemAdviseSetPreferredLocation,
-                                  gpu_map[idev]);
                 cudaMemAdvise(m_net_torque_alt.get() + range.first,
                               sizeof(Scalar4) * nelem,
                               cudaMemAdviseSetPreferredLocation,
@@ -3938,11 +3832,6 @@ void ParticleData::setGPUAdvice()
                                              + range.first,
                                          sizeof(Scalar) * nelem,
                                          gpu_map[idev]);
-                for (unsigned int i = 0; i < 20; ++i)
-                    cudaMemPrefetchAsync(m_particle_n_list_alt.get() + i * m_particle_n_list_alt.getPitch()
-                                             + range.first,
-                                         sizeof(Scalar) * nelem,
-                                         gpu_map[idev]);                        
                 cudaMemPrefetchAsync(m_net_torque_alt.get() + range.first,
                                      sizeof(Scalar4) * nelem,
                                      gpu_map[idev]);
@@ -4239,7 +4128,6 @@ template<class Real> void SnapshotParticleData<Real>::setTypes(pybind11::list ty
     for (unsigned int i = 0; i < len(types); i++)
         type_mapping[i] = pybind11::cast<string>(types[i]);
     }
-
 
 #ifdef ENABLE_MPI
 template<class Real> void SnapshotParticleData<Real>::bcast(unsigned int root, MPI_Comm mpi_comm)

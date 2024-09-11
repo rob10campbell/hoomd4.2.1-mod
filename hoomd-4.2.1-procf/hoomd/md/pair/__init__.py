@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-##### Modified by PRO-CF ##~ [PROCF2023] ######
+##### Modified by Rheoinformatic ##~ [RHEOINF] ######
 
 r"""Pair Potentials for molecular dynamics.
 
@@ -144,10 +144,11 @@ from .pair import (
     Yukawa,
     Ewald,
     Morse,
+    MorseRepulse, #[RHEOINF]
     DPD,
     DPDConservative,
     DPDLJ,
-    DPDMorse, #[PROCF2023]
+    DPDMorse, #[RHEOINF]
     ForceShiftedLJ,
     Moliere,
     ZBL,

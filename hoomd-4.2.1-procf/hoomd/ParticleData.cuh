@@ -48,7 +48,6 @@ struct pdata_element
     Scalar4 net_force;    //!< net force
     Scalar4 net_torque;   //!< net torque
     Scalar net_virial[6]; //!< net virial
-    Scalar particle_n_list[20];  // (Paniz) 
     };
 #else
 //! Forward declaration
@@ -75,8 +74,6 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                               const Scalar4* d_net_torque,
                               const Scalar* d_net_virial,
                               unsigned int net_virial_pitch,
-                              const Scalar* d_particle_n_list, //(Paniz)
-                              unsigned int particle_n_list_pitch,
                               const unsigned int* d_tag,
                               unsigned int* d_rtag,
                               Scalar4* d_pos_alt,
@@ -91,8 +88,7 @@ unsigned int gpu_pdata_remove(const unsigned int N,
                               Scalar3* d_inertia_alt,
                               Scalar4* d_net_force_alt,
                               Scalar4* d_net_torque_alt,
-                              Scalar* d_net_virial_alt, //(Paniz)
-                              Scalar* d_particle_n_list_alt,
+                              Scalar* d_net_virial_alt,
                               unsigned int* d_tag_alt,
                               detail::pdata_element* d_out,
                               unsigned int* d_comm_flags,
@@ -119,8 +115,6 @@ void gpu_pdata_add_particles(const unsigned int old_nparticles,
                              Scalar4* d_net_torque,
                              Scalar* d_net_virial,
                              unsigned int net_virial_pitch,
-                             Scalar* d_particle_n_list, // (Paniz)
-                             unsigned int particle_n_list_pitch,
                              unsigned int* d_tag,
                              unsigned int* d_rtag,
                              const detail::pdata_element* d_in,
