@@ -1,13 +1,10 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
-
-
 #ifndef __POTENTIAL_PAIR_H__
 #define __POTENTIAL_PAIR_H__
 
-#include "Lifetime.h" //~ many-body neighbors [RHEOINF]
+#include "Lifetime.h"
 
 #include <iostream>
 #include <memory>
@@ -23,14 +20,13 @@
 #include "hoomd/managed_allocator.h"
 #include "hoomd/md/EvaluatorPairLJ.h"
 
-//~ access for many-body neighbors [RHEOINF]
+// paniz_write
 #include "hoomd/HOOMDMPI.h"
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include <math.h>
 #include <cmath> 
-//~
 
 #ifdef ENABLE_HIP
 #include <hip/hip_runtime.h>
@@ -102,7 +98,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
     typedef typename evaluator::param_type param_type;
 
     //! Construct the pair potential
-    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, Scalar K=0.0); //~ add K [RHEOINF]
+    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, Scalar K = 0.0);
     //! Destructor
     virtual ~PotentialPair();
 
@@ -125,6 +121,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
     virtual void setROnPython(pybind11::tuple types, Scalar r_on);
     /// Validate that types are within Ntypes
     void validateTypes(unsigned int typ1, unsigned int typ2, std::string action);
+
 
     //! Shifting modes that can be applied to the energy
     enum energyShiftMode
@@ -195,22 +192,19 @@ template<class evaluator> class PotentialPair : public ForceCompute
         {
         return m_tail_correction_enabled;
         }
-
-    //~! Set angular rigidity K value [RHEOINF]
+    //S
     void setK(Scalar K) {
         m_K = K;
     }
     Scalar getK() const {
         return m_K;
     }
-    //~
-
-    std::shared_ptr<Lifetime> LTIME; //~ access LTIME for many-body neighbors [RHEOINF]
-
-#ifdef ENABLE_MPI
+    std::shared_ptr<Lifetime> LTIME;
+    //F
+ #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
     virtual CommFlags getRequestedCommFlags(uint64_t timestep);
-#endif
+ #endif
 
     //! Calculates the energy between two lists of particles.
     template<class InputIterator>
@@ -227,10 +221,9 @@ template<class evaluator> class PotentialPair : public ForceCompute
     std::vector<std::string> getTypeShapeMapping() const
         {
         std::vector<std::string> type_shape_mapping(m_pdata->getNTypes());
-        unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [RHEOINF]
         for (unsigned int i = 0; i < type_shape_mapping.size(); i++)
             {
-            evaluator eval(Scalar(0.0), Scalar(0.0), pair_typeids, Scalar(0.0), this->m_params[m_typpair_idx(i, i)]); //~ add radcontact, array for pair_typeIDs [RHEOINF]
+            evaluator eval(Scalar(0.0), Scalar(0.0), this->m_params[m_typpair_idx(i, i)]);
             type_shape_mapping[i] = eval.getShapeSpec();
             }
         return type_shape_mapping;
@@ -251,7 +244,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
     protected:
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
     energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
-    Scalar m_K;                   //!< angular rigidity K value [RHEOINF]
+    Scalar m_K;
     Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
     GlobalArray<Scalar> m_rcutsq; //!< Cutoff radius squared per type pair
     GlobalArray<Scalar> m_ronsq;  //!< ron squared per type pair
@@ -314,11 +307,9 @@ template<class evaluator> class PotentialPair : public ForceCompute
                 {
                 for (unsigned int type_j = 0; type_j < m_pdata->getNTypes(); type_j++)
                     {
-                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [RHEOINF]
                     // rho is the number density
                     Scalar rho_j = m_num_particles_by_type[type_j] / volume;
-                    evaluator eval(Scalar(0.0), Scalar(0.0), //~ add radcontact [RHEOINF] 
-                                   pair_typeids, //~ add array for pair_typeIDs [RHEOINF]
+                    evaluator eval(Scalar(0.0),
                                    h_rcutsq.data[m_typpair_idx(type_i, type_j)],
                                    m_params[m_typpair_idx(type_i, type_j)]);
                     m_external_energy += Scalar(2.0) * m_num_particles_by_type[type_i] * M_PI
@@ -340,14 +331,12 @@ template<class evaluator> class PotentialPair : public ForceCompute
                 {
                 for (unsigned int type_i = 0; type_i < m_pdata->getNTypes(); type_i++)
                     {
-                    unsigned int pair_typeids[2] = {0, 0}; //~ define default typeIDs as zero [RHEOINF]
                     // rho is the number density
                     Scalar rho_i = m_num_particles_by_type[type_i] / volume;
                     for (unsigned int type_j = 0; type_j < m_pdata->getNTypes(); type_j++)
                         {
                         Scalar rho_j = m_num_particles_by_type[type_j] / volume;
-                        evaluator eval(Scalar(0.0), Scalar(0.0), //~ add radcontact [RHEOINF] 
-                                       pair_typeids, //~ add array for pair_typeIDs [RHEOINF]
+                        evaluator eval(Scalar(0.0),
                                        h_rcutsq.data[m_typpair_idx(type_i, type_j)],
                                        m_params[m_typpair_idx(type_i, type_j)]);
                         // The pressure LRC, where
@@ -378,8 +367,9 @@ template<class evaluator> class PotentialPair : public ForceCompute
 */
 template<class evaluator>
 PotentialPair<evaluator>::PotentialPair(std::shared_ptr<SystemDefinition> sysdef,
-                                        std::shared_ptr<NeighborList> nlist, Scalar K) //~ add K [RHEOINF]
-    : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift), m_K(K) //~ add K [RHEOINF]
+                                        std::shared_ptr<NeighborList> nlist,
+                                        Scalar K)
+    : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift),m_K(K),
       m_typpair_idx(m_pdata->getNTypes())
     {
     m_exec_conf->msg->notice(5) << "Constructing PotentialPair<" << evaluator::getName() << ">"
@@ -388,13 +378,14 @@ PotentialPair<evaluator>::PotentialPair(std::shared_ptr<SystemDefinition> sysdef
     assert(m_pdata);
     assert(m_nlist);
 
-    //~ access Lifetime for indexing if needed [RHEOINF]
+    //~ add bond_calc flag [PROCF2023]
     if(m_K != 0.0)
 	{
         LTIME = std::shared_ptr<Lifetime>(new Lifetime(sysdef));
 	}
-    //~
 
+
+    //~
 
     GlobalArray<Scalar> rcutsq(m_typpair_idx.getNumElements(), m_exec_conf);
     m_rcutsq.swap(rcutsq);
@@ -623,11 +614,11 @@ void PotentialPair<evaluator>::setROnPython(pybind11::tuple types, Scalar r_on)
 
     \param timestep specifies the current time step of the simulation
 */
+
 template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t timestep)
     {
     // start by updating the neighborlist
     m_nlist->compute(timestep);
-
     // depending on the neighborlist settings, we can take advantage of newton's third law
     // to reduce computations at the cost of memory access complexity: set that flag now
     bool third_law = m_nlist->getStorageMode() == NeighborList::half;
@@ -646,16 +637,10 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
-    //~ access particle diameter [RHEOINF] 
-    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
-    //~
 
     // force arrays
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
-    //~ add virialxyi_ind [RHEOINF]
-    ArrayHandle<Scalar> h_virial_ind(m_virial_ind, access_location::host, access_mode::overwrite);
-    //~
 
     const BoxDim box = m_pdata->getGlobalBox();
     ArrayHandle<Scalar> h_ronsq(m_ronsq, access_location::host, access_mode::read);
@@ -664,9 +649,11 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     PDataFlags flags = this->m_pdata->getFlags();
     bool compute_virial = flags[pdata_flag::pressure_tensor];
 
-    //~ get multi-body neighbors [RHEOINF]
     //S
-    // NOTE: h_diameter is already included above
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
+                                   
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(),
                                     access_location::host,
                                     access_mode::read);
@@ -703,12 +690,12 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                             m_exec_conf->getMPICommunicator());
             }
         #endif
-
+        
         #ifdef ENABLE_MPI
         //std::cout<<"1"<<std::endl;
         //std::cout<<"totals: "<<tot_particles<<std::endl;
         unsigned int num_ranks = LTIME->num_rank;
-        // Initialize a buffer to store gathered data on the root rank  
+        // Initialize a buffer to store gathered data on the root rank   
         std::vector<std::vector<Scalar>> gathered_previous_neighbor_lists(num_ranks);
         std::vector<int> displacements(gathered_previous_neighbor_lists.size());
         if (m_sysdef->isDomainDecomposed()) 
@@ -732,7 +719,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                 std::copy(h_previous_neighbor_temp.begin(), h_previous_neighbor_temp.end(), h_previous_neighbor_list.begin());
             } 
         #endif 
-
+    
     }
 
     // start the connected neighbors with -2
@@ -747,26 +734,17 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         h_current_neighbor_list.data[i] = h_tag.data[i];
         }
     }
-    //F
-    //~
 
+    //F
     // need to start from a zero force, energy and virial
     memset((void*)h_force.data, 0, sizeof(Scalar4) * m_force.getNumElements());
     memset((void*)h_virial.data, 0, sizeof(Scalar) * m_virial.getNumElements());
-    memset((void*)h_virial_ind.data, 0, sizeof(Scalar) * m_virial_ind.getNumElements()); //~ add virialxyi_ind [RHEOINF]
-
-    //~ print shear rate [RHEOINF]
-    //Scalar shear_rate = this->m_SR;
-    //    //std::cout << shear_rate << std::endl;
-    //~
-
-    size_t idx_pi = -1; //~ set the neighbor index for pi [RHEOINF]
-
+    size_t idx_pi = -1; 
     // for each particle
+            
     for (int i = 0; i < (int)m_pdata->getN(); i++)
         {
-
-        /* //~ optional print checks [RHEOINF]
+        /*
         if (std::isnan(h_pos.data[i].z)) {
             std::cout << "timestep:" <<timestep << std::endl;
             std::cout<<"my rank :"<<m_exec_conf->getRank()<<std::endl;
@@ -786,13 +764,9 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             std::cout<<h_current_neighbor_list.data[j * p_neighbor_pitch + i] <<",";
         }
         std::cout<<std::endl;*/
-        //~
-
         // access the particle's position and type (MEM TRANSFER: 4 scalars)
         Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
         unsigned int typei = __scalar_as_int(h_pos.data[i].w);
-
-        //~ update many-body neighbors [RHEOINF]
         if (m_K != 0.0){
             //find the particle in the previous time step particle neighbor list
             if(typei == 0 ){
@@ -806,16 +780,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                 }
             }
         }
-        //~
-
         // sanity check
         assert(typei < m_pdata->getNTypes());
-
-        //~ access diameter (if needed) removed in v4 upgrade, readded by [RHEOINF]
-        Scalar di = Scalar(0.0);
-        if (evaluator::needsDiameter())
-           di = h_diameter.data[i];
-        //~
 
         // access charge (if needed)
         Scalar qi = Scalar(0.0);
@@ -831,7 +797,6 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         Scalar virialyyi = 0.0;
         Scalar virialyzi = 0.0;
         Scalar virialzzi = 0.0;
-        Scalar virialxyi_ind = 0.0; //~ add virialxyi_ind [RHEOINF]
 
         // loop over all of the neighbors of this particle
         const size_t myHead = h_head_list.data[i];
@@ -850,16 +815,6 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
-            //~ store the typeIDs of the current pair [RHEOINF]
-            unsigned int pair_typeids[2] = {typei, typej};
-            //~
-
-            //~ access diameter (if needed) removed in v4 upgrade, readded by [RHEOINF]
-            Scalar dj = Scalar(0.0);
-            if (evaluator::needsDiameter())
-                dj = h_diameter.data[j];
-            //~
-
             // access charge (if needed)
             Scalar qj = Scalar(0.0);
             if (evaluator::needsCharge())
@@ -870,10 +825,6 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
 
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
-
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
-            Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
-            //~
 
             // get parameters for this type pair
             unsigned int typpair_idx = m_typpair_idx(typei, typej);
@@ -898,20 +849,15 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-
-            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [RHEOINF]
-            //~ add diameter (if needed) removed in v4, readded [RHEOINF]
-            if (evaluator::needsDiameter())
-                eval.setDiameter(di, dj);
-            //~
+            evaluator eval(rsq, rcutsq, param);
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 
-            //~ update multi-body angles [RHEOINF]
+            bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift);
             //S
             unsigned int tagi = h_tag.data[i];
             unsigned int tagj = h_tag.data[j];
-
+            
             if (m_K != 0.0){
                 if (typei == typej)
                 {   
@@ -922,7 +868,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                         size_t idx_i = 0;
                         bool not_saved = true;
                         while (idx_i < 20){
-
+                        
                             // Check if tag[j] already exists
                             if (h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] == h_tag.data[j])
                             {
@@ -963,7 +909,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                             }
                         }
 
-
+                            
                             // save angles 
                             bool new_connection = true;
                             size_t is_idx = 0;
@@ -976,16 +922,17 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                 }
                                 is_idx++;
                             }
-
-
+                            
+                        
                     }
                 }
             }
-            //F
-            //~
+             //F
 
 
-            bool evaluated = eval.evalForceAndEnergy(force_divr, pair_eng, energy_shift);
+
+
+
 
             if (evaluated)
                 {
@@ -1031,9 +978,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     virialyyi += force_div2r * dx.y * dx.y;
                     virialyzi += force_div2r * dx.y * dx.z;
                     virialzzi += force_div2r * dx.z * dx.z;
-                    virialxyi_ind += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [RHEOINF]
                     }
-
                 // add the force to particle j if we are using the third law (MEM TRANSFER: 10
                 // scalars / FLOPS: 8) only add force to local particles
                 if (third_law && j < m_pdata->getN())
@@ -1044,14 +989,11 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     h_force.data[mem_idx].z -= dx.z * force_divr;
                     h_force.data[mem_idx].w += pair_eng * Scalar(0.5);
 
-                    //~ print pairwise forces [RHEOINF]
                     if ((timestep-100000) % 10000 == 0){
                     Scalar fj_mag = std::sqrt(h_force.data[mem_idx].x * h_force.data[mem_idx].x 
                     + h_force.data[mem_idx].y * h_force.data[mem_idx].y + h_force.data[mem_idx].z * h_force.data[mem_idx].z);
                     std::cout << h_force.data[mem_idx].w << "," << fj_mag << "," << (rsq-Scalar(2.0)) << std::endl;
                     }
-                    //~
-
                     if (compute_virial)
                         {
                         h_virial.data[0 * m_virial_pitch + mem_idx] += force_div2r * dx.x * dx.x;
@@ -1060,7 +1002,6 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                         h_virial.data[3 * m_virial_pitch + mem_idx] += force_div2r * dx.y * dx.y;
                         h_virial.data[4 * m_virial_pitch + mem_idx] += force_div2r * dx.y * dx.z;
                         h_virial.data[5 * m_virial_pitch + mem_idx] += force_div2r * dx.z * dx.z;
-                        h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += force_div2r * dx.x * dx.y; //~ add virialxyi_ind [RHEOINF]
                         }
                     }
                 }
@@ -1080,17 +1021,18 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
             h_virial.data[3 * m_virial_pitch + mem_idx] += virialyyi;
             h_virial.data[4 * m_virial_pitch + mem_idx] += virialyzi;
             h_virial.data[5 * m_virial_pitch + mem_idx] += virialzzi;
-            h_virial_ind.data[0 * m_virial_ind_pitch + mem_idx] += virialxyi_ind; //~ add virialxyi_ind [RHEOINF]
             }
         }
 
-    //~ compute angular rigidity forces [RHEOINF]
-    //S
 if (m_K != 0.0){
     #ifdef ENABLE_MPI
 
-    	LTIME->updatebondtime(timestep); //~ get timestep from Liftime file [RHEOINF]
 
+    //~ add bond_calc [PROCF2023] 
+    
+    	LTIME->updatebondtime(timestep);
+
+    //
     #endif
     for (int i = 0; i < (int)m_pdata->getN(); i++){
         unsigned int typei = __scalar_as_int(h_pos.data[i].w);
@@ -1151,7 +1093,7 @@ if (m_K != 0.0){
                             }
                             unsigned int typeb = __scalar_as_int(h_pos.data[b].w);
 
-
+                            
 
                             if (tagb != taga  && taga != tagi && tagb != tagi && typea==0 && typeb==0)
                             {
@@ -1181,19 +1123,19 @@ if (m_K != 0.0){
 
                                 // Calculate cosine of the angle 
                                 Scalar current_cos_theta = dot_product / (ria_mag * rib_mag);
-
+                                
 
                                 if (current_cos_theta > 1.0)
                                     current_cos_theta = 1.0;
                                 if (current_cos_theta < -1.0)
                                     current_cos_theta = -1.0;
-
+                                
                                 Scalar current_sin_theta = std::sqrt(1.0 - current_cos_theta * current_cos_theta);
                                 if (current_sin_theta < SMALL)
                                     current_sin_theta = SMALL;
-
+                            
                                 current_sin_theta = 1.0 / current_sin_theta;
-
+                                
                                 // Calculate force magnitude for Emanuela equation
                                 Scalar B = 67.27;
                                 Scalar w = 0.3;
@@ -1205,7 +1147,7 @@ if (m_K != 0.0){
                                 Scalar exp_theta = exp(-pow((current_cos_theta - cos(eq_theta)) / w, 2));
 
                                 Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
-
+                                
 
                                 Scalar a11 = vab * current_cos_theta / (ria_mag * ria_mag);
                                 Scalar a12 = -vab / (ria_mag * rib_mag);
@@ -1232,9 +1174,9 @@ if (m_K != 0.0){
                                 angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y);
                                 angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z);
 
-
+                                
                                 // Update forces and virials for particle i, a and b
-
+                                
                                 if (a < (int)(m_pdata->getN()+ m_pdata->getNGhosts())) {
                                     h_force.data[a].x += fia.x;
                                     h_force.data[a].y += fia.y;
@@ -1243,7 +1185,7 @@ if (m_K != 0.0){
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * m_virial_pitch + a] += angle_virial[l]; 
                                 }
-
+                                
                                 if (i < (int)m_pdata->getN()) {
                                     h_force.data[i].x -= fia.x + fib.x; 
                                     h_force.data[i].y -= fia.y + fib.y;
@@ -1261,16 +1203,16 @@ if (m_K != 0.0){
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * m_virial_pitch + b] += angle_virial[l]; 
                                 }
-
+              
                             }
                         }
                     }
                 } 
             }
         }
-    //F
+  
+    //F   
     }
-    //~
 
     computeTailCorrection();
     }
@@ -1285,13 +1227,6 @@ CommFlags PotentialPair<evaluator>::getRequestedCommFlags(uint64_t timestep)
 
     if (evaluator::needsCharge())
         flags[comm_flag::charge] = 1;
-
-    flags[comm_flag::diameter] = 1; //~ make sure diameter is accessible in MPI
-
-    //~ add diameter (if needed) removed in v4 re-added [RHEOINF]
-    if (evaluator::needsDiameter())
-        flags[comm_flag::diameter] = 1;
-    //~
 
     flags |= ForceCompute::getRequestedCommFlags(timestep);
 
@@ -1344,14 +1279,14 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
         // reset the old flags
         m_comm->setFlags(old_flags);
 
-        //~ add flags for many-body neighbors [RHEOINF]
+
+        // Paniz
         CommFlags flags = CommFlags(0);
         flags[comm_flag::position] = 1;
         flags[comm_flag::net_force] = 1;
         flags[comm_flag::net_virial] = 1;
         flags[comm_flag::particle_n_list] = 1;
         flags[comm_flag::tag] = 1;
-        //~
         }
 #endif
 
@@ -1362,9 +1297,6 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
                                       access_location::host,
                                       access_mode::read);
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
-    //~ access particle diameter [RHEOINF] 
-    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(), access_location::host, access_mode::read);
-    //~
 
     const BoxDim box = m_pdata->getGlobalBox();
     ArrayHandle<Scalar> h_ronsq(m_ronsq, access_location::host, access_mode::read);
@@ -1383,12 +1315,6 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
 
         // sanity check
         assert(typei < m_pdata->getNTypes());
-
-        //~ access diameter (if needed) removed in v4, re-added [RHEOINF]
-        Scalar di = Scalar(0.0);
-        if (evaluator::needsDiameter())
-            di = h_diameter.data[i];
-        //~
 
         // access charge (if needed)
         Scalar qi = Scalar(0.0);
@@ -1410,16 +1336,6 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             unsigned int typej = __scalar_as_int(h_pos.data[j].w);
             assert(typej < m_pdata->getNTypes());
 
-            //~ store the typeIDs of the current pair [RHEOINF]
-            unsigned int pair_typeids[2] = {typei, typej};
-            //~
-
-            //~ access diameter (if needed) removed in v4 upgrade, readded by [RHEOINF]
-            Scalar dj = Scalar(0.0);
-            if (evaluator::needsDiameter())
-                dj = h_diameter.data[j];
-            //~
-
             // access charge (if needed)
             Scalar qj = Scalar(0.0);
             if (evaluator::needsCharge())
@@ -1430,10 +1346,6 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
 
             // calculate r_ij squared (FLOPS: 5)
             Scalar rsq = dot(dx, dx);
-
-            //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
-            Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
-            //~
 
             // get parameters for this type pair
             unsigned int typpair_idx = m_typpair_idx(typei, typej);
@@ -1458,12 +1370,7 @@ inline void PotentialPair<evaluator>::computeEnergyBetweenSets(InputIterator fir
             // compute the force and potential energy
             Scalar force_divr = Scalar(0.0);
             Scalar pair_eng = Scalar(0.0);
-
-            evaluator eval(rsq, radcontact, pair_typeids, rcutsq, param); //~ add radcontact, pair_typeIDs [RHEOINF]
-            //~ add diameter (if needed), removed in v4 but re-added [RHEOINF]
-            if (evaluator::needsDiameter())
-                eval.setDiameter(di, dj);
-            //~
+            evaluator eval(rsq, rcutsq, param);
             if (evaluator::needsCharge())
                 eval.setCharge(qi, qj);
 
@@ -1545,7 +1452,7 @@ template<class T> void export_PotentialPair(pybind11::module& m, const std::stri
     pybind11::class_<PotentialPair<T>, ForceCompute, std::shared_ptr<PotentialPair<T>>>
         potentialpair(m, name.c_str());
     potentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, Scalar>()) //~ add Scalar for K [RHEOINF]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, Scalar>())
         .def("setParams", &PotentialPair<T>::setParamsPython)
         .def("getParams", &PotentialPair<T>::getParams)
         .def("setRCut", &PotentialPair<T>::setRCutPython)
@@ -1558,8 +1465,8 @@ template<class T> void export_PotentialPair(pybind11::module& m, const std::stri
         .def_property("tail_correction",
                       &PotentialPair<T>::getTailCorrectionEnabled,
                       &PotentialPair<T>::setTailCorrectionEnabled)
-        .def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK) //~ add K [RHEOINF]
-        .def("computeEnergyBetweenSets", &PotentialPair<T>::computeEnergyBetweenSetsPythonList);
+        .def("computeEnergyBetweenSets", &PotentialPair<T>::computeEnergyBetweenSetsPythonList)
+        .def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK);
     }
 
     } // end namespace detail
