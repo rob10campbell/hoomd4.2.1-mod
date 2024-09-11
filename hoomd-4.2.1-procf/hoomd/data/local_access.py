@@ -169,9 +169,8 @@ class ParticleLocalAccessBase(_LocalAccess):
         'net_force': 'getNetForce',
         'net_torque': 'getNetTorque',
         'net_virial': 'getNetVirial',
-        'particle_n_list': 'getParticleNList' ##~ many-body neighbors [RHEOINF]
         'net_energy': 'getNetEnergy',
-        'particle_n_list': 'getParticleNList'
+        'particle_n_list': 'getParticleNList' ##~ many-body neighbors [RHEOINF]
     }
 
     def __init__(self, state):

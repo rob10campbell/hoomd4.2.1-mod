@@ -12,11 +12,12 @@
 
 //~ access for angle managmenet [RHEOINF]
 #include "hoomd/HOOMDMPI.h"
+#include <memory>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <math.h>
-#include <cmath>
 
 // _write
 //~
@@ -341,7 +342,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
         }
         //~
 
-        // access the particle's p(siti(n, velocity, and type (MEM TRANSFER: 7 scalars)
+        // access the particle's position, velocity, and type (MEM TRANSFER: 7 scalars)
         Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
         Scalar3 vi = make_scalar3(h_vel.data[i].x, h_vel.data[i].y, h_vel.data[i].z);
 
@@ -676,6 +677,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                                                 cos_theta= -1.0;
 
                                             // Calculate angle index
+                                            unsigned int vari = tagi - this->LTIME->num_solvent;
                                             unsigned int varj = tagj - this->LTIME->num_solvent;
                                             unsigned int vark = tagk - this->LTIME->num_solvent;
 
@@ -1107,6 +1109,7 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 
 
                                 // Update forces and virials for particle i, a and b
+
                                 if (a < (int)(this->m_pdata->getN()+ this->m_pdata->getNGhosts())) {
                                     h_force.data[a].x += fia.x;
                                     h_force.data[a].y += fia.y;

@@ -102,7 +102,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
     typedef typename evaluator::param_type param_type;
 
     //! Construct the pair potential
-    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, Scalar K = 0.0);
+    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, Scalar K = 0.0); //~ add K [RHEOINF]
     //! Destructor
     virtual ~PotentialPair();
 
