@@ -74,7 +74,7 @@ struct comm_flag
         reverse_net_force, //! Communicate net force on ghost particles. Added by Vyas
         net_torque,        //! Communicate net torque
         net_virial,         //! Communicate net virial
-        net_virial_ind     //~! Communicate net virial components [RHEOINF]
+        net_virial_ind,     //~! Communicate net virial components [RHEOINF]
         particle_n_list    //~! Communicate multi-body neighbors [RHEOINF]
         };
     };

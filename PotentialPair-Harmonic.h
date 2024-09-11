@@ -1988,8 +1988,8 @@ template<class T> void export_PotentialPair(pybind11::module& m, const std::stri
         .def_property("tail_correction",
                       &PotentialPair<T>::getTailCorrectionEnabled,
                       &PotentialPair<T>::setTailCorrectionEnabled)
+        .def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK) //~ add K [RHEOINF]
         .def("computeEnergyBetweenSets", &PotentialPair<T>::computeEnergyBetweenSetsPythonList);
-        .def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK); //~ add K [RHEOINF]
     }
 
     } // end namespace detail

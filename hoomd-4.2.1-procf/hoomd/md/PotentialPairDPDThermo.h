@@ -1192,7 +1192,7 @@ template<class T> void export_PotentialPairDPDThermo(pybind11::module& m, const 
         .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, bool, Scalar>()) //~ add bool for bond_calc, Scalar for K [RHEOINF]
         .def_property("bond_calc",  
 		&PotentialPairDPDThermo<T>::getBondCalcEnabled, &PotentialPairDPDThermo<T>::setBondCalcEnabled)  //~ add bond_calc [RHEOINF]
-        .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT);
+        .def_property("kT", &PotentialPairDPDThermo<T>::getT, &PotentialPairDPDThermo<T>::setT)
         .def_property("K", &PotentialPairDPDThermo<T>::getK, &PotentialPairDPDThermo<T>::setK); //~ add K [RHEOINF]
     }
 
