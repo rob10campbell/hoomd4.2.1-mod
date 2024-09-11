@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 /*! \file CommunicatorGPU.h
     \brief Defines the CommunicatorGPU class
 */
@@ -238,8 +240,8 @@ class PYBIND11_EXPORT CommunicatorGPU : public Communicator
     GlobalVector<Scalar> m_netvirial_ghost_sendbuf; //!< Send buffer for netvirial
     GlobalVector<Scalar> m_netvirial_ghost_recvbuf; //!< Recv buffer for netvirial
 
-    GlobalVector<Scalar> m_particlenlist_ghost_sendbuf; //
-    GlobalVector<Scalar> m_particlenlist_ghost_recvbuf; //(Paniz)
+    GlobalVector<Scalar> m_particlenlist_ghost_sendbuf; //!< Send buffer for multi-body neighbors [RHEOINF]
+    GlobalVector<Scalar> m_particlenlist_ghost_recvbuf; //!< Recv buffer for multi-body neighbors [RHEOINF]
 
     GlobalVector<unsigned int>
         m_ghost_begin; //!< Begin index for every stage and neighbor in send buf

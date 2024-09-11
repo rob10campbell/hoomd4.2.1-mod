@@ -1,3 +1,11 @@
+//~ ########## Created by the Rheoinformatic research group ##########
+////~ HOOMD-blue:
+//// Copyright (c) 2009-2022 The Regents of the University of Michigan.
+//// Part of HOOMD-blue, released under the BSD 3-Clause License.
+////~
+////~ This file:
+/////~ Written by Paniz Haghighi 
+
 #ifndef __ANGLEMAP_H__
 #define __ANGLEMAP_H__
 

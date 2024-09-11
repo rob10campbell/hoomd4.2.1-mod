@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+#######~ Modified by Rheoinformatic [RHEOINF] ~#######
+
 """MD integration methods.
 
 .. code-block:: python
@@ -644,6 +646,13 @@ class Langevin(Method):
         kT (hoomd.variant.variant_like): Temperature of the simulation
             :math:`[\mathrm{energy}]`.
 
+        alpha (`float`): When set, use :math:`\alpha d_i` for the drag
+            coefficient where :math:`d_i` is particle diameter
+            :math:`[\mathrm{mass} \cdot
+            \mathrm{length}^{-1} \cdot \mathrm{time}^{-1}]`.
+            Defaults to None.
+            NOTE: alpha was replaced with a fixed gamma in HOOMD-blue v4, but this fails to account for polydispersity, so this version replaced the default_gamma parameter with the origial alpha [RHEOINF]
+
         tally_reservoir_energy (bool): When True, track the energy exchange
             between the thermal reservoir and the particles.
             Defaults to False :math:`[\mathrm{energy}]`.
@@ -691,7 +700,7 @@ class Langevin(Method):
     where :math:`\vec{\tau}_\mathrm{C} = \vec{\tau}_\mathrm{net}`,
     :math:`\gamma_r^i` is the i-th component of the rotational drag coefficient
     (`gamma_r`), :math:`\tau_\mathrm{R}^i` is a component of the uniform random
-    the torque, :math:`\vec{L}` is the particle's angular momentum and :math:`I`
+    the torque, :math:`\vec{L}` is the particle's angular velocity and :math:`I`
     is the the particle's moment of inertia. The magnitude of the random torque
     is chosen via the fluctuation-dissipation theorem to be consistent with the
     specified drag and temperature, :math:`kT`.
@@ -700,17 +709,33 @@ class Langevin(Method):
     using Velocity-Verlet and the rotational degrees of freedom with a scheme
     based on `Kamberaj 2005`_.
 
-    The attributes `gamma` and `gamma_r` set the translational and rotational
-    damping coefficients, respectivley, by particle type.
-
-    .. rubric:: Example:
-
-    .. code-block:: python
-
-        langevin = hoomd.md.methods.Langevin(filter=hoomd.filter.All(), kT=1.5)
-        simulation.operations.integrator.methods = [langevin]
-
     .. _Kamberaj 2005: http://dx.doi.org/10.1063/1.1906216
+
+    Langevin dynamics includes the acceleration term in the Langevin equation.
+    This assumption is valid when underdamped: :math:`\frac{m}{\gamma} \gg
+    \delta t`. Use `Brownian` if your system is not underdamped.
+
+    You can set :math:`\gamma` in two ways:
+
+    1. Specify :math:`\alpha` which scales the particle diameter to
+       :math:`\gamma = \alpha d_i`.
+    2. After the method object is created, specify the attribute `gamma`
+       and `gamma_r` for rotational damping or random torque to assign them
+       directly, with independent values for each particle type in the
+       system.
+
+    Examples::
+
+        langevin = hoomd.md.methods.Langevin(filter=hoomd.filter.All(), kT=0.2,
+        alpha=1.0)
+        integrator = hoomd.md.Integrator(dt=0.001, methods=[langevin],
+        forces=[lj])
+
+    Examples of using `gamma` and `gamma_r`::
+
+        langevin = hoomd.md.methods.Langevin(filter=hoomd.filter.All(), kT=0.2)
+        langevin.gamma.default = 2.0
+        langevin.gamma_r.default = [1.0,2.0,3.0]
 
     Attributes:
         filter (hoomd.filter.filter_like): Subset of particles to
@@ -731,6 +756,11 @@ class Langevin(Method):
                                                  B=1.0,
                                                  t_start=0,
                                                  t_ramp=1_000_000)
+
+        alpha (float): When set, use :math:`\alpha d_i` for the drag
+            coefficient where :math:`d_i` is particle diameter
+            :math:`[\mathrm{mass} \cdot \mathrm{length}^{-1}
+            \cdot \mathrm{time}^{-1}]`. Defaults to None.
 
         tally_reservoir_energy (bool): When True, track the energy exchange
             between the thermal reservoir and the particles.
@@ -753,7 +783,7 @@ class Langevin(Method):
 
         gamma_r (TypeParameter[``particle type``,[`float`, `float` , `float`]]):
             The rotational drag coefficient tensor for each particle type
-            :math:`[\mathrm{time}^{-1}]`.
+            :math:`[\mathrm{mass} \cdot mathrm{length}^{2} \cdot \mathrm{time}^{-1}]`.
 
             .. rubric:: Example:
 
@@ -766,6 +796,7 @@ class Langevin(Method):
             self,
             filter,
             kT,
+            alpha=None,
             tally_reservoir_energy=False,
             default_gamma=1.0,
             default_gamma_r=(1.0, 1.0, 1.0),
@@ -775,9 +806,10 @@ class Langevin(Method):
         param_dict = ParameterDict(
             filter=ParticleFilter,
             kT=Variant,
+            alpha=OnlyTypes(float, allow_none=True),
             tally_reservoir_energy=bool(tally_reservoir_energy),
         )
-        param_dict.update(dict(kT=kT, filter=filter))
+        param_dict.update(dict(kT=kT, alpha=alpha, filter=filter))
         # set defaults
         self._param_dict.update(param_dict)
 
@@ -839,6 +871,13 @@ class Brownian(Method):
 
         kT (hoomd.variant.variant_like): Temperature of the simulation
             :math:`[\mathrm{energy}]`.
+
+        alpha (`float`): When set, use :math:`\alpha d_i` for the
+            drag coefficient where :math:`d_i` is particle diameter
+            :math:`[\mathrm{mass} \cdot \mathrm{length}^{-1}
+            \cdot \mathrm{time}^{-1}]`.
+            Defaults to ``None``
+            NOTE: alpha was replaced with a fixed gamma in HOOMD-blue v4, but this fails to account for polydispersity, so this version replaced the default_gamma parameter with the origial alpha [RHEOINF]
 
         default_gamma (float): Default drag coefficient for all particle types
             :math:`[\mathrm{mass} \cdot \mathrm{time}^{-1}]`.
@@ -921,15 +960,32 @@ class Brownian(Method):
     `hoomd.md.compute.ThermodynamicQuantities` will report appropriate
     temperatures and pressures when logged or used by other methods.
 
-    The attributes `gamma` and `gamma_r` set the translational and rotational
-    damping coefficients, respectivley, by particle type.
+Brownian dynamics neglects the acceleration term in the Langevin equation.
+    This assumption is valid when overdamped:
+    :math:`\frac{m}{\gamma} \ll \delta t`. Use `Langevin` if your
+    system is not overdamped.
 
-    .. rubric:: Example:
+    You can set :math:`\gamma` in two ways:
 
-    .. code-block:: python
+    1. Specify :math:`\alpha` which scales the particle diameter to
+       :math:`\gamma = \alpha d_i`.
+    2. After the method object is created, specify the attribute `gamma`
+       and `gamma_r` for rotational damping or random torque to assign them
+       directly, with independent values for each particle type in the
+       system.
 
-        brownian = hoomd.md.methods.Brownian(filter=hoomd.filter.All(), kT=1.5)
-        simulation.operations.integrator.methods = [brownian]
+    Examples::
+
+        brownian = hoomd.md.methods.Brownian(filter=hoomd.filter.All(), kT=0.2,
+        alpha=1.0)
+        integrator = hoomd.md.Integrator(dt=0.001, methods=[brownian],
+        forces=[lj])
+
+    Examples of using `gamma` and `gamma_r`::
+
+        brownian = hoomd.md.methods.Brownian(filter=hoomd.filter.All(), kT=0.2)
+        brownian.gamma.default = 2.0
+        brownian.gamma_r.default = [1.0, 2.0, 3.0]
 
     Attributes:
         filter (hoomd.filter.filter_like): Subset of particles to apply this
@@ -950,6 +1006,11 @@ class Brownian(Method):
                                                  B=1.0,
                                                  t_start=0,
                                                  t_ramp=1_000_000)
+
+        alpha (float): When set, use :math:`\alpha d_i` for the drag
+            coefficient where :math:`d_i` is particle diameter
+            :math:`[\mathrm{mass} \cdot \mathrm{length}^{-1}
+            \cdot \mathrm{time}^{-1}]`.
 
         gamma (TypeParameter[ ``particle type``, `float` ]): The drag
             coefficient for each particle type
@@ -976,6 +1037,7 @@ class Brownian(Method):
             self,
             filter,
             kT,
+            alpha=None,
             default_gamma=1.0,
             default_gamma_r=(1.0, 1.0, 1.0),
     ):
@@ -984,8 +1046,9 @@ class Brownian(Method):
         param_dict = ParameterDict(
             filter=ParticleFilter,
             kT=Variant,
+            alpha=OnlyTypes(float, allow_none=True),
         )
-        param_dict.update(dict(kT=kT, filter=filter))
+        param_dict.update(dict(kT=kT, alpha=alpha, filter=filter))
 
         # set defaults
         self._param_dict.update(param_dict)

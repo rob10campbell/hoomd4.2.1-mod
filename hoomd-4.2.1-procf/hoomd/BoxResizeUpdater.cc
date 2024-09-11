@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
-// ########## Modified by PRO-CF //~ [PROCF2023] ##########
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
 
 /*! \file BoxResizeUpdater.cc
     \brief Defines the BoxResizeUpdater class
@@ -30,9 +30,9 @@ BoxResizeUpdater::BoxResizeUpdater(std::shared_ptr<SystemDefinition> sysdef,
                                    std::shared_ptr<BoxDim> box1,
                                    std::shared_ptr<BoxDim> box2,
                                    std::shared_ptr<Variant> variant,
-                                   std::shared_ptr<ParticleGroup> group,
-                                   Scalar SR) //~ add shear rate [PROCF2023]
-    : Updater(sysdef, trigger), m_box1(box1), m_box2(box2), m_variant(variant), m_group(group), m_SR(SR) //~ add SR [PROCF2023]
+                                   std::shared_ptr<Variant> vinf, //~ add vinf [RHEOINF]
+                                   std::shared_ptr<ParticleGroup> group)
+    : Updater(sysdef, trigger), m_box1(box1), m_box2(box2), m_variant(variant), m_vinf(vinf), m_group(group) //~ add vinf [RHEOINF]
     {
     assert(m_pdata);
     assert(m_variant);
@@ -66,18 +66,6 @@ void BoxResizeUpdater::setBox2(std::shared_ptr<BoxDim> box2)
     {
     m_box2 = box2;
     }
-
-//~ add shear rate [PROCF2023]
-void BoxResizeUpdater::setSR(Scalar SR)
-    {
-    m_SR = SR;
-    }
-
-Scalar BoxResizeUpdater::getSR()
-    {
-    return m_SR;
-    }
-//~
 
 /// Get the current box based on the timestep
 BoxDim BoxResizeUpdater::getCurrentBox(uint64_t timestep)
@@ -121,6 +109,11 @@ void BoxResizeUpdater::update(uint64_t timestep)
     // check if the current box size is the same
     BoxDim cur_box = m_pdata->getGlobalBox();
 
+    //~ check if the current velocity is the same [RHEOINF]
+    Scalar cur_vel = (*m_vinf)(timestep);
+    //std::cout << "boxresize " << cur_vel << std::endl;
+    //~
+
     // only change the box if there is a change in the box dimensions
     if (new_box != cur_box)
         {
@@ -129,7 +122,7 @@ void BoxResizeUpdater::update(uint64_t timestep)
 
         // scale the particle positions (if we have been asked to)
         // move the particles to be inside the new box
-        scaleAndWrapParticles(cur_box, new_box);
+        scaleAndWrapParticles(cur_box, new_box, cur_vel); //~ add velocity [RHEOINF]
 
         // scale the origin
         Scalar3 old_origin = m_pdata->getOrigin();
@@ -140,19 +133,18 @@ void BoxResizeUpdater::update(uint64_t timestep)
     }
 
 /// Scale particles to the new box and wrap any others back into the box
-void BoxResizeUpdater::scaleAndWrapParticles(const BoxDim& cur_box, const BoxDim& new_box)
+void BoxResizeUpdater::scaleAndWrapParticles(const BoxDim& cur_box, const BoxDim& new_box, Scalar cur_vel) //~ add velocity [RHEOINF]
     {
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(),
                                access_location::host,
                                access_mode::readwrite);
-    //~ access velocity for correcting particles that cross the y-boundary [PROCF2023]
+    //~ scale the velocity
     ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
-                               access_location::host,
-                               access_mode::readwrite);
+                         access_location::host,
+                         access_mode::readwrite);
     //~
 
-
-    //~ turn off automatic scaling [PROCF2023]
+    //~ remove auto scaling/wrapping [RHEOINF]
     /*for (unsigned int group_idx = 0; group_idx < m_group->getNumMembers(); group_idx++)
         {
         unsigned int j = m_group->getMemberIndex(group_idx);
@@ -181,10 +173,11 @@ void BoxResizeUpdater::scaleAndWrapParticles(const BoxDim& cur_box, const BoxDim
         {
         // need to update the image if we move particles from one side
         // of the box to the other
-        int img0 = h_image.data[i].y; //~ get old y-velocity [PROCF2023]
+        //~ and update velocity when particles are wrapped in Y-direction [RHEOINF]
+        int img0 = h_image.data[i].y; //~ get y-image for velocity scaling [RHEOINF]
         local_box.wrap(h_pos.data[i], h_image.data[i]);
-        img0 -= h_image.data[i].y; //~ subtract new y-velocity [PROCF2023]
-        h_vel.data[i].x += (img0 * m_SR); //~ add shear rate [PROCF2023]
+        img0 -= h_image.data[i].y; //~ use current data to modify image [RHEOINF]
+        h_vel.data[i].x += (img0 * cur_vel); //~ change velocity when particles are wrapped [RHEOINF]
 
         }
     }
@@ -201,12 +194,13 @@ void export_BoxResizeUpdater(pybind11::module& m)
                             std::shared_ptr<BoxDim>,
                             std::shared_ptr<BoxDim>,
                             std::shared_ptr<Variant>,
-                            std::shared_ptr<ParticleGroup>,
-                            Scalar>()) //~ add Scalar for SR [PROCF2023]
+                            std::shared_ptr<Variant>, //~ add vinf [RHEOINF]
+                            std::shared_ptr<ParticleGroup>>()
+                            ) 
         .def_property("box1", &BoxResizeUpdater::getBox1, &BoxResizeUpdater::setBox1)
         .def_property("box2", &BoxResizeUpdater::getBox2, &BoxResizeUpdater::setBox2)
         .def_property("variant", &BoxResizeUpdater::getVariant, &BoxResizeUpdater::setVariant)
-        .def_property("SR", &BoxResizeUpdater::getSR, &BoxResizeUpdater::setSR) //~ add shear rate [PROCF2023]
+        .def_property("vinf", &BoxResizeUpdater::getVinf, &BoxResizeUpdater::setVinf) //~ add vinf [RHEOINF]
         .def_property_readonly("filter",
                                [](const std::shared_ptr<BoxResizeUpdater> method)
                                { return method->getGroup()->getFilter(); })

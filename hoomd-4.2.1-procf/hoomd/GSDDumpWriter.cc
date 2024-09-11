@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #include "GSDDumpWriter.h"
 #include "Filesystem.h"
 #include "GSD.h"
@@ -18,13 +20,15 @@
 #include <sstream>
 #include <stdexcept>
 #include <string.h>
-//Paniz
+
+//~ add to write angle map [RHEOINF]
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include <math.h>
 #include <iostream>
 #include <memory>
+//~
 
 using namespace std;
 using namespace hoomd::detail;
@@ -780,7 +784,8 @@ void GSDDumpWriter::writeTopology(BondData::Snapshot& bond,
                                  (void*)&bond.groups[0]);
         GSDUtils::checkError(retval, m_fname);
         }
-     // Save the angle_map Paniz
+
+    //~ Save the angle_map [RHEOINF]
     
     /*std::ofstream outFile("angle_map_gsd.bin", std::ios::out | std::ios::binary);
     if (!outFile)
@@ -801,7 +806,8 @@ void GSDDumpWriter::writeTopology(BondData::Snapshot& bond,
     outFile.close();
     std::cout << "written" << std::endl;*/
     //std::cout<<hoomd::AngleMap::angle_map_temp2[0]<<std::endl;
-    
+
+    //~
 
     if (angle.size > 0)
         {

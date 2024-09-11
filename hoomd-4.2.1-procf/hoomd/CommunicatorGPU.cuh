@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 /*! \file CommunicatorGPU.cuh
     \brief Defines the GPU functions of the communication algorithms
 */
@@ -336,6 +338,8 @@ void gpu_exchange_ghosts_copy_netvirial_buf(unsigned int n_recv,
                                             const Scalar* d_netvirial_recvbuf,
                                             Scalar* d_netvirial,
                                             unsigned int pitch_out);
+
+//~ multi-body neighbors [RHEOINF]
 void gpu_exchange_ghosts_pack_particlenlist(unsigned int n_out,
                                         const uint2* d_ghost_idx_adj,
                                         const Scalar* d_particlenlist,
@@ -346,6 +350,8 @@ void gpu_exchange_ghosts_copy_particlenlist_buf(unsigned int n_recv,
                                             const Scalar* d_particlenlist_recvbuf,
                                             Scalar* d_particlenlist,
                                             unsigned int pitch_out);
+//~
+
     }  // end namespace hoomd
 
 #endif // ENABLE_MPI

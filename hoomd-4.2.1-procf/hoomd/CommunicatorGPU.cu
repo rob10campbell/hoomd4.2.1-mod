@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 /*! \file CommunicatorGPU.cu
     \brief Implementation of communication algorithms on the GPU
 */
@@ -1081,6 +1083,7 @@ void gpu_exchange_ghosts_pack_netvirial(unsigned int n_out,
                        pitch_in);
     }
 
+//~ multi-body neighbors [RHEOINF]
 __global__ void gpu_pack_particlenlist_kernel(unsigned int n_out,
                                           const uint2* d_ghost_idx_adj,
                                           const Scalar* in,
@@ -1137,6 +1140,7 @@ void gpu_exchange_ghosts_pack_particlenlist(unsigned int n_out,
                        d_particlenlist_sendbuf,
                        pitch_in);
     }
+//~
 
 template<class members_t, class ranks_t, class group_element_t>
 __global__ void gpu_group_pack_kernel(unsigned int n_out,
@@ -1377,6 +1381,7 @@ void gpu_exchange_ghosts_copy_netvirial_buf(unsigned int n_recv,
                        pitch_out);
     }
 
+//~ multi-body neighbors [RHEOINF]
 __global__ void gpu_unpack_particlenlist_kernel(unsigned int n_in,
                                             const Scalar* in,
                                             Scalar* out,
@@ -1429,7 +1434,7 @@ void gpu_exchange_ghosts_copy_particlenlist_buf(unsigned int n_recv,
                        d_particlenlistl,
                        pitch_out);
     }
-
+//~
 
 template<class members_t, class ranks_t, class group_element_t>
 __global__ void gpu_unpack_groups_kernel(unsigned int nrecv,
