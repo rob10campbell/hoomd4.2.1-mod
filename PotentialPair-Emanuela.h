@@ -378,7 +378,7 @@ template<class evaluator> class PotentialPair : public ForceCompute
 */
 template<class evaluator>
 PotentialPair<evaluator>::PotentialPair(std::shared_ptr<SystemDefinition> sysdef,
-                                        std::shared_ptr<NeighborList> nlist, Scalar K) //~ add K [RHEOINF]
+                                        std::shared_ptr<NeighborList> nlist, Scalar K), //~ add K [RHEOINF]
     : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift), m_K(K) //~ add K [RHEOINF]
       m_typpair_idx(m_pdata->getNTypes())
     {
