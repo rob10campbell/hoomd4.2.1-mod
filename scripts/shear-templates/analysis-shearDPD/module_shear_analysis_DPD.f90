@@ -44,9 +44,9 @@ do i=0,nparticles-1
     k = nlayerY -1
   endif
   vel_x = vel(i,0) - vel_bin(k)
-  pxx = pxx + mass(i) * (vel_x * vel_x - vel(i,0)*vel(i,0))
-  pxy = pxy + mass(i) * (vel_x * vel(i,1) - vel(i,0)*vel(i,1))
-  pxz = pxz + mass(i) * (vel_x * vel(i,2) - vel(i,0)*vel(i,2))
+  pxx = pxx + mass(i) * (vel_x * vel_x)
+  pxy = pxy + mass(i) * (vel_x * vel(i,1))
+  pxz = pxz + mass(i) * (vel_x * vel(i,2))
 enddo
 
 ! recalculate temperature

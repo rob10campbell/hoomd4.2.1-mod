@@ -7,6 +7,7 @@
 ##       RUN CHECKS ON A SIMULATION section
 """
 ## This code performs the following shear specific analyses: 
+##   - extracts temperature and pressure (the negative of stress) from all frames of a GSD file 
 ##   - calculates:
 ##        * corrected (kinetic) pressure and temperature 
 ##           - tracking only the effect of colloid particles, not solvents
@@ -60,6 +61,46 @@ DPDtime = period*dt_Integration
 # create "data" subfolder if it doesn't exit
 if os.path.exists(data_outpath) == False:
   os.mkdir(data_outpath)
+
+#######
+## extract thermodynamic properties from GSD for all frames
+"""
+# get temperature and pressure (AKA negative of stress), including all virial components
+"""
+def extract_properties_py(filename):
+  # open the simulation GSD file as "traj" (trajectory)
+  traj = gsd.hoomd.open(filename, 'r')
+  # get the number of frames
+  nframes = len(traj)
+
+  # create a file to save the thermodynamic properties
+  f=open(data_outpath+'/gsd-properties.txt', 'w')
+  f.write('simframe Virial-Pressure Vr_CONS Vr_DISS Vr_RAND Vr_SQUE Vr_CONT PE kT tps\n')
+
+  # for each frame
+  for i in range(0, nframes):
+    simframe = i
+    # extract the total "force virial contribution" of the pressure tensor
+    Pr=float(traj[i].log['md/compute/ThermodynamicQuantities/pressure_tensor'][1])
+    # extract the decomposed virial compoenents of the pressure tensor
+    Vr=np.asarray(traj[i].log['md/compute/ThermodynamicQuantities/virial_ind_tensor'],dtype=float)
+    # extract the potential energy and scale to kilo-units (1/1000)
+    Pe=float(traj[i].log['md/compute/ThermodynamicQuantities/potential_energy'][0])*0.001
+    # extract the kinetic temperature (kT)
+    KT=float(traj[i].log['md/compute/ThermodynamicQuantities/kinetic_temperature'][0])
+    # extract the transactios per secont (tps) for assessing speed/efficiency of the simulation
+    tps=int(traj[i].log['Simulation/tps'][0])
+
+    # write these values to the output file:
+    # raw values
+    f.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9}\n'.format(simframe, Pr,
+      Vr[0], Vr[1], Vr[2], Vr[3], Vr[4], Pe, KT, tps))
+
+    # rounded values
+    #f.write('%f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %d %0.2f %d\n'%((i+1)*t1, Pr, 
+    #  Vr[0], Vr[1], Vr[2], Vr[3], Vr[4], Pe, KT, tps))
+  print("Data extracted from GSD file")
+#######
 
 #######
 ## corrected (kinetic) pressure and temperature
@@ -203,6 +244,7 @@ def fabric_tensor_py(filename):
 #######
 
 if __name__ == '__main__':
+  extract_properties_py(filename)
   corrected_temperature_py(filename)
   solvent_vel_profile_py(filename)
   non_affinity_py(filename,DPDtime)
