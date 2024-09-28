@@ -323,11 +323,7 @@ class EvaluatorPairDPDThermoDPDMorse
 
         Scalar rinv = fast::rsqrt(rsq);
         // convert to h_ij (surface-surface distance)
-<<<<<<< HEAD
 	Scalar h_ij = (Scalar(1.0) / rinv) - radsum;
-=======
-	Scalar r = (Scalar(1.0) / rinv) - radsum;
->>>>>>> Corrected bond rigidity with shear (#5)
 	//Scalar rcut = fast::sqrt(rcutsq) - radsum;
 	Scalar rcutinv = Scalar(1.0) / rcut;
 	Scalar w_factor = (Scalar(1.0) - h_ij * rcutinv);
@@ -466,29 +462,16 @@ class EvaluatorPairDPDThermoDPDMorse
 	   // if both particles do NOT both have radius = 0 (colloid-colloid)
 	   else
 	      { 
-
-<<<<<<< HEAD
 	      Scalar w_factor = (Scalar(1.0) - h_ij * rcutinv);
               Scalar Exp_factor = fast::exp(-alpha * (h_ij - r0));
 
 	      // if particles overlap
 	      if(h_ij <= Scalar(0.0))
-=======
-	      Scalar w_factor = (Scalar(1.0) - r * rcutinv);
-              Scalar Exp_factor = fast::exp(-alpha * (r - r0));
-
-	      // if particles overlap
-	      if(r <= Scalar(0.0))
->>>>>>> Corrected bond rigidity with shear (#5)
 	         {
 		 // resolve overlap with CONTACT FORCE, if a contact force is provided [RHEOINF]
     		 if (f_contact != 0.0)
                     {
-<<<<<<< HEAD
     	            cont_divr = f_contact * (Scalar(1.0) - h_ij) * pow((Scalar(0.50)*radsum),3) * rinv;
-=======
-    	            cont_divr = f_contact * (Scalar(1.0) - r) * pow((Scalar(0.50)*radsum),3) * rinv;
->>>>>>> Corrected bond rigidity with shear (#5)
     	            }
 	         // if no contact force provided, resolve overlap with other forces [RHEOINF]
 	         else
@@ -496,11 +479,7 @@ class EvaluatorPairDPDThermoDPDMorse
     	            // if D0 is provided, use this to calculate Morse repulsion [RHEOINF]
     	            if (D0 != 0.0)
         	       {
-<<<<<<< HEAD
         	       //Scalar Exp_factor = fast::exp(-alpha * (h_ij - r0));
-=======
-        	       //Scalar Exp_factor = fast::exp(-alpha * (r - r0));
->>>>>>> Corrected bond rigidity with shear (#5)
         	       cons_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
         	       pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
         	       }
@@ -513,11 +492,7 @@ class EvaluatorPairDPDThermoDPDMorse
                        pair_eng = repulse_D0 * Exp_factor * (Exp_factor - Scalar(2.0));
                        // use conservative force
                        //force_divr = A0 * w_factor * rinv;
-<<<<<<< HEAD
                        //pair_eng = A0 * (rcut - h_ij) - Scalar(1.0 / 2.0) * A0 * rcutinv * (rcut * rcut - h_ij * h_ij);
-=======
-                       //pair_eng = A0 * (rcut - r) - Scalar(1.0 / 2.0) * A0 * rcutinv * (rcut * rcut - r * r);
->>>>>>> Corrected bond rigidity with shear (#5)
         	       }
     	            }
 	         }
@@ -580,20 +555,12 @@ class EvaluatorPairDPDThermoDPDMorse
 		 force_divr_cons = force_divr;
 
 	         // if using Contact force
-<<<<<<< HEAD
 	         if(h_ij <= Del_max)
-=======
-	         if(r <= Del_max)
->>>>>>> Corrected bond rigidity with shear (#5)
 		    {
                     if (f_contact != 0.0)
                       {
   		      // Contact force
-<<<<<<< HEAD
 	              cont_divr = f_contact * pow((Scalar(1.0) - h_ij/Del_max), 3) * pow((Scalar(0.50)*radsum),3) * rinv;
-=======
-	              cont_divr = f_contact * pow((Scalar(1.0) - r/Del_max), 3) * pow((Scalar(0.50)*radsum),3) * rinv;
->>>>>>> Corrected bond rigidity with shear (#5)
                       }
 		    }
 
