@@ -671,7 +671,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                     access_location::host,
                                     access_mode::read);
 
-    ArrayHandle<Scalar> h_current_neighbor_list(m_pdata->getParticleNList(),
+    ArrayHandle<Scalar> h_current_neighbor_list( m_pdata->getParticleNList(),
                                                     access_location::host,
                                                     access_mode::readwrite);                        
     assert(h_current_neighbor_list.data);
@@ -679,11 +679,11 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     //std::cout<<"new 2"<<std::endl;
     // Copy the previous neighbor list to a new variable
     int tot_particles = (int)(m_pdata->getN());  
-    std::vector<Scalar> h_previous_neighbor_temp(20 * tot_particles);
+    std::vector<Scalar> h_previous_neighbor_temp(20 * tot_particles );
     std::vector<Scalar> h_previous_neighbor_list;
-    if (m_K != 0.0){
+    if (m_K != 0.0 ){
         //std::cout<<"new 3"<<std::endl;
-        for ( int i = 0; i < tot_particles; i++ ) {
+        for ( int i = 0; i < tot_particles; i++) {
             if(h_current_neighbor_list.data[i] != -2){
                 for (size_t j = 0; j < 20; j++) { // 20 is the count of neighbors used
                     h_previous_neighbor_temp[j * tot_particles + i] = h_current_neighbor_list.data[j * p_neighbor_pitch + i];
@@ -760,7 +760,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     //    //std::cout << shear_rate << std::endl;
     //~
 
-    size_t idx_pi = -1; //~ set the neighbor index for pi [RHEOINF]
+    //size_t idx_pi = -1; //~ set the neighbor index for pi [RHEOINF]
 
     // for each particle
     for (int i = 0; i < (int)m_pdata->getN(); i++)
@@ -793,7 +793,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         unsigned int typei = __scalar_as_int(h_pos.data[i].w);
 
         //~ update many-body neighbors [RHEOINF]
-        if (m_K != 0.0){
+        /* if (m_K != 0.0){
             //find the particle in the previous time step particle neighbor list
             if(typei == 0 ){
                 //bool wasnt_found = true;
@@ -805,7 +805,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     }else{idx_pi = -3;}
                 }
             }
-        }
+        }*/
         //~
 
         // sanity check
@@ -908,7 +908,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                 eval.setCharge(qi, qj);
 
             //~ update multi-body angles [RHEOINF]
-            //S
+            /* //S
             unsigned int tagi = h_tag.data[i];
             unsigned int tagj = h_tag.data[j];
 
@@ -980,7 +980,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
 
                     }
                 }
-            }
+            }*/
             //F
             //~
 
@@ -1045,11 +1045,12 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     h_force.data[mem_idx].w += pair_eng * Scalar(0.5);
 
                     //~ print pairwise forces [RHEOINF]
-                    if ((timestep-100000) % 10000 == 0){
-                    Scalar fj_mag = std::sqrt(h_force.data[mem_idx].x * h_force.data[mem_idx].x 
-                    + h_force.data[mem_idx].y * h_force.data[mem_idx].y + h_force.data[mem_idx].z * h_force.data[mem_idx].z);
-                    std::cout << h_force.data[mem_idx].w << "," << fj_mag << "," << (rsq-Scalar(2.0)) << std::endl;
-                    }
+                    //if ((timestep-100000) % 10000 == 0){
+                    //Scalar fj_mag = std::sqrt(h_force.data[mem_idx].x * h_force.data[mem_idx].x 
+                    //+ h_force.data[mem_idx].y * h_force.data[mem_idx].y + h_force.data[mem_idx].z * h_force.data[mem_idx].z);
+                    //std::cout << "PAIRWISE FORCE" << std::endl;
+                    //std::cout << "pe=" << h_force.data[mem_idx].w << ", fj=" << fj_mag << ", h_ij=" << (rsq-Scalar(2.0)) << std::endl;
+                    //}
                     //~
 
                     if (compute_virial)
@@ -1090,7 +1091,7 @@ if (m_K != 0.0){
     #ifdef ENABLE_MPI
 
     	LTIME->updatebondtime(timestep); //~ get timestep from Liftime file [RHEOINF]
-
+}
     #endif
     for (int i = 0; i < (int)m_pdata->getN(); i++){
         unsigned int typei = __scalar_as_int(h_pos.data[i].w);
@@ -1156,16 +1157,16 @@ if (m_K != 0.0){
                             if (tagb != taga  && taga != tagi && tagb != tagi && typea==0 && typeb==0)
                             {
                                 // Calculate angle index
-                                unsigned int vari = tagi ;
-                                unsigned int vara = taga ;
-                                unsigned int varb = tagb ;
+                                //unsigned int vari = tagi ;
+                                //unsigned int vara = taga ;
+                                //unsigned int varb = tagb ;
 
-                                unsigned int var1 = vari;
-                                unsigned int var3 = std::max({vara, varb});
-                                unsigned int var2 = std::min({vara, varb});
+                                //unsigned int var1 = vari;
+                                //unsigned int var3 = std::max({vara, varb});
+                                //unsigned int var2 = std::min({vara, varb});
 
-                                unsigned int n = LTIME->num_solvent; 
-                                unsigned int current_angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+                                //unsigned int n = LTIME->num_solvent; 
+                                //unsigned int current_angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
 
                                 Scalar3 ria = make_scalar3(pa.x - pi.x, pa.y - pi.y, pa.z - pi.z);
                                 Scalar3 rib = make_scalar3(pb.x - pi.x, pb.y - pi.y, pb.z - pi.z);
@@ -1220,9 +1221,18 @@ if (m_K != 0.0){
                                                             a22 * ria.y + a12 * rib.y,
                                                             a22 * ria.z + a12 * rib.z);
 
-
                                 // compute the energy, for each atom in the angle for Emanuela equation
                                 Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+
+                                //~ print pairwise angular forces [RHEOINF]
+                                //if ((timestep-100000) % 10000 == 0){
+                                Scalar fia_mag = std::sqrt(fia.x * fia.x + fia.y * fia.y + fia.z * fia.z);
+                                Scalar fib_mag = std::sqrt(fib.x * fib.x + fib.y * fib.y + fib.z * fib.z);
+                                std::cout << "ANGULAR REPULSION FORCE" << std::endl;
+                                std::cout << "fia.x=" << fia.x << std::endl;
+                                std::cout << "pe=" << angle_eng << ", fia=" << fia_mag << ", fib=" << fib_mag << std::endl;
+                                //}
+                                //~
 
                                 Scalar angle_virial[6];
                                 angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
