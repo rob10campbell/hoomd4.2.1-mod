@@ -82,7 +82,7 @@ NOTE: we do not remove the streamline velocity from the kinetic component of the
 		* [x] IntegratorTwoStep.h : **flow velocity (vinf), shear rate (SR)**
 		* [x] integrate.py : **flow velocity (vinf) and default to 0**
 		* [x] PotentialPair.h : **virialxyi_ind**
-		* [x] PotentialPairDPDThermo.h **shear rate (SR), virialxyi_ind**
+		* [x] PotentialPairDPDThermo.h **shear rate (SR)**
                 * [x] `test/`
 			* [x] test_communication.cc : **dummy flow velocity (vinf)**
 			* [x] test_fire_energy_minimizer.cc : **dummy flow velocity (vinf)**
