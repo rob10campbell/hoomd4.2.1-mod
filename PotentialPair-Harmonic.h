@@ -1038,7 +1038,8 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                                 is_idx++;
                             }
 
-                            if (new_connection && idx_pi != -3)
+                            #if (new_connection && idx_pi != -3)
+                            if (new_connection && idx_pi != long unsigned int -3)
                             {   
                                 // Calculate angle between j and all previous neighbors of i
 

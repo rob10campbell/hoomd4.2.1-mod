@@ -73,7 +73,8 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
     # external plugin.
     _ext_module = _md
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', bond_calc=False, K=0.0): ##~ default bond_calc to False, add angular rigidity K [RHEOINF]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', 
+                 bond_calc=False, K=0.0, w=0.0, theta_bar=0.0): ##~ default bond_calc to False, add angular rigidity params [RHEOINF]
         super().__init__()
         tp_r_cut = TypeParameter(
             'r_cut', 'particle_types',
@@ -97,6 +98,8 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         self.nlist = nlist
         self._bond_calc = bond_calc ##~ Store bond_calc value as an instance variable [RHEOINF]
         self._K = K ##~ Store angular rigidity K values as instance variable [RHEOINF]
+        self._w = w ##~ Store angular rigidity w values as instance variable [RHEOINF]
+        self._theta_bar = theta_bar ##~ Store angular rigidity theta_bar values as instance variable [RHEOINF]
 
     ##~ add a property to access _bond_calc instance variable [RHEOINF]
     @property
@@ -104,10 +107,16 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
         return self._bond_calc
     ##~
 
-    ##~ add a property to access _K [RHEOINF]
+    ##~ add a property to access angular rigidity params [RHEOINF]
     @property
     def K(self):
         return self._K
+    @property
+    def w(self):
+        return self._w
+    @property
+    def theta_bar(self):
+        return self._theta_bar
     ##~
 
     def compute_energy(self, tags1, tags2):
@@ -166,9 +175,9 @@ class Pair(force.Force, metaclass=PairMeta): ##~ add abstract property for bond_
 
         ##~ use constructor with bond_calc ONLY if using PotentialPairDPDThermo.h [RHEOINF]
         if "PotentialPairDPDThermo" in self._cpp_class_name:
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self._K)
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._bond_calc, self._K, self._w, self._theta_bar)
         else: 
-            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._K)
+            self._cpp_obj = cls(self._simulation.state._cpp_sys_def, self.nlist._cpp_obj, self._K, self._w, self._theta_bar)
         ##~ 
         #self._cpp_obj = cls(self._simulation.state._cpp_sys_def,
         #                    self.nlist._cpp_obj) ##~ comment out [RHEOINF]
@@ -700,7 +709,7 @@ class Morse(Pair):
     _cpp_class_name = "PotentialPairMorse"
     _default_scaled_D0 = False ##~ add scaled_D0 [RHEOINF]
 
-    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None, K=0.0): ##~ add scaled_D0 and K [RHEOINF]
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none', scaled_D0=None, K=0.0, w=0.0, theta_bar=0.0): ##~ add scaled_D0 and angular rigidity params [RHEOINF]
         super().__init__(nlist, default_r_cut, default_r_on, mode)
         ##~ add scaled_D0 [RHEOINF]
         if scaled_D0 is None:
@@ -711,8 +720,10 @@ class Morse(Pair):
             TypeParameterDict(D0=float, alpha=float, r0=float, f_contact=float, scaled_D0=bool(scaled_D0), len_keys=2)) ##~ add f_contact and scaled_D0 [RHEOINF]
         self._add_typeparam(params)
         self._K = K ##~ add K [RHEOINF]
+        self._w = w ##~ add K [RHEOINF]
+        self._theta_bar = theta_bar ##~ add K [RHEOINF]
 
-    ##~ add angular rigidity K [RHEOINF]
+    ##~ add angular rigidity params [RHEOINF]
     @property
     def K(self):
         """
@@ -726,6 +737,34 @@ class Morse(Pair):
         Setter method for the K property.
         """
         self._K = value
+
+    @property
+    def w(self):
+        """
+        Getter method for the w property.
+        """
+        return self._w
+
+    @w.setter
+    def w(self, value):
+        """
+        Setter method for the w property.
+        """
+        self._w = value
+
+    @property
+    def theta_bar(self):
+        """
+        Getter method for the theta_bar property.
+        """
+        return self._theta_bar
+
+    @theta_bar.setter
+    def theta_bar(self, value):
+        """
+        Setter method for the theta_bar property.
+        """
+        self._theta_bar = value
     ##~
 
 class DPD(Pair):
@@ -2004,7 +2043,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
     _default_a2 = 0.0
     _default_sys_kT = 0.1
 
-    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, sys_kT=None, K=0.0):
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, sys_kT=None, 
+                 K=0.0, w=0.0, theta_bar=0.0): ##~ add angular rigigity params [RHEOINF]
         super().__init__(nlist=nlist,
                          default_r_cut=default_r_cut,
                          default_r_on=0,
@@ -2021,6 +2061,8 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         ##~
         self._bond_calc = bond_calc
         self._K = K ##~ add K [RHEOINF]
+        self._w = w ##~ add 2 [RHEOINF]
+        self._theta_bar = theta_bar ##~ add theta_bar [RHEOINF]
         params = TypeParameter(
             'params', 'particle_types',
             TypeParameterDict(A0=float,
@@ -2080,6 +2122,34 @@ Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
         Setter method for the K property.
         """
         self._K = value
+
+    @property
+    def w(self):
+        """
+        Getter method for the w property.
+        """
+        return self._w
+
+    @w.setter
+    def w(self, value):
+        """
+        Setter method for the w property.
+        """
+        self._w = value
+
+    @property
+    def theta_bar(self):
+        """
+        Getter method for the theta_bar property.
+        """
+        return self._theta_bar
+
+    @theta_bar.setter
+    def theta_bar(self, value):
+        """
+        Setter method for the theta_bar property.
+        """
+        self._theta_bar = value
 ##~
 
 
