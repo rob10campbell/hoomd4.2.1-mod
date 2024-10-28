@@ -1100,20 +1100,21 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
 
 
                                 // Calculate force magnitude of the Harmonic Equation
-                                Scalar vab = -1.0 * tk * current_sin_theta;
+                                //Scalar vab = -1.0 * tk * current_sin_theta;
 
                                 // Calculate force magnitude of the Emanuella Equation
                                 Scalar B = m_K;
-                                Scalar w = 0.3;
-                                Scalar eq_theta = 120.0 * M_PI / 180.0;
+                                Scalar w = m_w; //0.3;
+                                Scalar eq_theta = m_theta_bar * M_PI / 180.0; //120.0 * M_PI / 180.0;
                                 //Scalar eq_theta = angle_map_temp2[current_angle_index];
 
-                                Scalar Aia = pow(ria_mag/2, -10) * pow(1 - pow(ria_mag / 4, 10), 2);
-                                Scalar Aib = pow(rib_mag/2, -10) * pow(1 - pow(rib_mag / 4, 10), 2);
+                                //Scalar Aia = pow(ria_mag/2, -10) * pow(1 - pow(ria_mag / 4, 10), 2);
+                                //Scalar Aib = pow(rib_mag/2, -10) * pow(1 - pow(rib_mag / 4, 10), 2);
 
                                 Scalar exp_theta = exp(-pow((current_cos_theta - cos(eq_theta)) / w, 2));
 
-                                Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
+                                //Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
+                                Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * exp_theta * (current_cos_theta - cos(eq_theta));
 
 
                                 // Calculate force magnitude of the Harmonic Equation
@@ -1131,7 +1132,8 @@ template<class evaluator> void PotentialPairDPDThermo<evaluator>::computeForces(
                                                             a22 * ria.z + a12 * rib.z);
 
                                 // compute the energy, for each atom in the angle for Emanuela equation
-                                Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+                                //Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+                                Scalar angle_eng = (B * exp_theta)/3;
 
                                 // compute the energy, for each atom in the angle
                                 //Scalar angle_eng = (tk * dtg  * Scalar(1.0 / 6.0);

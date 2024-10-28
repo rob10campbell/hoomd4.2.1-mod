@@ -102,7 +102,8 @@ template<class evaluator> class PotentialPair : public ForceCompute
     typedef typename evaluator::param_type param_type;
 
     //! Construct the pair potential
-    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, Scalar K=0.0); //~ add K [RHEOINF]
+    PotentialPair(std::shared_ptr<SystemDefinition> sysdef, std::shared_ptr<NeighborList> nlist, 
+                                                    Scalar K=0.0, Scalar w=0.0, Scalar theta_bar=0.0); //~ add angular rigidity params [RHEOINF]
     //! Destructor
     virtual ~PotentialPair();
 
@@ -196,12 +197,24 @@ template<class evaluator> class PotentialPair : public ForceCompute
         return m_tail_correction_enabled;
         }
 
-    //~! Set angular rigidity K value [RHEOINF]
+    //~! Set angular rigidity params value [RHEOINF]
     void setK(Scalar K) {
         m_K = K;
     }
     Scalar getK() const {
         return m_K;
+    }
+    void setW(Scalar w) {
+        m_w = w;
+    }
+    Scalar getW() const {
+        return m_w;
+    }
+    void setTheta(Scalar theta_bar) {
+        m_theta_bar = theta_bar;
+    }
+    Scalar getTheta() const {
+        return m_theta_bar;
     }
     //~
 
@@ -252,6 +265,8 @@ template<class evaluator> class PotentialPair : public ForceCompute
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
     energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
     Scalar m_K;                   //!< angular rigidity K value [RHEOINF]
+    Scalar m_w;                   //!< angular rigidity w value [RHEOINF]
+    Scalar m_theta_bar;           //!< angular rigidity reference angle [RHEOINF]
     Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
     GlobalArray<Scalar> m_rcutsq; //!< Cutoff radius squared per type pair
     GlobalArray<Scalar> m_ronsq;  //!< ron squared per type pair
@@ -378,8 +393,10 @@ template<class evaluator> class PotentialPair : public ForceCompute
 */
 template<class evaluator>
 PotentialPair<evaluator>::PotentialPair(std::shared_ptr<SystemDefinition> sysdef,
-                                        std::shared_ptr<NeighborList> nlist, Scalar K) //~ add K [RHEOINF]
-    : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift), m_K(K), //~ add K [RHEOINF]
+                                        std::shared_ptr<NeighborList> nlist, 
+                                        Scalar K, Scalar w, Scalar theta_bar) //~ add angular rigidity params [RHEOINF]
+    : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift), 
+      m_K(K), m_w(w), m_theta_bar(theta_bar), //~ add angular rigidity params [RHEOINF]
       m_typpair_idx(m_pdata->getNTypes())
     {
     m_exec_conf->msg->notice(5) << "Constructing PotentialPair<" << evaluator::getName() << ">"
@@ -1045,11 +1062,13 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
                     h_force.data[mem_idx].w += pair_eng * Scalar(0.5);
 
                     //~ print pairwise forces [RHEOINF]
-                    if ((timestep-100000) % 10000 == 0){
-                    Scalar fj_mag = std::sqrt(h_force.data[mem_idx].x * h_force.data[mem_idx].x 
-                    + h_force.data[mem_idx].y * h_force.data[mem_idx].y + h_force.data[mem_idx].z * h_force.data[mem_idx].z);
-                    std::cout << h_force.data[mem_idx].w << "," << fj_mag << "," << (rsq-Scalar(2.0)) << std::endl;
-                    }
+                    //if (m_K == 0.0){
+                    //if ((timestep-1000000) % 100000 == 0){
+                    //Scalar fj_mag = std::sqrt(h_force.data[mem_idx].x * h_force.data[mem_idx].x 
+                    //+ h_force.data[mem_idx].y * h_force.data[mem_idx].y + h_force.data[mem_idx].z * h_force.data[mem_idx].z);
+                    //std::cout << "PAIRWISE FORCE" << std::endl;
+                    //std::cout << "tag=" << h_tag.data[mem_idx] << ", pe=" << h_force.data[mem_idx].w << ", fj=" << fj_mag << ", h_ij=" << (std::sqrt(rsq)-Scalar(2.0)) << std::endl;
+                    //}}
                     //~
 
                     if (compute_virial)
@@ -1195,16 +1214,17 @@ if (m_K != 0.0){
                                 current_sin_theta = 1.0 / current_sin_theta;
 
                                 // Calculate force magnitude for Emanuela equation
-                                Scalar B = 67.27;
-                                Scalar w = 0.3;
-                                Scalar eq_theta = 65.0 * M_PI / 180.0;
+                                Scalar B = m_K; //67.27;
+                                Scalar w = m_w; //0.3;
+                                Scalar eq_theta = m_theta_bar * M_PI / 180; //65.0 * M_PI / 180.0;
 
-                                Scalar Aia = pow(ria_mag/2, -10) * pow(1 - pow(ria_mag / 4, 10), 2);
-                                Scalar Aib = pow(rib_mag/2, -10) * pow(1 - pow(rib_mag / 4, 10), 2);
+                                //Scalar Aia = pow(ria_mag/2, -10) * pow(1 - pow(ria_mag / 4, 10), 2);
+                                //Scalar Aib = pow(rib_mag/2, -10) * pow(1 - pow(rib_mag / 4, 10), 2);
 
                                 Scalar exp_theta = exp(-pow((current_cos_theta - cos(eq_theta)) / w, 2));
 
-                                Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
+                                //Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
+                                Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * exp_theta * (current_cos_theta - cos(eq_theta));
 
 
                                 Scalar a11 = vab * current_cos_theta / (ria_mag * ria_mag);
@@ -1221,8 +1241,17 @@ if (m_K != 0.0){
                                                             a22 * ria.z + a12 * rib.z);
 
 
+                                // print angle forces
+                                /*if ((timestep-1000000) % 100000 == 0){
+                                Scalar fia_mag = std::sqrt(fia.x * fia.x + fia.y * fia.y + fia.z * fia.z);
+                                Scalar fib_mag = std::sqrt(fib.x * fib.x + fib.y * fib.y + fib.z * fib.z);
+                                std::cout << "ANGLE FORCE" << std::endl;
+                                std::cout << "fia=" << fia_mag << ", fib=" << fib_mag << std::endl;
+                                }*/
+
                                 // compute the energy, for each atom in the angle for Emanuela equation
-                                Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+                                //Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+                                Scalar angle_eng = (B * exp_theta)/3;
 
                                 Scalar angle_virial[6];
                                 angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
@@ -1242,6 +1271,14 @@ if (m_K != 0.0){
                                     h_force.data[a].w += angle_eng;
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * m_virial_pitch + a] += angle_virial[l]; 
+                                // print total forces
+                                //if ((timestep-1000000) % 100000 == 0){
+                                //Scalar fa_mag = std::sqrt(h_force.data[a].x * h_force.data[a].x 
+                                //+ h_force.data[a].y * h_force.data[a].y + h_force.data[a].z * h_force.data[a].z);
+                                //std::cout << "taga=" << taga << ", pea=" << h_force.data[a].w << ", fa=" << fa_mag << ", h_ia=" << (ria_mag-Scalar(2.0)) << ", theta_a=" << std::acos(current_cos_theta) << std::endl;
+                                //std::cout << "---" << std::endl;
+                                //}
+                                //
                                 }
 
                                 if (i < (int)m_pdata->getN()) {
@@ -1251,6 +1288,14 @@ if (m_K != 0.0){
                                     h_force.data[i].w += angle_eng;
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * m_virial_pitch + i] += angle_virial[l]; 
+                                // print total forces
+                                //if ((timestep-100000) % 10000 == 0){
+                                //Scalar fi_mag = std::sqrt(h_force.data[i].x * h_force.data[i].x 
+                                //+ h_force.data[i].y * h_force.data[i].y + h_force.data[i].z * h_force.data[i].z);
+                                //std::cout << "tagi=" << tagi << ", pei=" << h_force.data[a].w << ", fi=" << fi_mag << ", h_ia=" << (ria_mag-Scalar(2.0)) << ", h_ib=" << (rib_mag-Scalar(2.0)) << ", theta_i=" << std::acos(current_cos_theta) << std::endl;
+                                //std::cout << "---" << std::endl;
+                                //}
+                                //
                                 }
 
                                 if (b < (int)(m_pdata->getN()+ m_pdata->getNGhosts())) {
@@ -1260,6 +1305,14 @@ if (m_K != 0.0){
                                     h_force.data[b].w += angle_eng;
                                     for (int l = 0; l < 6; l++)
                                         h_virial.data[l * m_virial_pitch + b] += angle_virial[l]; 
+                                // print total forces
+                                //if ((timestep-100000) % 10000 == 0){
+                                //Scalar fb_mag = std::sqrt(h_force.data[b].x * h_force.data[b].x 
+                                //+ h_force.data[b].y * h_force.data[b].y + h_force.data[b].z * h_force.data[b].z);
+                                //std::cout << "tagb=" << tagb << ", peb=" << h_force.data[b].w << ", fb=" << fb_mag << ", h_ib=" << (rib_mag-Scalar(2.0)) << ", theta_b=" << std::acos(current_cos_theta) << std::endl;
+                                //std::cout << "---" << std::endl;
+                                //
+                                //}
                                 }
 
                             }
@@ -1545,7 +1598,7 @@ template<class T> void export_PotentialPair(pybind11::module& m, const std::stri
     pybind11::class_<PotentialPair<T>, ForceCompute, std::shared_ptr<PotentialPair<T>>>
         potentialpair(m, name.c_str());
     potentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, Scalar>()) //~ add Scalar for K [RHEOINF]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, Scalar, Scalar, Scalar>()) //~ add Scalar for angular repulsion params [RHEOINF]
         .def("setParams", &PotentialPair<T>::setParamsPython)
         .def("getParams", &PotentialPair<T>::getParams)
         .def("setRCut", &PotentialPair<T>::setRCutPython)
@@ -1559,6 +1612,8 @@ template<class T> void export_PotentialPair(pybind11::module& m, const std::stri
                       &PotentialPair<T>::getTailCorrectionEnabled,
                       &PotentialPair<T>::setTailCorrectionEnabled)
         .def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK) //~ add K [RHEOINF]
+        .def_property("w", &PotentialPair<T>::getW, &PotentialPair<T>::setW) //~ add w [RHEOINF]
+        .def_property("theta_bar", &PotentialPair<T>::getTheta, &PotentialPair<T>::setTheta) //~ add theta_bar [RHEOINF]
         .def("computeEnergyBetweenSets", &PotentialPair<T>::computeEnergyBetweenSetsPythonList);
     }
 

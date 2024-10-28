@@ -1214,16 +1214,29 @@ if (m_K != 0.0){
                                 current_sin_theta = 1.0 / current_sin_theta;
 
                                 // Calculate force magnitude for Emanuela equation
+                                /*
                                 Scalar B = m_K; //67.27;
                                 Scalar w = m_w; //0.3;
                                 Scalar eq_theta = m_theta_bar * M_PI / 180; //65.0 * M_PI / 180.0;
 
-                                Scalar Aia = pow(ria_mag/2, -10) * pow(1 - pow(ria_mag / 4, 10), 2);
-                                Scalar Aib = pow(rib_mag/2, -10) * pow(1 - pow(rib_mag / 4, 10), 2);
+                                //Scalar Aia = pow(ria_mag/2, -10) * pow(1 - pow(ria_mag / 4, 10), 2);
+                                //Scalar Aib = pow(rib_mag/2, -10) * pow(1 - pow(rib_mag / 4, 10), 2);
 
                                 Scalar exp_theta = exp(-pow((current_cos_theta - cos(eq_theta)) / w, 2));
 
-                                Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
+                                //Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * Aia * Aib * exp_theta * (current_cos_theta - cos(eq_theta));
+                                Scalar vab = (-2 * B * current_sin_theta / pow(w, 2)) * exp_theta * (current_cos_theta - cos(eq_theta));
+                                */
+
+                                // Calculate force magnitude for Harmonic equation
+                                ///*
+                                Scalar eq_theta = m_theta_bar * M_PI / 180; //65.0 * M_PI / 180.0;
+                                Scalar dth = acos(current_cos_theta) - eq_theta;
+                                Scalar tk = m_K * dth;
+
+                                //Calculate force magnitude for K(thera - theta_0)^2
+                                Scalar vab = -1.0 * tk * current_sin_theta;
+                                //*/
 
 
                                 Scalar a11 = vab * current_cos_theta / (ria_mag * ria_mag);
@@ -1249,7 +1262,16 @@ if (m_K != 0.0){
                                 }*/
 
                                 // compute the energy, for each atom in the angle for Emanuela equation
-                                Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+                                /*
+                                //Scalar angle_eng = (B * Aia * Aib * exp_theta)/3;
+                                Scalar angle_eng = (B * exp_theta)/3;
+                                */
+
+                                // compute the energy, for each atom in the angle for K(thera - theta_0)^2
+                                ///*
+                                Scalar angle_eng = (tk * dth) * Scalar(1.0 / 6.0);
+                                //*/
+
 
                                 Scalar angle_virial[6];
                                 angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
