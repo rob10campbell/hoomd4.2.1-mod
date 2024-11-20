@@ -2132,6 +2132,7 @@ class MorseRepulse(Pair):
                               kappa_y=float, 
                               r0=float,
                               f_contact=float, 
+                              scaled_D0=bool, 
                               len_keys=2))
         self._add_typeparam(params)
 

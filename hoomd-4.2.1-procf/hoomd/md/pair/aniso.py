@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 r"""Anisotropic pair forces.
 
 Anisotropic pair force classes apply a force, torque, and virial on every
@@ -563,3 +565,19 @@ class ALJ(AnisotropicPair):
         log shape for visualization and storage through the GSD file type.
         """
         return self._return_type_shapes()
+
+##~ add Morse friction potential [RHEOINF]
+class MorseFrix(AnisotropicPair):
+
+    _cpp_class_name = "AnisoPotentialPairMorseFrix"
+
+    def __init__(self, nlist, default_r_cut=None):
+        super().__init__(nlist, default_r_cut, 'none')
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float, alpha=float, kn=float, eta_t=float, mu_t=float, len_keys=2))
+        self._add_typeparam(params)
+        #mu = TypeParameter('mu', 'particle_types',
+        #                   TypeParameterDict((float, float, float), len_keys=1))
+        #self._extend_typeparam((params, mu))
+##~

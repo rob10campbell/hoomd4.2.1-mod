@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #ifndef __ANISO_POTENTIAL_PAIR_H__
 #define __ANISO_POTENTIAL_PAIR_H__
 
@@ -491,11 +493,30 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                                     access_mode::read);
 
     ArrayHandle<Scalar4> h_pos(m_pdata->getPositions(), access_location::host, access_mode::read);
+    //~ add diameter [RHEOINF]
+    ArrayHandle<Scalar> h_diameter(m_pdata->getDiameters(),
+                                   access_location::host,
+                                   access_mode::read);
+    //~
     ArrayHandle<Scalar> h_charge(m_pdata->getCharges(), access_location::host, access_mode::read);
     ArrayHandle<Scalar4> h_orientation(m_pdata->getOrientationArray(),
                                        access_location::host,
                                        access_mode::read);
+    //~ add velocity [RHEOINF]
+    ArrayHandle<Scalar4> h_vel(m_pdata->getVelocities(),
+                               access_location::host,
+                               access_mode::read);
+    //~
     ArrayHandle<unsigned int> h_tag(m_pdata->getTags(), access_location::host, access_mode::read);
+
+    //~ add angular momentul and intertia [RHEOINF]
+    ArrayHandle<Scalar4> h_angmom(m_pdata->getAngularMomentumArray(),
+                                  access_location::host,
+                                  access_mode::read);
+    ArrayHandle<Scalar3> h_inertia(m_pdata->getMomentsOfInertiaArray(),
+                                   access_location::host,
+                                   access_mode::read);
+    //~
 
     // force arrays
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
@@ -521,11 +542,27 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             unsigned int typei = __scalar_as_int(h_pos.data[i].w);
             Scalar4 quat_i = h_orientation.data[i];
 
+            //~ angular momentum / quaternion updates [RHEOINF]
+            Scalar3 vi = make_scalar3(h_vel.data[i].x, h_vel.data[i].y, h_vel.data[i].z);
+            quat<Scalar> p(h_angmom.data[i]);
+            quat<Scalar> q(h_orientation.data[i]);
+            vec3<Scalar> I(h_inertia.data[i]);
+            vec3<Scalar> omega_i = (Scalar(1. / 2.) * conj(q) * p).v / I;
+            //std::cout << typei << "," << vi.x << "," << vi.y << "," << vi.z << std::endl;
+            //~
+
             // sanity check
             assert(typei < m_pdata->getNTypes());
 
             // access charge (if needed)
+            //~ add diameter [RHEOINF]
+            Scalar di = Scalar(0.0);
+            //~
             Scalar qi = Scalar(0.0);
+            //~ add diameter [RHEOINF]
+            if (aniso_evaluator::needsDiameter())
+                di = h_diameter.data[i];
+            //~
             if (aniso_evaluator::needsCharge())
                 qi = h_charge.data[i];
 
@@ -563,12 +600,31 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 assert(typej < m_pdata->getNTypes());
 
                 // access charge (if needed)
+                //~ add diameter [RHEOINF]
+                Scalar dj = Scalar(0.0);
+                //~
                 Scalar qj = Scalar(0.0);
+                //~ add diameter [RHEOINF]
+                if (aniso_evaluator::needsDiameter())
+                    dj = h_diameter.data[j];
+                //~
                 if (aniso_evaluator::needsCharge())
                     qj = h_charge.data[j];
 
                 // apply periodic boundary conditions
                 dx = box.minImage(dx);
+
+                //~ angular momentum / quaternion updates [RHEOINF]
+                vec3<Scalar> dx_vec(dx);
+                vec3<Scalar> n_normal = normalize(dx_vec);
+                Scalar3 vj = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
+                vec3<Scalar> vij(vi-vj);
+                quat<Scalar> p(h_angmom.data[j]);
+                quat<Scalar> q(h_orientation.data[j]);
+                vec3<Scalar> I(h_inertia.data[j]);
+                vec3<Scalar> omega_j = (Scalar(1. / 2.) * conj(q) * p).v / I;
+                vec3<Scalar> Vt = vij - dot(vij,n_normal) * n_normal - Scalar(0.5) * cross((di*omega_i+dj*omega_j),n_normal);
+                //~
 
                 // get parameters for this type pair
                 unsigned int typpair_idx = m_typpair_idx(typei, typej);
@@ -590,12 +646,24 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
 
                 aniso_evaluator eval(dx, quat_i, quat_j, rcutsq, param);
 
+                //~ add diameter [RHEOINF]
+                if (aniso_evaluator::needsDiameter())
+                    eval.setDiameter(di, dj);
+                //~
                 if (aniso_evaluator::needsCharge())
                     eval.setCharge(qi, qj);
                 if (aniso_evaluator::needsShape())
                     eval.setShape(&m_shape_params[typei], &m_shape_params[typej]);
                 if (aniso_evaluator::needsTags())
                     eval.setTags(h_tag.data[i], h_tag.data[j]);
+                //~ add pair typeids for polydispersity [RHEOINF]
+                if (aniso_evaluator::needsTypes())
+                    eval.setTypes(typei, typej);
+                //~
+                //~ add velocity [RHEOINF]
+                if (aniso_evaluator::needsVel())
+                    eval.setVel(Vt);
+                //~
 
                 bool evaluated = eval.evaluate(force, pair_eng, energy_shift, torque_i, torque_j);
 
@@ -676,11 +744,20 @@ CommFlags AnisoPotentialPair<aniso_evaluator>::getRequestedCommFlags(uint64_t ti
     {
     CommFlags flags = CommFlags(0);
 
+    //~ we need velocity [RHEOINF]
+    flags[comm_flag::velocity] = 1;
+    //~
+
     // we need orientations for anisotropic ptls
     flags[comm_flag::orientation] = 1;
 
     if (aniso_evaluator::needsCharge())
         flags[comm_flag::charge] = 1;
+
+    //~ add diameter [RHEOINF]
+    if (aniso_evaluator::needsDiameter())
+        flags[comm_flag::diameter] = 1;
+    //~
 
     // with rigid bodies, include net torque
     flags[comm_flag::net_torque] = 1;

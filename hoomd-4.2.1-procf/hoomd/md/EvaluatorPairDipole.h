@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 // $Id$
 // $URL$
 
@@ -169,6 +171,22 @@ class EvaluatorPairDipole
         {
         return true;
         }
+
+    //!~ Whether the pair potential uses typeid. [RHEOINF]
+    HOSTDEVICE static bool needsTypes()
+        {
+        return false;
+        }
+    HOSTDEVICE void setTypes(unsigned int typei, unsigned int typej) { }
+    //~
+
+    //~ Whether the pair potential uses velocity [RHEOINF]
+    HOSTDEVICE static bool needsVel()
+       {
+       return false;
+       }
+    HOSTDEVICE void setVel(vec3<Scalar> U_t) { }
+    //~
 
     /// Whether the potential implements the energy_shift parameter
     HOSTDEVICE static bool constexpr implementsEnergyShift()
