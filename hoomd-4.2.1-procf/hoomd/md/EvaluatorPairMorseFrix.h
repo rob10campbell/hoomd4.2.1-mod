@@ -44,8 +44,10 @@ class EvaluatorPairMorseFrix
         {
         Scalar D0;
         Scalar alpha;
+        //Scalar range; //[AJ 2024]
         //Scalar r0;
         Scalar kn;
+        //Scalar eta_n; //[AJ 2024]
         Scalar eta_t;
         Scalar mu_t;
 
@@ -68,6 +70,7 @@ class EvaluatorPairMorseFrix
 
         //HOSTDEVICE param_type() : D0(0), alpha(0), r0(0), kn(0), eta_t(0), mu_t(0) { }
         HOSTDEVICE param_type() : D0(0), alpha(0), kn(0), eta_t(0), mu_t(0) { }
+        //HOSTDEVICE param_type() : range(0), kn(0), eta_n(0), eta_t(0), mu_t(0) { }  //[AJ 2024]
         //HOSTDEVICE param_type() : kn(0), eta_t(0), mu_t(0) { }
 
 #ifndef __HIPCC__
@@ -76,8 +79,10 @@ class EvaluatorPairMorseFrix
             {
             D0 = v["D0"].cast<Scalar>();
             alpha = v["alpha"].cast<Scalar>();
+            //range = v["range"].cast<Scalar>();  //[AJ 2024]
             //r0 = v["r0"].cast<Scalar>();
             kn = v["kn"].cast<Scalar>();
+            //eta_n = v["eta_n"].cast<Scalar>();  //[AJ 2024]
             eta_t = v["eta_t"].cast<Scalar>();
             mu_t = v["mu_t"].cast<Scalar>();
             }
@@ -87,8 +92,10 @@ class EvaluatorPairMorseFrix
             pybind11::dict v;
             v["D0"] = D0;
             v["alpha"] = alpha;
+            //v["range"] = range;  //[AJ 2024]
             //v["r0"] = r0;
             v["kn"] = kn;
+            //v["eta_n"] = eta_n;  //[AJ 2024]
             v["eta_t"] = eta_t;
             v["mu_t"] = mu_t;
             return std::move(v);
@@ -143,6 +150,7 @@ class EvaluatorPairMorseFrix
         \param _quat_i Quaternion of i^{th} particle
         \param _quat_j Quaternion of j^{th} particle
         \param _kn
+        \param _eta_n
         \param _eta_t 
         \param _mu_t 
         \param _params Per type pair parameters of this potential
@@ -154,6 +162,7 @@ class EvaluatorPairMorseFrix
                                      const param_type& _params
                                      )
         : dr(_dr), rcutsq(_rcutsq), tag_i(0), tag_j(0), quat_i(_quat_i), quat_j(_quat_j),
+          //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), range(_params.range), kn(_params.kn), eta_n(_params.eta_n), eta_t(_params.eta_t), mu_t(_params.mu_t) // [AJ2024]
           //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
           mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
           //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
@@ -201,11 +210,19 @@ class EvaluatorPairMorseFrix
     //~
 
     //~ Whether the pair potential uses velocity [RHEOINF]
+    //HOSTDEVICE static bool needsVeltan()
     HOSTDEVICE static bool needsVel()
        {
        return true;
        }
     //~
+
+    // //~ Whether the pair potential uses velocity [AJ2024]
+    // HOSTDEVICE static bool needsVelnorm()
+    //    {
+    //    return true;
+    //    }
+    // //~
 
     //!~ Whether the pair potential uses timestep. [RHEOINF]
     HOSTDEVICE static bool needsTimestep()
@@ -261,10 +278,20 @@ class EvaluatorPairMorseFrix
     /* \param  v_tan velocity
        from AnisoPotentialPair.h
     */
+    //HOSTDEVICE void setVeltan(vec3<Scalar> U_t)
     HOSTDEVICE void setVel(vec3<Scalar> U_t)
     {
     v_tan = U_t;
     }
+
+    // // Accept optional velocity [RHEOINF]
+    // /* \param  v_norm velocity
+    //    from AnisoPotentialPair.h
+    // */
+    // HOSTDEVICE void setVel(vec3<Scalar> U_n)
+    // {
+    // v_norm = U_n;
+    // }
 
     //! Evaluate the force and energy
     /*! \param force Output parameter to write the computed force.
@@ -285,87 +312,99 @@ class EvaluatorPairMorseFrix
         vec3<Scalar> rvec(dr);
         Scalar rsq = dot(rvec, rvec);
         Scalar r = fast::sqrt(rsq);
+        //std::cout << "r..." << r << std::endl;
         Scalar radsum = 0.5 * (diameter_i + diameter_j); //~ Add radsum from passed diameters
+        //std::cout << "radsum..." << radsum << std::endl;
         Scalar h_ij = r - radsum;
+        //std::cout << "h_ij..." << h_ij << std::endl;
 
-        Scalar rcut = fast::sqrt(rcutsq);
+        //Scalar rcut = fast::sqrt(rcutsq);
 
-        //std::cout << "Frix..." << std::endl;
 
         // if the particles do not interact
         if (rsq > rcutsq)
            {
+           //std::cout << "Frix_false..." << std::endl;
            return false;
            }
- 
-        // Compute Morse 
-        // /*         
-        //Scalar r = fast::sqrt(rsq); 
-        Scalar Exp_factor = fast::exp(-alpha * (r - radsum));
 
-        //~ add contact force [RHEOINF]
-        //~ check if contact force is provided [RHEOINF]
-        Scalar f_contact = 0.0;
-        Scalar3 Morse_force = make_scalar3(0, 0, 0);
-        if (f_contact != 0.0)
-        {
-            //~ if particles overlap (r < radsum) apply contact force
-            if(r < radsum)Morse_force = vec_to_scalar3(f_contact * (Scalar(1.0) - (r-radsum)) * pow((Scalar(0.50)*radsum),3) * rvec / r);
+        //Scalar morse_range = range;
+        Scalar morse_range = 3/alpha;
+        Scalar frix_cut = 0.5*morse_range;
+        
+        Scalar overlap = h_ij - frix_cut;
 
-            else{
-                //~ calculate force as normal
-                Morse_force += vec_to_scalar3(Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rvec / r);
+        vec3<Scalar> f;
+        //f.x = 0;
+        //f.y = 0;
+        //f.z = 0;
+        vec3<Scalar> t_i;
+        //t_i.x = 0;
+        //t_i.y = 0;
+        //t_i.z = 0;
+        vec3<Scalar> t_j;
+        //t_j.x = 0;
+        //t_j.y = 0;
+        //t_j.z = 0;
+        
+        std::cout << "overlap: " << overlap << std::endl;
 
-                //~ but still include contact force within 0.001 dist of colloid-colloid contact 
-                Scalar Del_max = Scalar(0.001); //~ 0.001 or 0.01
-                if(r<(radsum+Del_max))Morse_force += vec_to_scalar3(f_contact * pow((Scalar(1.0) - (r-radsum)/Del_max), 3) * pow((Scalar(0.50)*radsum),3) * rvec / r);
-                } 
-           
-        }
+        if (overlap < Scalar(0.0)) 
+            {
+            // Compute Friction
+            // Scalar overlap = 1.0 - (h_ij / frix_cut); // 0 at h_ij=r_cut, 1 at colloid-colloid contact (prevents force blow up)
+            
 
-        else {
-            //~ calculate force as normal
-            Morse_force += vec_to_scalar3(Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rvec / r);
-             }
-        //~
-        pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
-        //~ Morse_force = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [RHEOINF]
-        //std::cout << D0 << "," << Exp_factor << "," << pair_eng << std::endl;            
+            vec3<Scalar> F_normal = - kn * overlap * rvec / r;  //repulsive since overlap = -ve
+            // vec3<Scalar> F_normal = kn * overlap * rvec / r; //suggested: but + = attractive ; j->i
+            
+            //Scalar eta_n  = Scalar(0); 
+            // vec3<Scalar> Fn_damp = eta_n * v_norm;//[AJ2024]
 
-        //Scalar Exp_factor = fast::exp(-alpha * (r - radsum));
-        //f_scalar = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) * rinv;
-        //pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
-        //*/
+            vec3<Scalar> Ft_damp = -eta_t * v_tan;
+            // vec3<Scalar> Ft_damp = eta_t * v_tan;
+            
+            Scalar F_normal_mag = fast::sqrt(dot(F_normal,F_normal));
+            //Scalar Ft_normal_mag = mu_t * F_normal_mag;
+            Scalar Ft_damp_mag =  fast::sqrt(dot(Ft_damp,Ft_damp));
 
-        Scalar range = 3/alpha;
-        Scalar frix_cut = 0.5*range;
-        Scalar del_min = 0.001;
-        if (h_ij > del_min and h_ij < rcut) {
-        // Computer Friction
-        Scalar overlap = (1.0 - (h_ij / rcut)) * 0.1; // 0 at h_ij=r_cut, 0.1 at colloid-colloid contact (prevents force blow up)
-        //Scalar overlap = 1 / (h_ij / rcut); // at rcut, overlap = 1, as particles get closer, the friction increases
-        //vec3<Scalar> F_normal = -kn * overlap * rvec / r; //original: but - = repulsive ; -(j->i) AKA i->j
-        //vec3<Scalar> F_normal = kn * overlap * rvec / r; //suggested: but + = attractive ; j->i
-        vec3<Scalar> F_normal = kn * overlap * rvec / r; //suggested: but + = attractive ; j->i
-        //vec3<Scalar> F_normal = Morse_force + (kn * overlap * rvec / r); //suggested: but + = attractive ; j->i
-        //vec3<Scalar> Ft_damp = -eta_t * v_tan;
-        vec3<Scalar> Ft_damp = eta_t * v_tan;
-        //Scalar F_normal_mag = fast::sqrt(dot(F_normal,F_normal));
-        Scalar F_normal_mag = fast::sqrt(dot(F_normal,F_normal)) + fast::sqrt(dot(Morse_force,Morse_force));
-        Scalar Ft_damp_mag =  fast::sqrt(dot(Ft_damp,Ft_damp));
-        vec3<Scalar> t = normalize(v_tan);
-        //vec3<Scalar> friction_F = - std::min(mu_t*F_normal_mag,Ft_damp_mag) * t;
-        //vec3<Scalar> friction_F = std::min(mu_t*F_normal_mag,Ft_damp_mag) * t;
-        vec3<Scalar> friction_F = mu_t*F_normal_mag * t;
-        //vec3<Scalar> friction_F = mu_t*F_normal_mag * t;
-        force+= vec_to_scalar3(friction_F + F_normal);
+            vec3<Scalar> t = normalize(v_tan);
+            vec3<Scalar> friction_F = - std::min(mu_t*F_normal_mag,Ft_damp_mag) * t;
+            //vec3<Scalar> friction_F = - Ft_damp_mag * t;
+            // vec3<Scalar> friction_F = - mu_t*F_normal_mag * t;
 
-        torque_i -= vec_to_scalar3(cross((diameter_i+0.5*overlap)*rvec/r,friction_F));
-        torque_j -= vec_to_scalar3(cross((diameter_j+0.5*overlap)*rvec/r,friction_F));
-        //torque_i += vec_to_scalar3(cross((diameter_i+0.5*overlap)*rvec/r,friction_F));
-        //torque_j += vec_to_scalar3(cross((diameter_j+0.5*overlap)*rvec/r,friction_F));
+            
+            //std::cout << "Ft_damp..." << Ft_damp_mag << std::endl;
+            //std::cout << "Ft_frix..." << Ft_normal_mag << std::endl;
+            
+            
+            // std::cout << "Torque_x..." << t_i.x << std::endl;
+            // std::cout << "Torque_x..." << t_i.x << std::endl;
 
-        } // close correct r_cut = 3/kappa range
+            //f+= friction_F + Fn_damp + F_normal;
+            //f+= friction_F + F_normal;
+            f+=friction_F;
+
+            std::cout << "v_tan: " << v_tan.x << "," << v_tan.y << "," << v_tan.z <<  std::endl;
+            std::cout << "norm(v_tan): " << t.x << "," << t.y << "," << t.z <<  std::endl;
+            std::cout << "friction_F: " << friction_F.x << "," << friction_F.y << "," << friction_F.z <<  std::endl;
+            t_i -= cross(0.5*(diameter_i+overlap)*rvec/r,friction_F);
+            t_j -= cross(0.5*(diameter_j+overlap)*rvec/r,friction_F); 
+                
+            }
+
+        std::cout << "diameter_i: " << diameter_i << ", diameter_j: " << diameter_j << std::endl;
+        std::cout << "r: " << r << std::endl;
+        std::cout << "rvec: " << rvec.x << "," << rvec.y << "," << rvec.z << std::endl;
+        std::cout << "force: " << f.x << "," << f.y << "," << f.z <<  std::endl;
+        std::cout << "torque_i: " << t_i.x << "," << t_i.y << "," << t_i.z <<  std::endl;
+        std::cout << "torque_j: " << t_j.x << "," << t_j.y << "," << t_j.z <<  std::endl;
+        std::cout << "----" << std::endl;
+
+            
+        force = vec_to_scalar3(f);
+        torque_i = vec_to_scalar3(t_i);
+        torque_j = vec_to_scalar3(t_j);
 
         return true;
         }
@@ -409,11 +448,14 @@ class EvaluatorPairMorseFrix
     Scalar diameter_j;//!<~ add diameter_j [RHEOINF]
     Scalar D0;     //!< Depth of the Morse potential at its minimum
     Scalar alpha;  //!< Controls width of the potential well
+    //Scalar range;
     //Scalar r0;     //!< Offset, i.e., position of the potential minimum
     Scalar kn;
+    //Scalar eta_n;
     Scalar eta_t;
     Scalar mu_t;
     vec3<Scalar> v_tan;
+    // vec3<Scalar> v_norm;        //[AJ2024]
     // const param_type &params;   //!< The pair potential parameters
     };
 

@@ -13,6 +13,7 @@ File lists are formatted as: `folder/`; file
 * [Walls](/changelog.md#walls) : Wall options: flat or converging diverging (Josh)
 * [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
+* [Friction](/changelog.md#friction) : Add the option for Coulombic (spring-like) and Viscous damping friction forces in aniso sims (Rob, Anushka, Paniz)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential) : Add AO Potential (might be incorrect calc?) (Rob)
 * [HPMC](/changelog.md#hpmc) : enable compilation with HPMC on (see important notes in description) (Rob)
 
@@ -210,7 +211,24 @@ Adding two repulsive options to Morse
 			* [x] \_\_init\_\_.py **call MorseRepulse**
 			* [x] pair.py : **call MorseRepulse**
 
-		
+## Friction
+Add an evaluator with Coulombic (spring-like) and Viscous damping friction forces (Rob, Anushka, Paniz)
+- *MorseFrix* : add Coulombic (spring-like) and Viscous damping friction forces that act across 0.5 of the Morse attraction range
+- **update some params every timestep** : add MPI mods that update some ghost params every timestep (regardless of the neighborlist buffer, which usually controls this process) to ensure tangential velocity, orientation, and torque are always accurate in MPI sims
+ * [x] `hoomd/`
+	* [x] `md/`
+		* [x] AnisoPotentialPair.h : **call MorseFrix, update some params every timestep**
+		* [x] **[ADD NEW FILE]** AnisoPotentialPairMorseFrix.h : **call MorseFrix from AnisoPotentialPair**
+		* [x] CMakeLists.txt : **set new file (EvaluatorPairMorseFrix.h)**
+		* [x] EvaluatorPairALJ.h : **pass optional friction/size params** 
+		* [x] EvaluatorPairDipole.h : **pass optional friction/size params** 
+		* [x] EvaluatorPairGB.h : **pass optional friction/size params** 
+		* [x] **[ADD NEW FILE]** EvaluatorPairMorseFrix.h (friction acting across half the Morse range)
+		* [x] module-md.cc : **add void/export for MorseFrix()** 
+		* [x] `pair`
+			* [x] \_\_init\_\_.py **call MorseFrix**
+			* [x] aniso.py : **call MorseFrix**
+
 ## Asakura-Oosawa Potential 
 Adding AO Potential (might be incorrect calc?) (Rob)
 - **DPDAO**: Add the Asakura-Oosawa potential as an alternative to Morse potential. This is an laternate method for evaluating the pair-forces between two particles that calculates the correct combination of forces for each pair of particles as described in the [background reading on DPD for Colloids](/background-reading/2-DPD-for-Colloids-18pg.pdf), but replaces the Morse Potential with the Asakura-Oosawa (AO) potential; i.e., the standard DPD forces plus the AO potential, hydrodynamics (the squeezing force AKA lubrication force), and a contact force for resolving semi-hard colloid-colloid particle overlaps.
@@ -218,6 +236,7 @@ Adding AO Potential (might be incorrect calc?) (Rob)
 	* [ ] `md/`
 		* [ ] CMakeLists.txt : **set new file (EvaluatorPairDPDThermoDPDAO.h)**
 		* [ ] **[ADD NEW FILE]** EvaluatorPairDPDThermoDPDAO.h (the Asakura-Oosawa potential)
+		* [ ] module-md.cc : **add void/export for DPDAO()** 
 		* [ ] `pair`
 			* [ ] \_\_init\_\_.py **call DPDAO**
 			* [ ] pair.py : **call DPDAO**

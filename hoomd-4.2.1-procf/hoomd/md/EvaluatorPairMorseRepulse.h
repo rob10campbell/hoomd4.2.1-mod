@@ -231,9 +231,9 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
                 }
 
             //~ apply repulsion WITHIN A PORTION of the Morse range
-            Scalar rcut = fast::sqrt(rcutsq);
-            if (r < Scalar(0.75)*rcut) 
-               {
+            //Scalar rcut = fast::sqrt(rcutsq);
+            //if (r < Scalar(0.75)*rcut) 
+            //   {
 
             //~ add repulsion
             if (Erep) {
@@ -263,7 +263,7 @@ class EvaluatorPairMorseRepulse //~ change name to MorseRepulse
                 pair_eng += epsilon * exp_val_y * rinv;
                 }
 
-            } // close second dist check
+            //} // close second dist check
 
             pair_eng = D0 * Exp_factor * (Exp_factor - Scalar(2.0));
             //~ force_divr = Scalar(2.0) * D0 * alpha * Exp_factor * (Exp_factor - Scalar(1.0)) / r; //~ move this into overlap check [RHEOINF]
