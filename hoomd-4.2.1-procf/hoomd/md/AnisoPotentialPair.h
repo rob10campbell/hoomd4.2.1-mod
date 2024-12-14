@@ -21,6 +21,14 @@
 #include "hoomd/ManagedArray.h"
 #include "hoomd/VectorMath.h"
 
+//~ update some parameters every timestep (regardless of the neighborlist buffer) [RHEOINF]
+#include "hoomd/HOOMDMPI.h"
+
+#ifdef ENABLE_MPI
+#include "hoomd/Communicator.h"
+#endif
+//~
+
 /*! \file AnisoPotentialPair.h
     \brief Defines the template class for anisotropic pair potentials
     \details The heart of the code that computes anisotropic pair potentials is in this file.
