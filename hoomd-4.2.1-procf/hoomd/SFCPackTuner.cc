@@ -152,6 +152,15 @@ void SFCPackTuner::applySortOrder()
                                      access_location::host,
                                      access_mode::readwrite);
 
+    //~ update ghost neighbors [RHEOINF]
+    ArrayHandle<Scalar> h_current_neighbor_list( m_pdata->getParticleNList(),
+                                                    access_location::host,
+                                                    access_mode::readwrite);
+    size_t p_neighbor_pitch = m_pdata->getParticleNList().getPitch();
+
+    Scalar* particle_neighbor_list_temp = new Scalar[20 * m_pdata->getN()];
+    //~
+
     // construct a temporary holding array for the sorted data
     Scalar4* scal4_tmp = new Scalar4[m_pdata->getN()];
 
@@ -186,6 +195,19 @@ void SFCPackTuner::applySortOrder()
         scal_tmp[i] = h_diameter.data[m_sort_order[i]];
     for (unsigned int i = 0; i < m_pdata->getN(); i++)
         h_diameter.data[i] = scal_tmp[i];
+
+    //~ sort angles [RHEOINF]
+    for (unsigned int i = 0; i < m_pdata->getN(); i++){
+        for (size_t j = 0; j < 20; j++) {
+                    particle_neighbor_list_temp[j * (m_pdata->getN()) + i] = h_current_neighbor_list.data[j * p_neighbor_pitch + m_sort_order[i]];
+                }
+    }
+    for (unsigned int i = 0; i < m_pdata->getN(); i++){
+        for (size_t j = 0; j < 20; j++) {
+                    h_current_neighbor_list.data[j * p_neighbor_pitch + i]=particle_neighbor_list_temp[j * (m_pdata->getN()) + i];
+                }
+    }
+    //~
 
     // sort angular momentum
     for (unsigned int i = 0; i < m_pdata->getN(); i++)
@@ -282,6 +304,7 @@ void SFCPackTuner::applySortOrder()
     delete[] scal3_tmp;
     delete[] uint_tmp;
     delete[] int3_tmp;
+    delete[] particle_neighbor_list_temp; //~ update ghost neighbors [RHEOINF]
     }
 
 namespace detail

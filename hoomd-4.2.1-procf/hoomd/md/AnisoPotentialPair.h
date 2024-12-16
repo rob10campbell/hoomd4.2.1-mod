@@ -19,6 +19,14 @@
 #include "hoomd/ManagedArray.h"
 #include "hoomd/VectorMath.h"
 
+//~ update some parameters every timestep (regardless of the neighborlist buffer) [RHEOINF]
+#include "hoomd/HOOMDMPI.h"
+
+#ifdef ENABLE_MPI
+#include "hoomd/Communicator.h"
+#endif
+//~
+
 /*! \file AnisoPotentialPair.h
     \brief Defines the template class for anisotropic pair potentials
     \details The heart of the code that computes anisotropic pair potentials is in this file.
@@ -193,6 +201,8 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
     virtual CommFlags getRequestedCommFlags(uint64_t timestep);
+
+    void updateGhostsIfNeeded(uint64_t timestep); //~ update some params every timestep regardless of buffer [RHEOINF]
 #endif
 
     //! Returns true because we compute the torque
@@ -233,6 +243,13 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
 
     /// r_cut (not squared) given to the neighbor list
     std::shared_ptr<GlobalArray<Scalar>> m_r_cut_nlist;
+
+//~ update some params every timestep regardless of buffer [RHEOINF]
+fdef ENABLE_MPI
+   /// The system's communicator.
+   std::shared_ptr<Communicator> m_comm;
+#endif
+//~
 
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);
@@ -315,6 +332,17 @@ AnisoPotentialPair<aniso_evaluator>::AnisoPotentialPair(std::shared_ptr<SystemDe
         }
 #endif
     }
+
+//~ update some params every timestep regardless of neighborlist buffer [RHEOINF]
+#ifdef ENABLE_MPI
+    if (m_sysdef->isDomainDecomposed())
+        {
+        auto comm_weak = m_sysdef->getCommunicator();
+        assert(comm_weak.lock());
+        m_comm = comm_weak.lock();
+        }
+#endif
+//~
 
 template<class aniso_evaluator> AnisoPotentialPair<aniso_evaluator>::~AnisoPotentialPair()
     {
@@ -475,6 +503,10 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     // start by updating the neighborlist
     m_nlist->compute(timestep);
 
+    //~ update some params every timestep regardless of neighborlist buffer [RHEOINF]
+    m_nlist->setStorageMode(NeighborList::full);
+    //~
+
     // depending on the neighborlist settings, we can take advantage of newton's third law
     // to reduce computations at the cost of memory access complexity: set that flag now
     bool third_law = m_nlist->getStorageMode() == NeighborList::half;
@@ -501,6 +533,12 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar4> h_torque(m_torque, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
+
+    //~ update some params every timestep (regardless of neighborlist buffer) [RHEOINF]
+    #ifdef ENABLE_MPI
+        updateGhostsIfNeeded(timestep);
+    #endif
+    //~
 
     const BoxDim box = m_pdata->getBox();
     ArrayHandle<Scalar> h_rcutsq(m_rcutsq, access_location::host, access_mode::read);
@@ -667,6 +705,33 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             }
         }
     }
+
+//~ update some parameters every timestep (regardless of neighborlist buffer) [RHEOINF]
+#ifdef ENABLE_MPI
+template<class aniso_evaluator>
+void AnisoPotentialPair<aniso_evaluator>::updateGhostsIfNeeded(uint64_t timestep)
+    {
+    // Temporarily modify communication flags to ensure all required data is exchanged
+    CommFlags old_flags = m_comm->getFlags();
+    CommFlags new_flags = old_flags;
+    new_flags[comm_flag::tag] = 1;
+    new_flags[comm_flag::velocity] = 1;
+    new_flags[comm_flag::orientation] = 1;
+    if (aniso_evaluator::needsDiameter())
+        new_flags[comm_flag::diameter] = 1;
+    new_flags[comm_flag::net_torque] = 1;
+
+    m_comm->setFlags(new_flags);
+
+    // Force communication
+    m_comm->migrateParticles();
+    m_comm->exchangeGhosts();
+
+    // Restore original flags
+    m_comm->setFlags(old_flags);
+    }
+#endif
+//~
 
 #ifdef ENABLE_MPI
 /*! \param timestep Current time step

@@ -223,6 +223,8 @@ template<class evaluator> class PotentialPair : public ForceCompute
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
     virtual CommFlags getRequestedCommFlags(uint64_t timestep);
+
+    void updateGhostsIfNeeded(uint64_t timestep); //~ update ghost neighbors [RHEOINF]
 #endif
 
     //! Calculates the energy between two lists of particles.
@@ -645,6 +647,11 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     // start by updating the neighborlist
     m_nlist->compute(timestep);
 
+    // update ghost neighbors [RHEOINF]
+    if (m_K != 0.0 ){
+    m_nlist->setStorageMode(NeighborList::full);}
+    //~
+
     // depending on the neighborlist settings, we can take advantage of newton's third law
     // to reduce computations at the cost of memory access complexity: set that flag now
     bool third_law = m_nlist->getStorageMode() == NeighborList::half;
@@ -694,6 +701,39 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
     assert(h_current_neighbor_list.data);
     size_t p_neighbor_pitch = m_pdata->getParticleNList().getPitch();
     //std::cout<<"new 2"<<std::endl;
+
+    //~ update ghost neighbors [RHEOINF]
+    int tot_particles = (int)(m_pdata->getN() + m_pdata->getNGhosts());
+    std::vector<Scalar> h_previous_neighbor_list(20 * tot_particles);
+    #ifdef ENABLE_MPI
+        if (m_K != 0.0 ){
+        updateGhostsIfNeeded(timestep);}
+    #endif
+
+    if (m_K != 0.0 ){
+
+        for ( int i = 0; i < tot_particles; i++) {
+                for (size_t j = 0; j < 20; j++) { // 20 is the count of neighbors used
+                    h_previous_neighbor_list[j * (tot_particles) + i] = h_current_neighbor_list.data[j * p_neighbor_pitch + i];
+                }
+        }
+
+    }
+
+    // start the connected neighbors with -2
+    for (int i = 0; i <  tot_particles ; ++i) {
+        for(int j = 0; j <  20 ; ++j){
+        h_current_neighbor_list.data[j * p_neighbor_pitch + i] = -2 ;
+        }
+    }
+    // start the neighbors with tag of the particle so that the particle can be found
+    for (int i = 0; i < (int)m_pdata->getN(); i++){
+        h_current_neighbor_list.data[i] = h_tag.data[i];
+
+    }
+    //~
+
+    /* old code
     // Copy the previous neighbor list to a new variable
     int tot_particles = (int)(m_pdata->getN());  
     std::vector<Scalar> h_previous_neighbor_temp(20 * tot_particles);
@@ -764,6 +804,7 @@ template<class evaluator> void PotentialPair<evaluator>::computeForces(uint64_t 
         h_current_neighbor_list.data[i] = h_tag.data[i];
         }
     }
+    */
     //F
     //~
 
@@ -1327,6 +1368,28 @@ if (m_K != 0.0){
 
     computeTailCorrection();
     }
+
+//~ update ghost neighbors [RHEOINF]
+#ifdef ENABLE_MPI
+template<class evaluator>
+void PotentialPair<evaluator>::updateGhostsIfNeeded(uint64_t timestep)
+    {
+    //Temporarily modify communication flags to ensure all required data is exchanged
+    CommFlags old_flags = m_comm->getFlags();
+    CommFlags new_flags = old_flags;
+    new_flags[comm_flag::tag] = 1;
+    new_flags[comm_flag::particle_n_list] = 1;
+    m_comm->setFlags(new_flags);
+
+    //Force communication
+    m_comm->migrateParticles();
+    m_comm->exchangeGhosts();
+
+    //Restore original flags
+    m_comm->setFlags(old_flags);
+    }
+#endif
+//~
 
 #ifdef ENABLE_MPI
 /*! \param timestep Current time step
