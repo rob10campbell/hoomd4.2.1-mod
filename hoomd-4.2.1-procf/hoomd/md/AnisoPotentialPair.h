@@ -21,6 +21,34 @@
 #include "hoomd/ManagedArray.h"
 #include "hoomd/VectorMath.h"
 
+////~ angular rigidity [RHEOINF]
+#include "Lifetime.h" //~ many-body neighbors [RHEOINF]
+
+#include <pybind11/numpy.h>
+//#include <pybind11/pybind11.h>
+#include <stdexcept>
+
+//#include "NeighborList.h"
+//#include "hoomd/ForceCompute.h"
+#include "hoomd/GlobalArray.h"
+#include "hoomd/HOOMDMath.h"
+#include "hoomd/Index1D.h"
+#include "hoomd/managed_allocator.h"
+
+//~ access for many-body neighbors [RHEOINF]
+//#include "hoomd/HOOMDMPI.h"
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <math.h>
+#include <cmath>
+//~
+
+#ifdef ENABLE_HIP
+#include <hip/hip_runtime.h>
+#endif
+////~
+
 //~ update some parameters every timestep (regardless of the neighborlist buffer) [RHEOINF]
 #include "hoomd/HOOMDMPI.h"
 
@@ -86,6 +114,7 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
     //! Construct the pair potential
     AnisoPotentialPair(std::shared_ptr<SystemDefinition> sysdef,
                        std::shared_ptr<NeighborList> nlist);
+                       //Scalar K=0.0, Scalar w=0.0, Scalar theta_bar=0.0); //~ add angular rigidity params [RHEOINF]
     //! Destructor
     virtual ~AnisoPotentialPair();
 
@@ -200,6 +229,29 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
         m_attached = false;
         }
 
+    //~! Set angular rigidity params value [RHEOINF]
+    //void setK(Scalar K) {
+    //    m_K = K;
+    //}
+    //Scalar getK() const {
+    //    return m_K;
+    //}
+    //void setW(Scalar w) {
+    //    m_w = w;
+    //}
+    //Scalar getW() const {
+    //    return m_w;
+    //}
+    //void setTheta(Scalar theta_bar) {
+    //    m_theta_bar = theta_bar;
+    //}
+    //Scalar getTheta() const {
+    //    return m_theta_bar;
+    //}
+    //~
+
+    std::shared_ptr<Lifetime> LTIME; //~ access LTIME for many-body neighbors [RHEOINF]
+
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
     virtual CommFlags getRequestedCommFlags(uint64_t timestep);
@@ -233,6 +285,9 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
     protected:
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
     energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
+    //Scalar m_K;                   //!< angular rigidity K value [RHEOINF]
+    //Scalar m_w;                   //!< angular rigidity w value [RHEOINF]
+    //Scalar m_theta_bar;           //!< angular rigidity reference angle [RHEOINF]
     Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
     GlobalArray<Scalar> m_rcutsq; //!< Cutoff radius squared per type pair
     std::vector<param_type, hoomd::detail::managed_allocator<param_type>>
@@ -263,13 +318,22 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
 template<class aniso_evaluator>
 AnisoPotentialPair<aniso_evaluator>::AnisoPotentialPair(std::shared_ptr<SystemDefinition> sysdef,
                                                         std::shared_ptr<NeighborList> nlist)
+                                                        //Scalar K, Scalar w, Scalar theta_bar) //~ add angular rigidity params [RHEOINF]
     : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift),
+      //m_K(K), m_w(w), m_theta_bar(theta_bar), //~ add angular rigidity params [RHEOINF]
       m_typpair_idx(m_pdata->getNTypes())
     {
     m_exec_conf->msg->notice(5) << "Constructing AnisoPotentialPair<" << aniso_evaluator::getName()
                                 << ">" << std::endl;
     assert(m_pdata);
     assert(m_nlist);
+
+    //~ access Lifetime for indexing if needed [RHEOINF]
+    //if(m_K != 0.0)
+    //    {
+        LTIME = std::shared_ptr<Lifetime>(new Lifetime(sysdef));
+    //    }
+    //~
 
     GlobalArray<Scalar> rcutsq(m_typpair_idx.getNumElements(), m_exec_conf);
     m_rcutsq.swap(rcutsq);
@@ -554,6 +618,9 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar4> h_torque(m_torque, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
+    //~ add virialxyi_ind [RHEOINF]
+    ArrayHandle<Scalar> h_virial_ind(m_virial_ind, access_location::host, access_mode::overwrite);
+    //~
 
     //~ update some params every timestep (regardless of neighborlist buffer) [RHEOINF]
     #ifdef ENABLE_MPI
@@ -572,6 +639,54 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
         PDataFlags flags = this->m_pdata->getFlags();
         bool compute_virial = flags[pdata_flag::pressure_tensor];
 
+        //~ get multi-body neighbors [RHEOINF]
+        //S
+        // NOTE: h_diameter is already included above
+        ArrayHandle<unsigned int> h_tag(m_pdata->getTags(),
+                                        access_location::host,
+                                        access_mode::read);
+
+        ArrayHandle<Scalar> h_current_neighbor_list(m_pdata->getParticleNList(),
+                                                        access_location::host,
+                                                        access_mode::readwrite);
+        assert(h_current_neighbor_list.data);
+        size_t p_neighbor_pitch = m_pdata->getParticleNList().getPitch();
+        //std::cout<<"new 2"<<std::endl;
+
+        //~ update ghost neighbors [RHEOINF]
+        int tot_particles = (int)(m_pdata->getN() + m_pdata->getNGhosts());
+        std::vector<Scalar> h_previous_neighbor_list(20 * tot_particles);
+        #ifdef ENABLE_MPI
+            //if (m_K != 0.0 ){
+            updateGhostsIfNeeded(timestep);//}
+        #endif
+
+        //if (m_K != 0.0 ){
+        
+            for ( int i = 0; i < tot_particles; i++) {
+                for (size_t j = 0; j < 20; j++) { // 20 is the count of neighbors used
+                    h_previous_neighbor_list[j * (tot_particles) + i] = h_current_neighbor_list.data[j * p_neighbor_pitch + i];
+                }
+            }
+    
+        //}
+
+        // start the connected neighbors with -2 
+        for (int i = 0; i <  tot_particles ; ++i) {
+            for(int j = 0; j <  20 ; ++j){ 
+            h_current_neighbor_list.data[j * p_neighbor_pitch + i] = -2 ;
+            }
+        }
+        // start the neighbors with tag of the particle so that the particle can be found
+        for (int i = 0; i < (int)m_pdata->getN(); i++){
+            h_current_neighbor_list.data[i] = h_tag.data[i];
+    
+        }
+        //F
+        //~
+
+        size_t idx_pi = -1; //~ set the neighbor index for pi [RHEOINF]
+
         // for each particle
         for (int i = 0; i < (int)m_pdata->getN(); i++)
             {
@@ -579,6 +694,22 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
             unsigned int typei = __scalar_as_int(h_pos.data[i].w);
             Scalar4 quat_i = h_orientation.data[i];
+
+            //~ update many-body neighbors [RHEOINF]
+            //if (m_K != 0.0){
+                //find the particle in the previous time step particle neighbor list
+                if(typei == 0 ){
+                    //bool wasnt_found = true;
+                    for(int p_i = 0; p_i < tot_particles; p_i++){
+                        if (h_previous_neighbor_list[p_i] == h_tag.data[i]) {
+                            idx_pi = p_i;
+                            //wasnt_found = false;
+                            break;
+                        }else{idx_pi = -3;}
+                    }
+                }
+            //}
+            //~
 
             //~ angular momentum / quaternion updates [RHEOINF]
             Scalar3 vi = make_scalar3(h_vel.data[i].x, h_vel.data[i].y, h_vel.data[i].z);
@@ -618,6 +749,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             Scalar virialyyi = 0.0;
             Scalar virialyzi = 0.0;
             Scalar virialzzi = 0.0;
+            Scalar virialxyi_ind = 0.0; //~ add virialxyi_ind [RHEOINF]
 
             // loop over all of the neighbors of this particle
             const size_t myHead = h_head_list.data[i];
@@ -651,6 +783,14 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
 
                 // apply periodic boundary conditions
                 dx = box.minImage(dx);
+
+                //~ calculate r_ij squared (FLOPS: 5) [RHEOINF]
+                Scalar rsq = dot(dx, dx);
+                //~
+
+                //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
+                Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+                //~
 
                 //~ angular momentum / quaternion updates [RHEOINF]
                 vec3<Scalar> dx_vec(dx);
@@ -702,6 +842,85 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 if (aniso_evaluator::needsVel())
                     eval.setVel(Vt);
                 //~
+
+
+                //~ update multi-body angles [RHEOINF]
+                //S
+                unsigned int tagi = h_tag.data[i];
+                unsigned int tagj = h_tag.data[j];
+
+                //if (m_K != 0.0){
+                    if (typei == typej)
+                    {
+                        Scalar rsq_root = std::sqrt(rsq) - Scalar(2.0);
+                        if (rsq_root < Scalar(2.0))
+                        {
+                            // Check and update neighbors for particle i
+                            size_t idx_i = 0;
+                            bool not_saved = true;
+                            while (idx_i < 20){
+
+                                // Check if tag[j] already exists
+                                if (h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] == h_tag.data[j])
+                                {
+                                    not_saved = false;
+                                    break;
+                                }
+
+                                // If current entry is empty, save tag[j]
+                                if (h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] == -2)
+                                {
+                                    h_current_neighbor_list.data[idx_i * p_neighbor_pitch + i] = h_tag.data[j];
+                                    break;
+                                }
+
+                                idx_i++;
+                            }
+
+                            if (not_saved)
+                            {
+                                // Check and update neighbors for particle j
+                                size_t idx_j = 0;
+                                while (idx_j < 20)
+                                {
+                                    // Check if tag[i] already exists
+                                    if (h_current_neighbor_list.data[idx_j * p_neighbor_pitch + j] == h_tag.data[i])
+                                    {
+                                        break;
+                                    }
+
+                                    // If current entry is empty, save tag[i]
+                                    if (h_current_neighbor_list.data[idx_j * p_neighbor_pitch + j] == -2)
+                                    {
+                                        h_current_neighbor_list.data[idx_j * p_neighbor_pitch + j] = h_tag.data[i];
+                                        break;
+                                    }
+
+                                    idx_j++;
+                                }
+                            }
+
+
+                                // save angles 
+                                bool new_connection = true;
+                                size_t is_idx = 0;
+                                while ( is_idx < 20)
+                                {
+                                    if (h_previous_neighbor_list[is_idx * tot_particles + idx_pi] == h_tag.data[j])
+                                    {
+                                        new_connection = false;
+                                        break;
+                                    }
+                                    is_idx++;
+                                }
+
+                                
+                        }           
+                     }                   
+                 //}               
+                 //F
+                 //~
+
 
                 bool evaluated = eval.evaluate(force, pair_eng, energy_shift, torque_i, torque_j);
 
@@ -771,10 +990,197 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 h_virial.data[5 * m_virial_pitch + i] += virialzzi;
                 }
             }
+
+           //~ compute angular rigidity forces [RHEOINF]
+           //S
+//if (m_K != 0.0){
+    #ifdef ENABLE_MPI
+
+        LTIME->updatebondtime(timestep); //~ get timestep from Liftime file [RHEOINF]
+
+    #endif
+    for (int i = 0; i < (int)m_pdata->getN(); i++){
+        unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+        Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+        if (typei==0) {
+                //Scalar kk =0;
+                size_t nonzero_count = 0;
+                unsigned int tagi = h_tag.data[i];
+                for (size_t idx_i = 1; idx_i < 20 ; ++idx_i)
+                {
+                    // check if i has more than 1 neighbor
+                    if (h_current_neighbor_list.data[idx_i* p_neighbor_pitch +i] != -2
+                    && h_current_neighbor_list.data[idx_i* p_neighbor_pitch +i] != tagi)
+                    {
+                        nonzero_count++; //count the neighbors
+                    }
+                }
+                if (nonzero_count > 1)
+                {
+                    #define SMALL Scalar(0.001)
+                    // go over each angle between two different neighbors of i and apply angle force 
+                    // find the first neighbor a
+                    for (size_t idx_a = 1; idx_a < (nonzero_count); ++idx_a)
+                    {
+                        unsigned int taga = static_cast<unsigned int>(h_current_neighbor_list.data[idx_a* p_neighbor_pitch +i]);
+                        Scalar3 pa;
+                        int a = -1;
+                        //bool f5=false;
+                        for (int M = 0; M < (int)(m_pdata->getN()+ m_pdata->getNGhosts()); M++)
+                        {
+                            if (h_tag.data[M] == taga) {
+                            // Access the position of the particle with the matching tag
+                                pa = make_scalar3(h_pos.data[M].x, h_pos.data[M].y, h_pos.data[M].z);
+                                a = M;
+                                //f5=true;
+                                break;
+                                }
+                        }
+
+                        unsigned int typea = __scalar_as_int(h_pos.data[a].w);
+                        // find the second neighbor b
+                        for (size_t idx_b = (idx_a+1) ; idx_b < (nonzero_count+1); ++idx_b)
+                        {
+                            unsigned int tagb = static_cast<unsigned int>(h_current_neighbor_list.data[idx_b* p_neighbor_pitch +i]);
+                            Scalar3 pb;
+                            int b = -1;
+                            //bool f6=false;
+                            for (int N = 0; N < (int)(m_pdata->getN()+ m_pdata->getNGhosts()); N++)
+                            {
+                                if (h_tag.data[N] == tagb) {
+                                    // Access the position of the particle with the matching tag
+                                    pb = make_scalar3(h_pos.data[N].x, h_pos.data[N].y, h_pos.data[N].z);
+                                    b = N;
+                                    //f6 = true;
+                                    break; 
+                                    }
+
+                            }
+                            unsigned int typeb = __scalar_as_int(h_pos.data[b].w);
+
+
+
+                            if (tagb != taga  && taga != tagi && tagb != tagi && typea==0 && typeb==0)
+                            {
+                                // Calculate angle index
+
+                                unsigned int vari = tagi ;
+                                unsigned int vara = taga ;
+                                unsigned int varb = tagb ;
+
+                                unsigned int var1 = vari;
+                                unsigned int var3 = std::max({vara, varb});
+                                unsigned int var2 = std::min({vara, varb});
+
+                                unsigned int n = LTIME->num_solvent;
+                                unsigned int current_angle_index = (var1 * n*(n-1)/2) + (2*var2*n - var2*var2 + 2*var3 - 3*var2 -2)/2;
+
+                                Scalar3 ria = make_scalar3(pa.x - pi.x, pa.y - pi.y, pa.z - pi.z);
+                                Scalar3 rib = make_scalar3(pb.x - pi.x, pb.y - pi.y, pb.z - pi.z);
+                                ria = box.minImage(ria);
+                                rib = box.minImage(rib);
+
+                                // Calculate magnitudes of vectors
+                                Scalar ria_mag = std::sqrt(ria.x * ria.x + ria.y * ria.y + ria.z * ria.z);
+                                Scalar rib_mag = std::sqrt(rib.x * rib.x + rib.y * rib.y + rib.z * rib.z);
+
+                                // Calculate dot product
+                                Scalar dot_product = ria.x * rib.x + ria.y * rib.y + ria.z * rib.z;
+
+                                // Calculate cosine of the angle 
+                                Scalar current_cos_theta = dot_product / (ria_mag * rib_mag);
+
+
+                                if (current_cos_theta > 1.0)
+                                    current_cos_theta = 1.0;
+                                if (current_cos_theta < -1.0)
+                                    current_cos_theta = -1.0;
+
+                                Scalar current_sin_theta = std::sqrt(1.0 - current_cos_theta * current_cos_theta);
+                                if (current_sin_theta < SMALL)
+                                    current_sin_theta = SMALL;
+
+                                current_sin_theta = 1.0 / current_sin_theta;
+
+                                // Calculate force magnitude for Harmonic equation
+                                Scalar m_theta_bar = 120;
+                                Scalar eq_theta = m_theta_bar * M_PI / 180; //65.0 * M_PI / 180.0;
+                                Scalar dth = acos(current_cos_theta) - eq_theta;
+                                Scalar m_K = 100;
+                                Scalar tk = m_K * dth;
+
+                                //Calculate force magnitude for K(thera - theta_0)^2
+                                Scalar vab = -1.0 * tk * current_sin_theta;
+
+                                Scalar a11 = vab * current_cos_theta / (ria_mag * ria_mag);
+                                Scalar a12 = -vab / (ria_mag * rib_mag);
+                                Scalar a22 = vab * current_cos_theta / (rib_mag * rib_mag);
+
+                                // Calculate forces
+                                Scalar3 fia = make_scalar3(a11 * ria.x + a12 * rib.x,
+                                                            a11 * ria.y + a12 * rib.y,
+                                                            a11 * ria.z + a12 * rib.z);
+
+                                Scalar3 fib = make_scalar3(a22 * ria.x + a12 * rib.x,
+                                                            a22 * ria.y + a12 * rib.y,
+                                                            a22 * ria.z + a12 * rib.z);
+
+                                // compute the energy, for each atom in the angle for K(thera - theta_0)^2
+                                Scalar angle_eng = (tk * dth) * Scalar(1.0 / 6.0);
+
+                                Scalar angle_virial[6];
+                                angle_virial[0] = Scalar(1. / 3.) * (ria.x * fia.x + rib.x * fib.x);
+                                angle_virial[1] = Scalar(1. / 3.) * (ria.y * fia.x + rib.y * fib.x);
+                                angle_virial[2] = Scalar(1. / 3.) * (ria.z * fia.x + rib.z * fib.x);
+                                angle_virial[3] = Scalar(1. / 3.) * (ria.y * fia.y + rib.y * fib.y);
+                                angle_virial[4] = Scalar(1. / 3.) * (ria.z * fia.y + rib.z * fib.y);
+                                angle_virial[5] = Scalar(1. / 3.) * (ria.z * fia.z + rib.z * fib.z);
+
+
+                                // Update forces and virials for particle i, a and b
+                                if (a < (int)(m_pdata->getN()+ m_pdata->getNGhosts())) {
+                                    h_force.data[a].x += fia.x;
+                                    h_force.data[a].y += fia.y;
+                                    h_force.data[a].z += fia.z;
+                                    h_force.data[a].w += angle_eng;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * m_virial_pitch + a] += angle_virial[l];
+
+                                }
+
+                                if (i < (int)m_pdata->getN()) {
+                                    h_force.data[i].x -= fia.x + fib.x;
+                                    h_force.data[i].y -= fia.y + fib.y;
+                                    h_force.data[i].z -= fia.z + fib.z;
+                                    h_force.data[i].w += angle_eng;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * m_virial_pitch + i] += angle_virial[l];
+
+                                }
+
+                                if (b < (int)(m_pdata->getN()+ m_pdata->getNGhosts())) {
+                                    h_force.data[b].x += fib.x;
+                                    h_force.data[b].y += fib.y;
+                                    h_force.data[b].z += fib.z;
+                                    h_force.data[b].w += angle_eng;
+                                    for (int l = 0; l < 6; l++)
+                                        h_virial.data[l * m_virial_pitch + b] += angle_virial[l];
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        //}
+//F
+
+
         }
     }
 
-//~ update some parameters every timestep (regardless of neighborlist buffer) [RHEOINF]
+
+//~ update s me parameters every timestep (regardless of neighborlist buffer) [RHEOINF]
 #ifdef ENABLE_MPI
 template<class aniso_evaluator>
 void AnisoPotentialPair<aniso_evaluator>::updateGhostsIfNeeded(uint64_t timestep)
@@ -844,7 +1250,7 @@ template<class T> void export_AnisoPotentialPair(pybind11::module& m, const std:
     pybind11::class_<AnisoPotentialPair<T>, ForceCompute, std::shared_ptr<AnisoPotentialPair<T>>>
         anisopotentialpair(m, name.c_str());
     anisopotentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>)//, Scalar, Scalar, Scalar>()) //~ add Scalar for angular repulsion params [RHEOINF]
         .def("setParams", &AnisoPotentialPair<T>::setParamsPython)
         .def("getParams", &AnisoPotentialPair<T>::getParamsPython)
         .def("setShape", &AnisoPotentialPair<T>::setShapePython)
@@ -854,6 +1260,9 @@ template<class T> void export_AnisoPotentialPair(pybind11::module& m, const std:
         .def_property("mode",
                       &AnisoPotentialPair<T>::getShiftMode,
                       &AnisoPotentialPair<T>::setShiftModePython)
+        //.def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK) //~ add K [RHEOINF]
+        //.def_property("w", &PotentialPair<T>::getW, &PotentialPair<T>::setW) //~ add w [RHEOINF]
+        //.def_property("theta_bar", &PotentialPair<T>::getTheta, &PotentialPair<T>::setTheta) //~ add theta_bar [RHEOINF]
         .def("getTypeShapesPy", &AnisoPotentialPair<T>::getTypeShapesPy);
     }
 
