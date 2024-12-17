@@ -29,7 +29,10 @@ inline void export_AnisoPotentialPair<EvaluatorPairMorseFrix>(pybind11::module& 
                      std::shared_ptr<AnisoPotentialPair<EvaluatorPairMorseFrix>>>
         anisopotentialpair(m, name.c_str());
     anisopotentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, //>() //~ add angular rigidity params [RHEOINF]
+                            Scalar, 
+                            Scalar, 
+                            Scalar>()) //~ add angular rigidity params [RHEOINF]
         .def("setParams", &AnisoPotentialPair<EvaluatorPairMorseFrix>::setParamsPython)
         .def("getParams", &AnisoPotentialPair<EvaluatorPairMorseFrix>::getParamsPython)
         .def("setMu", &AnisoPotentialPair<EvaluatorPairMorseFrix>::setShapePython)
@@ -39,6 +42,15 @@ inline void export_AnisoPotentialPair<EvaluatorPairMorseFrix>(pybind11::module& 
         .def_property("mode",
                       &AnisoPotentialPair<EvaluatorPairMorseFrix>::getShiftMode,
                       &AnisoPotentialPair<EvaluatorPairMorseFrix>::setShiftModePython)
+        .def_property("K", 
+                      &AnisoPotentialPair<EvaluatorPairMorseFrix>::getK, 
+                      &AnisoPotentialPair<EvaluatorPairMorseFrix>::setK) //~ add K [RHEOINF]
+        .def_property("w", 
+                      &AnisoPotentialPair<EvaluatorPairMorseFrix>::getW, 
+                      &AnisoPotentialPair<EvaluatorPairMorseFrix>::setW) //~ add w [RHEOINF]
+        .def_property("theta_bar", 
+                      &AnisoPotentialPair<EvaluatorPairMorseFrix>::getTheta, 
+                      &AnisoPotentialPair<EvaluatorPairMorseFrix>::setTheta) //~ add theta_bar [RHEOINF]
         .def("getTypeShapesPy", &AnisoPotentialPair<EvaluatorPairMorseFrix>::getTypeShapesPy);
     }
 

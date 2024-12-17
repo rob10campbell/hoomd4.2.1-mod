@@ -113,8 +113,8 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
 
     //! Construct the pair potential
     AnisoPotentialPair(std::shared_ptr<SystemDefinition> sysdef,
-                       std::shared_ptr<NeighborList> nlist);
-                       //Scalar K=0.0, Scalar w=0.0, Scalar theta_bar=0.0); //~ add angular rigidity params [RHEOINF]
+                       std::shared_ptr<NeighborList> nlist, //); //~ add angular rigidity params [RHEOINF]
+                       Scalar K=0.0, Scalar w=0.0, Scalar theta_bar=0.0); //~ add angular rigidity params [RHEOINF]
     //! Destructor
     virtual ~AnisoPotentialPair();
 
@@ -230,24 +230,24 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
         }
 
     //~! Set angular rigidity params value [RHEOINF]
-    //void setK(Scalar K) {
-    //    m_K = K;
-    //}
-    //Scalar getK() const {
-    //    return m_K;
-    //}
-    //void setW(Scalar w) {
-    //    m_w = w;
-    //}
-    //Scalar getW() const {
-    //    return m_w;
-    //}
-    //void setTheta(Scalar theta_bar) {
-    //    m_theta_bar = theta_bar;
-    //}
-    //Scalar getTheta() const {
-    //    return m_theta_bar;
-    //}
+    void setK(Scalar K) {
+        m_K = K;
+    }
+    Scalar getK() const {
+        return m_K;
+    }
+    void setW(Scalar w) {
+        m_w = w;
+    }
+    Scalar getW() const {
+        return m_w;
+    }
+    void setTheta(Scalar theta_bar) {
+        m_theta_bar = theta_bar;
+    }
+    Scalar getTheta() const {
+        return m_theta_bar;
+    }
     //~
 
     std::shared_ptr<Lifetime> LTIME; //~ access LTIME for many-body neighbors [RHEOINF]
@@ -285,9 +285,9 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
     protected:
     std::shared_ptr<NeighborList> m_nlist; //!< The neighborlist to use for the computation
     energyShiftMode m_shift_mode; //!< Store the mode with which to handle the energy shift at r_cut
-    //Scalar m_K;                   //!< angular rigidity K value [RHEOINF]
-    //Scalar m_w;                   //!< angular rigidity w value [RHEOINF]
-    //Scalar m_theta_bar;           //!< angular rigidity reference angle [RHEOINF]
+    Scalar m_K;                   //!< angular rigidity K value [RHEOINF]
+    Scalar m_w;                   //!< angular rigidity w value [RHEOINF]
+    Scalar m_theta_bar;           //!< angular rigidity reference angle [RHEOINF]
     Index2D m_typpair_idx;        //!< Helper class for indexing per type pair arrays
     GlobalArray<Scalar> m_rcutsq; //!< Cutoff radius squared per type pair
     std::vector<param_type, hoomd::detail::managed_allocator<param_type>>
@@ -317,10 +317,10 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
 */
 template<class aniso_evaluator>
 AnisoPotentialPair<aniso_evaluator>::AnisoPotentialPair(std::shared_ptr<SystemDefinition> sysdef,
-                                                        std::shared_ptr<NeighborList> nlist)
-                                                        //Scalar K, Scalar w, Scalar theta_bar) //~ add angular rigidity params [RHEOINF]
+                                                        std::shared_ptr<NeighborList> nlist, //) //~ add angular rigidity params[RHEOINF]
+                                                        Scalar K, Scalar w, Scalar theta_bar) //~ add angular rigidity params [RHEOINF]
     : ForceCompute(sysdef), m_nlist(nlist), m_shift_mode(no_shift),
-      //m_K(K), m_w(w), m_theta_bar(theta_bar), //~ add angular rigidity params [RHEOINF]
+      m_K(K), m_w(w), m_theta_bar(theta_bar), //~ add angular rigidity params [RHEOINF]
       m_typpair_idx(m_pdata->getNTypes())
     {
     m_exec_conf->msg->notice(5) << "Constructing AnisoPotentialPair<" << aniso_evaluator::getName()
@@ -329,10 +329,10 @@ AnisoPotentialPair<aniso_evaluator>::AnisoPotentialPair(std::shared_ptr<SystemDe
     assert(m_nlist);
 
     //~ access Lifetime for indexing if needed [RHEOINF]
-    //if(m_K != 0.0)
-    //    {
+    if(m_K != 0.0)
+        {
         LTIME = std::shared_ptr<Lifetime>(new Lifetime(sysdef));
-    //    }
+        }
     //~
 
     GlobalArray<Scalar> rcutsq(m_typpair_idx.getNumElements(), m_exec_conf);
@@ -618,9 +618,6 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     ArrayHandle<Scalar4> h_force(m_force, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar4> h_torque(m_torque, access_location::host, access_mode::overwrite);
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
-    //~ add virialxyi_ind [RHEOINF]
-    ArrayHandle<Scalar> h_virial_ind(m_virial_ind, access_location::host, access_mode::overwrite);
-    //~
 
     //~ update some params every timestep (regardless of neighborlist buffer) [RHEOINF]
     #ifdef ENABLE_MPI
@@ -657,11 +654,11 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
         int tot_particles = (int)(m_pdata->getN() + m_pdata->getNGhosts());
         std::vector<Scalar> h_previous_neighbor_list(20 * tot_particles);
         #ifdef ENABLE_MPI
-            //if (m_K != 0.0 ){
-            updateGhostsIfNeeded(timestep);//}
+            if (m_K != 0.0 ){
+            updateGhostsIfNeeded(timestep);}
         #endif
 
-        //if (m_K != 0.0 ){
+        if (m_K != 0.0 ){
         
             for ( int i = 0; i < tot_particles; i++) {
                 for (size_t j = 0; j < 20; j++) { // 20 is the count of neighbors used
@@ -669,7 +666,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 }
             }
     
-        //}
+        }
 
         // start the connected neighbors with -2 
         for (int i = 0; i <  tot_particles ; ++i) {
@@ -696,7 +693,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             Scalar4 quat_i = h_orientation.data[i];
 
             //~ update many-body neighbors [RHEOINF]
-            //if (m_K != 0.0){
+            if (m_K != 0.0){
                 //find the particle in the previous time step particle neighbor list
                 if(typei == 0 ){
                     //bool wasnt_found = true;
@@ -708,7 +705,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                         }else{idx_pi = -3;}
                     }
                 }
-            //}
+            }
             //~
 
             //~ angular momentum / quaternion updates [RHEOINF]
@@ -749,7 +746,6 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             Scalar virialyyi = 0.0;
             Scalar virialyzi = 0.0;
             Scalar virialzzi = 0.0;
-            Scalar virialxyi_ind = 0.0; //~ add virialxyi_ind [RHEOINF]
 
             // loop over all of the neighbors of this particle
             const size_t myHead = h_head_list.data[i];
@@ -789,7 +785,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 //~
 
                 //~ calculate the center-center distance equal to particle-particle contact (AKA r0) [RHEOINF]
-                Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
+                //Scalar radcontact = Scalar(0.5) * (h_diameter.data[i] + h_diameter.data[j]);
                 //~
 
                 //~ angular momentum / quaternion updates [RHEOINF]
@@ -849,7 +845,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 unsigned int tagi = h_tag.data[i];
                 unsigned int tagj = h_tag.data[j];
 
-                //if (m_K != 0.0){
+                if (m_K != 0.0){
                     if (typei == typej)
                     {
                         Scalar rsq_root = std::sqrt(rsq) - Scalar(2.0);
@@ -917,7 +913,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                                 
                         }           
                      }                   
-                 //}               
+                 }               
                  //F
                  //~
 
@@ -993,7 +989,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
 
            //~ compute angular rigidity forces [RHEOINF]
            //S
-//if (m_K != 0.0){
+if (m_K != 0.0){
     #ifdef ENABLE_MPI
 
         LTIME->updatebondtime(timestep); //~ get timestep from Liftime file [RHEOINF]
@@ -1103,10 +1099,10 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                                 current_sin_theta = 1.0 / current_sin_theta;
 
                                 // Calculate force magnitude for Harmonic equation
-                                Scalar m_theta_bar = 120;
+                                //Scalar m_theta_bar = 120;
                                 Scalar eq_theta = m_theta_bar * M_PI / 180; //65.0 * M_PI / 180.0;
                                 Scalar dth = acos(current_cos_theta) - eq_theta;
-                                Scalar m_K = 100;
+                                //Scalar m_K = 100;
                                 Scalar tk = m_K * dth;
 
                                 //Calculate force magnitude for K(thera - theta_0)^2
@@ -1172,7 +1168,8 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                     }
                 }
             }
-        //}
+        }
+}
 //F
 
 
@@ -1250,7 +1247,7 @@ template<class T> void export_AnisoPotentialPair(pybind11::module& m, const std:
     pybind11::class_<AnisoPotentialPair<T>, ForceCompute, std::shared_ptr<AnisoPotentialPair<T>>>
         anisopotentialpair(m, name.c_str());
     anisopotentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>)//, Scalar, Scalar, Scalar>()) //~ add Scalar for angular repulsion params [RHEOINF]
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, Scalar, Scalar, Scalar>()) //~ add Scalar for angular repulsion params [RHEOINF]
         .def("setParams", &AnisoPotentialPair<T>::setParamsPython)
         .def("getParams", &AnisoPotentialPair<T>::getParamsPython)
         .def("setShape", &AnisoPotentialPair<T>::setShapePython)
@@ -1260,9 +1257,9 @@ template<class T> void export_AnisoPotentialPair(pybind11::module& m, const std:
         .def_property("mode",
                       &AnisoPotentialPair<T>::getShiftMode,
                       &AnisoPotentialPair<T>::setShiftModePython)
-        //.def_property("K", &PotentialPair<T>::getK, &PotentialPair<T>::setK) //~ add K [RHEOINF]
-        //.def_property("w", &PotentialPair<T>::getW, &PotentialPair<T>::setW) //~ add w [RHEOINF]
-        //.def_property("theta_bar", &PotentialPair<T>::getTheta, &PotentialPair<T>::setTheta) //~ add theta_bar [RHEOINF]
+        .def_property("K", &AnisoPotentialPair<T>::getK, &AnisoPotentialPair<T>::setK) //~ add K [RHEOINF]
+        .def_property("w", &AnisoPotentialPair<T>::getW, &AnisoPotentialPair<T>::setW) //~ add w [RHEOINF]
+        .def_property("theta_bar", &AnisoPotentialPair<T>::getTheta, &AnisoPotentialPair<T>::setTheta) //~ add theta_bar [RHEOINF]
         .def("getTypeShapesPy", &AnisoPotentialPair<T>::getTypeShapesPy);
     }
 

@@ -24,7 +24,10 @@ inline void export_AnisoPotentialPair<EvaluatorPairDipole>(pybind11::module& m,
                      std::shared_ptr<AnisoPotentialPair<EvaluatorPairDipole>>>
         anisopotentialpair(m, name.c_str());
     anisopotentialpair
-        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>>())
+        .def(pybind11::init<std::shared_ptr<SystemDefinition>, std::shared_ptr<NeighborList>, //>() //~ add angular rigidity params [RHEOINF]
+                            Scalar,
+                            Scalar,
+                            Scalar>()) //~ add angular rigidity params [RHEOINF]
         .def("setParams", &AnisoPotentialPair<EvaluatorPairDipole>::setParamsPython)
         .def("getParams", &AnisoPotentialPair<EvaluatorPairDipole>::getParamsPython)
         .def("setMu", &AnisoPotentialPair<EvaluatorPairDipole>::setShapePython)
@@ -34,6 +37,15 @@ inline void export_AnisoPotentialPair<EvaluatorPairDipole>(pybind11::module& m,
         .def_property("mode",
                       &AnisoPotentialPair<EvaluatorPairDipole>::getShiftMode,
                       &AnisoPotentialPair<EvaluatorPairDipole>::setShiftModePython)
+        .def_property("K",
+                      &AnisoPotentialPair<EvaluatorPairDipole>::getK,
+                      &AnisoPotentialPair<EvaluatorPairDipole>::setK) //~ add K [RHEOINF]
+        .def_property("w",
+                      &AnisoPotentialPair<EvaluatorPairDipole>::getW,
+                      &AnisoPotentialPair<EvaluatorPairDipole>::setW) //~ add w [RHEOINF]
+        .def_property("theta_bar",
+                      &AnisoPotentialPair<EvaluatorPairDipole>::getTheta,
+                      &AnisoPotentialPair<EvaluatorPairDipole>::setTheta) //~ add theta_bar [RHEOINF]
         .def("getTypeShapesPy", &AnisoPotentialPair<EvaluatorPairDipole>::getTypeShapesPy);
     }
 
