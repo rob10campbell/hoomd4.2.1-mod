@@ -612,6 +612,9 @@ subroutine structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloid
   ! output filename/path for S(q) data
   character(len=50) :: filename_sofq 
 
+  ! Declare ierr for status checks
+  integer :: ierr
+
 
   !!! SET INITIAL VALUES
   ! calculate 1/box-size
@@ -633,8 +636,19 @@ subroutine structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloid
   inv_ncc = 1.d0 / ncolloids
 
   ! dynamically allocate arrays for g(r) counts
-  allocate(hist_bin_cc_g(0:nframes-1,0:nlayers_g-1))
-  allocate(bin_cc_density_g(0:nframes-1,0:nlayers_g-1))
+  !allocate(hist_bin_cc_g(0:nframes-1,0:nlayers_g-1))
+  !allocate(bin_cc_density_g(0:nframes-1,0:nlayers_g-1))
+  ! Allocate arrays
+  allocate(hist_bin_cc_g(0:nframes-1,0:nlayers_g-1), stat=ierr)
+  if (ierr /= 0) then
+    print *, "Error: Unable to allocate hist_bin_cc_g"
+    stop
+  endif
+  allocate(bin_cc_density_g(0:nframes-1,0:nlayers_g-1), stat=ierr)
+  if (ierr /= 0) then
+    print *, "Error: Unable to allocate bin_cc_density_g"
+    stop
+  endif
 
   ! initialize history bins and local bin density to 0 for g(r)
   hist_bin_cc_g = 0
@@ -679,7 +693,8 @@ subroutine structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloid
         ! located in (bins range 0:nlayers-1)
         k = int(r1*inv_bin_width_g)
         ! if the interaction is inside the search box
-        if(k < nlayers_g) then
+        !if(k < nlayers_g) then
+        if (k >= 0 .and. k < nlayers_g) then
           ! increase the number of particles interactions
           ! in that bin by 2 (once for each particle)
           hist_bin_cc_g(f, k) = hist_bin_cc_g(f, k) + 2
@@ -737,7 +752,16 @@ subroutine structure_factor(data_outpath,nframes,framechoice,Lbox,m_xys,ncolloid
   close(15)
 
   ! deallocate before ending
-  deallocate(hist_bin_cc_g,bin_cc_density_g)
+  !deallocate(hist_bin_cc_g,bin_cc_density_g)
+  ! Deallocate arrays
+  if (allocated(hist_bin_cc_g)) then
+    deallocate(hist_bin_cc_g, stat=ierr)
+    if (ierr /= 0) print *, "Error: Unable to deallocate hist_bin_cc_g"
+  endif
+  if (allocated(bin_cc_density_g)) then
+    deallocate(bin_cc_density_g, stat=ierr)
+    if (ierr /= 0) print *, "Error: Unable to deallocate bin_cc_density_g"
+  endif
 
 end subroutine structure_factor
 
