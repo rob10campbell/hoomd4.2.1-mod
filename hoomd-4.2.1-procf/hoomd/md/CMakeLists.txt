@@ -16,6 +16,7 @@ set(_md_sources module-md.cc
                    ComputeThermo.cc
                    ComputeThermoHMA.cc
                    ConstantForceCompute.cc
+                   ConstraintAngleForceCompute.cc #[RHEOINF]
                    CosineSqAngleForceCompute.cc
                    CustomForceCompute.cc
                    EvaluatorWalls.cc
@@ -595,6 +596,7 @@ set(files __init__.py
           bond.py
           compute.py
           constrain.py
+          constraintangle.py # add contraintangle [RHEOINF]
           dihedral.py
           force.py
           half_step_hook.py

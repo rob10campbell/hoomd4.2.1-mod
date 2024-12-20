@@ -1,6 +1,8 @@
 # Copyright (c) 2009-2023 The Regents of the University of Michigan.
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+##### Modified by Rheoinformatic ##~ [RHEOINF] ######
+
 """Molecular dynamics.
 
 In molecular dynamics simulations, HOOMD-blue numerically integrates the degrees
@@ -24,6 +26,7 @@ from hoomd.md import angle
 from hoomd.md import bond
 from hoomd.md import compute
 from hoomd.md import constrain
+from hoomd.md import constraintangle # [RHEOINF]
 from hoomd.md import data
 from hoomd.md import dihedral
 from hoomd.md import external
