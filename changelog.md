@@ -226,7 +226,6 @@ Add an evaluator with Coulombic (spring-like) and Viscous damping friction force
 		* [x] **[ADD NEW FILE]** EvaluatorPairMorseFrix.h (friction acting across half the Morse range)
 		* [x] module-md.cc : **add void/export for MorseFrix()** 
 		* [x] `pair`
-			* [x] \_\_init\_\_.py **call MorseFrix**
 			* [x] aniso.py : **call MorseFrix**
 
 ## Asakura-Oosawa Potential 

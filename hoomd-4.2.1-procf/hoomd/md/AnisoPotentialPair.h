@@ -505,6 +505,10 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     // start by updating the neighborlist
     m_nlist->compute(timestep);
 
+    //~ update some params every timestep regardless of neighborlist buffer [RHEOINF]
+    m_nlist->setStorageMode(NeighborList::full);
+    //~
+
     // depending on the neighborlist settings, we can take advantage of newton's third law
     // to reduce computations at the cost of memory access complexity: set that flag now
     bool third_law = m_nlist->getStorageMode() == NeighborList::half;
