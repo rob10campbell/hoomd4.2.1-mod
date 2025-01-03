@@ -98,6 +98,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairDPDThermoLJ.h
                 EvaluatorPairDPDThermoDPD.h
                 EvaluatorPairDPDThermoDPDMorse.h #[RHEOINF]
+                EvaluatorPairDPDThermoDPDXDLVO.h #[RHEOINF]
                 EvaluatorPairEwald.h
                 EvaluatorPairForceShiftedLJ.h
                 EvaluatorPairGauss.h
@@ -122,6 +123,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairZBL.h
                 EvaluatorTersoff.h
                 EvaluatorWalls.h
+                EvaluatorPairXDLVO.h #[RHEOINF]
                 FIREEnergyMinimizerGPU.h
                 FIREEnergyMinimizer.h
                 ForceCompositeGPU.h
@@ -479,7 +481,7 @@ foreach(_evaluator ${_wall_evaluators})
     endif()
 endforeach()
 
-set(_dpdthermo_evaluators DPD LJ DPDMorse) # add DPDMorse [RHEOINF]
+set(_dpdthermo_evaluators DPD LJ DPDMorse DPDXDLVO) # add DPDMorse, DPDXDLVO [RHEOINF]
 
 foreach(_evaluator ${_dpdthermo_evaluators})
     configure_file(export_PotentialPairDPDThermo.cc.inc
@@ -519,6 +521,7 @@ set(_pair_evaluators Buckingham
                      Mie
                      ReactionField
                      DLVO
+                     XDLVO #[RHEOINF]
                      Fourier
                      OPP
                      TWF

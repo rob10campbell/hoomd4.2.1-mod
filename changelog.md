@@ -14,6 +14,8 @@ File lists are formatted as: `folder/`; file
 * [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
 * [Friction](/changelog.md#friction) : Add the option for Coulombic (spring-like) and Viscous damping friction forces in aniso sims (Rob, Anushka, Paniz)
+* [Prescribed Angular Rigidity](/changelog.md#prescribed-angular-rigidity) : Use the built-in harmonic 3-body angle force to prescribe a specific angle at which 3-body structures are the most stable (Deepak, Paniz, Rob)
+* [xDLVO](/changelog.md#xdlvo) : an extended DLVO model for high salt/electrolyte/charge concentrations (Rob)
 * [Asakura-Oosawa Potential](/changelog.md#asakura-oosawa-potential) : Add AO Potential (might be incorrect calc?) (Rob)
 * [HPMC](/changelog.md#hpmc) : enable compilation with HPMC on (see important notes in description) (Rob)
 
@@ -213,7 +215,7 @@ Adding two repulsive options to Morse
 
 ## Friction
 Add an evaluator with Coulombic (spring-like) and Viscous damping friction forces (Rob, Anushka, Paniz)
-- *MorseFrix* : add Coulombic (spring-like) and Viscous damping friction forces that act across 0.5 of the Morse attraction range
+- **MorseFrix** : add Coulombic (spring-like) and Viscous damping friction forces that act across 0.5 of the Morse attraction range
 - **update some params every timestep** : add MPI mods that update some ghost params every timestep (regardless of the neighborlist buffer, which usually controls this process) to ensure tangential velocity, orientation, and torque are always accurate in MPI sims
  * [x] `hoomd/`
 	* [x] `md/`
@@ -227,6 +229,33 @@ Add an evaluator with Coulombic (spring-like) and Viscous damping friction force
 		* [x] module-md.cc : **add void/export for MorseFrix()** 
 		* [x] `pair`
 			* [x] aniso.py : **call MorseFrix**
+
+## Prescribed Angular Rigidity
+Add an evaluator that uses the built-in harmonic 3-body angle force to prescribe a specific angle at which 3-body structures are the most stable (theory developed by Paniz for her dynamic angular rigidity, reimplemented by Deepak using the built-in harmonic force (serial only), and documented by Rob).
+- **ConstraintAngleForceCompute** : new force angle-based constraint force compute method accessing exisiting 3-body harmonic angle force (serial only)
+ * [x] `hoomd/`
+        * [x] `md/`
+                * [x] CMakeLists.txt : **set new files (ConstraintAngleForceCompute.cc, constraintangle.py)**
+                * [x] **[ADD NEW FILE]** ConstraintAngleForceCompute.cc
+                * [x] **[ADD NEW FILE]** ConstraintAngleForceCompute.h
+                * [x] **[ADD NEW FILE]** constraintangle.py
+                * [x] module-md.cc : **add void/export for ConstraintAngleForceCompute**
+		* [x] \_\_init\_\_.py **call constraintangle**
+
+
+## xDLVO
+Add an evaluator for extended DLVO simulations of high salt/electrolyte/charge simulations. This model is based on the one described for proteins in Pusara et.al. (2021, PChemChemPhys) DOI: [10.1039/D1CP01573G](https://doi.org/10.1039/D1CP01573G) and add Electrostatic repulsion (standard Debye-Huckel approximation) + an osmotic Donnan ion depletion potential for salt effects at high electrolyte concentrations and an ion-particle interaction potential for ion-particle interactions and/or ion-bridging effects between particles.
+- **XDLVO, DPDXDLVO** : add Brownian and DPD implementations of the potential
+ * [x] `hoomd/`
+        * [x] `md/`
+                * [x] CMakeLists.txt : **set new files (EvaluatorPairXDLVO.h, EvaluatorPairDPDThermoDPDXDLVO.h)**
+                * [x] **[ADD NEW FILE]** EvaluatorPairDPDThermoDPDXDLVO.h
+                * [x] **[ADD NEW FILE]** EvaluatorPairXDLVO.h
+                * [x] module-md.cc : **add void/export for XDLVO() and DPDThermoDPDXDLVO**
+                * [x] `pair`
+			* [x] \_\_init\_\_.py **call XDLVO and DPDXDLVO**
+                        * [x] pair.py : **call XDLVO and DPDXDLVO**
+
 
 ## Asakura-Oosawa Potential 
 Adding AO Potential (might be incorrect calc?) (Rob)

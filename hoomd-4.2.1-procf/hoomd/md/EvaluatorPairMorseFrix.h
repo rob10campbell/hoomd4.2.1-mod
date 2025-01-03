@@ -347,7 +347,7 @@ class EvaluatorPairMorseFrix
         //t_j.y = 0;
         //t_j.z = 0;
         
-        std::cout << "overlap: " << overlap << std::endl;
+        //std::cout << "overlap: " << overlap << std::endl;
 
         if (overlap < Scalar(0.0)) 
             {
@@ -385,21 +385,21 @@ class EvaluatorPairMorseFrix
             //f+= friction_F + F_normal;
             f+=friction_F;
 
-            std::cout << "v_tan: " << v_tan.x << "," << v_tan.y << "," << v_tan.z <<  std::endl;
-            std::cout << "norm(v_tan): " << t.x << "," << t.y << "," << t.z <<  std::endl;
-            std::cout << "friction_F: " << friction_F.x << "," << friction_F.y << "," << friction_F.z <<  std::endl;
+            //std::cout << "v_tan: " << v_tan.x << "," << v_tan.y << "," << v_tan.z <<  std::endl;
+            //std::cout << "norm(v_tan): " << t.x << "," << t.y << "," << t.z <<  std::endl;
+            //std::cout << "friction_F: " << friction_F.x << "," << friction_F.y << "," << friction_F.z <<  std::endl;
             t_i -= cross(0.5*(diameter_i+overlap)*rvec/r,friction_F);
             t_j -= cross(0.5*(diameter_j+overlap)*rvec/r,friction_F); 
                 
             }
 
-        std::cout << "diameter_i: " << diameter_i << ", diameter_j: " << diameter_j << std::endl;
-        std::cout << "r: " << r << std::endl;
-        std::cout << "rvec: " << rvec.x << "," << rvec.y << "," << rvec.z << std::endl;
-        std::cout << "force: " << f.x << "," << f.y << "," << f.z <<  std::endl;
-        std::cout << "torque_i: " << t_i.x << "," << t_i.y << "," << t_i.z <<  std::endl;
-        std::cout << "torque_j: " << t_j.x << "," << t_j.y << "," << t_j.z <<  std::endl;
-        std::cout << "----" << std::endl;
+        //std::cout << "diameter_i: " << diameter_i << ", diameter_j: " << diameter_j << std::endl;
+        //std::cout << "r: " << r << std::endl;
+        //std::cout << "rvec: " << rvec.x << "," << rvec.y << "," << rvec.z << std::endl;
+        //std::cout << "force: " << f.x << "," << f.y << "," << f.z <<  std::endl;
+        //std::cout << "torque_i: " << t_i.x << "," << t_i.y << "," << t_i.z <<  std::endl;
+        //std::cout << "torque_j: " << t_j.x << "," << t_j.y << "," << t_j.z <<  std::endl;
+        //std::cout << "----" << std::endl;
 
             
         force = vec_to_scalar3(f);

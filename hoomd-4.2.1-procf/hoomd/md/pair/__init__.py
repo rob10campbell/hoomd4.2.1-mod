@@ -149,6 +149,7 @@ from .pair import (
     DPDConservative,
     DPDLJ,
     DPDMorse, #[RHEOINF]
+    DPDXDLVO, #[RHEOINF]
     ForceShiftedLJ,
     Moliere,
     ZBL,
@@ -156,6 +157,7 @@ from .pair import (
     ExpandedMie,
     ReactionField,
     DLVO,
+    XDLVO, #[RHEOINF]
     Buckingham,
     LJ1208,
     LJ0804,

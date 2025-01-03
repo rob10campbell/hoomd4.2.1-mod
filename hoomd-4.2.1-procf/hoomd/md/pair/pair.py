@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2023 The Regents of the University of Michigan.
+# Copyright (c) 2009-2023 The Regents of the University of Michigan
 # Part of HOOMD-blue, released under the BSD 3-Clause License.
 
 ###### Modified by Rheoinformatic ##~ [RHEOINF] ######
@@ -2137,3 +2137,108 @@ class MorseRepulse(Pair):
         self._add_typeparam(params)
 
 ##~
+
+
+##~ add XDLVO [RHEOINF]
+class XDLVO(Pair):
+    _cpp_class_name = "PotentialPairXDLVO"
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'): 
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float, 
+                              alpha=float, 
+                              Z=float, 
+                              kappa_e=float, 
+                              B=float, 
+                              r_e=float, 
+                              rho_e=float,
+                              sigma=float,
+                              kT=float,
+                              f_contact=float, 
+                              scaled_D0=bool, 
+                              len_keys=2))
+        self._add_typeparam(params)
+##~
+
+
+##~ add DPDXDLVO [RHEOINF]
+class DPDXDLVO(Pair):
+    _cpp_class_name = "PotentialPairDPDThermoDPDXDLVO"
+    _accepted_modes = ("none",)
+    _default_scaled_D0 = False
+    _default_a1 = 0.0
+    _default_a2 = 0.0
+    _default_sys_kT = 0.1
+
+    def __init__(self, nlist, kT, default_r_cut=None, bond_calc=False, scaled_D0=None, a1=None, a2=None, sys_kT=None):
+        super().__init__(nlist=nlist,
+                         default_r_cut=default_r_cut,
+                         default_r_on=0,
+                         mode='none')
+        ##~ add scaled_D0, default a1, default a2 [RHEOINF]
+        if scaled_D0 is None:
+            scaled_D0 = self._default_scaled_D0
+        if a1 is None:
+            a1 = self._default_a1
+        if a2 is None:
+            a2 = self._default_a2
+        if sys_kT is None:
+            sys_kT = self._default_sys_kT
+        ##~
+        self._bond_calc = bond_calc
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(A0=float,
+                              gamma=float,
+                              D0=float,
+                              alpha=float,
+                              r0=float,
+                              eta=float,
+                              Z=float,
+                              kappa_e=float,
+                              B=float,
+                              r_e=float,
+                              rho_e=float,
+                              sigma=float,
+                              kT=float,
+                              f_contact=float,
+                              a1=float(a1),
+                              a2=float(a2),
+                              rcut=float,
+                              scaled_D0=bool(scaled_D0),
+                              sys_kT=float(sys_kT),
+                              len_keys=2))
+        self._add_typeparam(params)
+        param_dict = ParameterDict(kT=hoomd.variant.Variant)
+        param_dict["kT"] = kT
+        self._param_dict.update(param_dict)
+        #self._param_dict.update(
+        #    ParameterDict(bond_calc=bool(bond_calc)))
+
+    def _add(self, simulation):
+        """Add the operation to a simulation.
+        
+        DPDMorse uses RNGs. Warn the user if they did not set the seed.
+        """
+        if isinstance(simulation, hoomd.Simulation):
+            simulation._warn_if_seed_unset()
+
+        super()._add(simulation)
+
+    @property
+    def bond_calc(self):
+        """
+        Getter method for the bond_calc property.
+        """
+        return self._bond_calc
+
+    @bond_calc.setter
+    def bond_calc(self, value):
+        """
+        Setter method for the bond_calc property.
+        """
+        self._bond_calc = value
+##~
+

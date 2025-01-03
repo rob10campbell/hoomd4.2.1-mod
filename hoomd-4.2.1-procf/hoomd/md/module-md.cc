@@ -67,6 +67,9 @@ void export_PotentialPairZBL(pybind11::module& m);
 void export_PotentialPairMie(pybind11::module& m);
 void export_PotentialPairReactionField(pybind11::module& m);
 void export_PotentialPairDLVO(pybind11::module& m);
+//~ add XDLVO [RHEOINF]
+void export_PotentialPairXDLVO(pybind11::module& m);
+//~
 void export_PotentialPairFourier(pybind11::module& m);
 void export_PotentialPairOPP(pybind11::module& m);
 void export_PotentialPairTWF(pybind11::module& m);
@@ -109,8 +112,9 @@ void export_PotentialExternalWallMorse(pybind11::module& m);
 
 void export_PotentialPairDPDThermoDPD(pybind11::module& m);
 void export_PotentialPairDPDThermoLJ(pybind11::module& m);
-//~ add DPDMorse [RHEOINF] 
+//~ add DPDMorse, DPDXDLVO [RHEOINF] 
 void export_PotentialPairDPDThermoDPDMorse(pybind11::module& m);
+void export_PotentialPairDPDThermoDPDXDLVO(pybind11::module& m);
 //~
 
 void export_IntegratorTwoStep(pybind11::module& m);
@@ -343,6 +347,9 @@ PYBIND11_MODULE(_md, m)
     export_PotentialPairMie(m);
     export_PotentialPairReactionField(m);
     export_PotentialPairDLVO(m);
+    //~ add XDLVO [RHEOINF]
+    export_PotentialPairXDLVO(m);
+    //~
     export_PotentialPairFourier(m);
     export_PotentialPairOPP(m);
     export_PotentialPairTWF(m);
@@ -367,8 +374,9 @@ PYBIND11_MODULE(_md, m)
 
     export_PotentialPairDPDThermoDPD(m);
     export_PotentialPairDPDThermoLJ(m);
-    //~ add DPDMorse [RHEOINF] 
+    //~ add DPDXDLVO [RHEOINF] 
     export_PotentialPairDPDThermoDPDMorse(m);
+    export_PotentialPairDPDThermoDPDXDLVO(m);
     //~
 
     export_PotentialBondHarmonic(m);

@@ -85,6 +85,7 @@ class PYBIND11_EXPORT ConstraintAngleForceCompute : public ForceCompute
         CommFlags flags = CommFlags(0);
         flags[comm_flag::tag] = 1;
         //flags[comm_flag::diameter] = 1;
+        flags[comm_flag::charge] = 1;
         flags |= ForceCompute::getRequestedCommFlags(timestep);
         return flags;
         }
