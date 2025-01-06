@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #ifndef HOOMD_TWOSTEPCONSTANTVOLUME_H
 #define HOOMD_TWOSTEPCONSTANTVOLUME_H
 
@@ -28,8 +30,9 @@ class PYBIND11_EXPORT TwoStepConstantVolume : public IntegrationMethodTwoStep
     */
     TwoStepConstantVolume(std::shared_ptr<SystemDefinition> sysdef,
                           std::shared_ptr<ParticleGroup> group,
-                          std::shared_ptr<Thermostat> thermostat)
-        : IntegrationMethodTwoStep(sysdef, group), m_thermostat(thermostat)
+                          std::shared_ptr<Thermostat> thermostat, //) //~ add walls [RHEOINF]
+                          std::string wall_axes) //~ add walls [RHEOINF]
+        : IntegrationMethodTwoStep(sysdef, group), m_thermostat(thermostat), m_wall(wall_axes) //~ add walls [RHEOINF]
         {
         }
 
@@ -79,6 +82,30 @@ class PYBIND11_EXPORT TwoStepConstantVolume : public IntegrationMethodTwoStep
         return m_limit;
         }
 
+    //~ wall axes [RHEOINF]
+    /** Set the wall option
+
+        @param wall_axes One of 10 wall axes options for bounceback:
+                         +x, -x, +x-x, +y, -y, +y-y, +z, -z, +z-z, none
+ 
+    */
+    void setWall(const std::string& wall_axes)
+        {
+        static const std::set<std::string> valid_axes = {"+x", "-x", "+x-x", "+y", "-y", "+y-y", "+z", "-z", "+z-z", "none"};
+        if (valid_axes.find(wall_axes) == valid_axes.end())
+            {
+            throw std::invalid_argument("Invalid wall_axes option: " + wall_axes);
+            }
+        m_wall = wall_axes;
+        }
+
+    /// Get the wall option
+    std::string getWall() const
+        {
+        return m_wall;
+        }
+    //~
+
     /// Get needed pdata flags.
     virtual PDataFlags getRequestedPDataFlags()
         {
@@ -106,6 +133,8 @@ class PYBIND11_EXPORT TwoStepConstantVolume : public IntegrationMethodTwoStep
 
     /// The distance limit to apply (may be null).
     std::shared_ptr<Variant> m_limit;
+
+    std::string m_wall; //~ add walls [RHEOINF]
     };
 
     } // namespace hoomd::md

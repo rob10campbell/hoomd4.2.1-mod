@@ -10,7 +10,7 @@ File lists are formatted as: `folder/`; file
 * [Polydispersity](/changelog.md#polydispersity) : Track and use particle radii for surface-surface distance (h_ij) calculations, option to scale D0 by particle size to mimic size-dependent depletion (Rob)
 * [On/Off Contact Force](/changelog.md#on-off-contact-force) : Add the ability to remove contact force and replace it with Morse repulsion (Sasha)
 * [Bond tracking](/changelog.md#bond-tracking) : Track bond formation and breaking (Nabi, Deepak, and Rob)
-* [Walls](/changelog.md#walls) : Wall options: flat or converging diverging (Josh)
+* [Walls](/changelog.md#walls) : Wall options (Josh, Rob) *to-be-added*: converging/diverging wall options (Josh)
 * [Pressure-driven flow](/changelog.md#pressure-driven-flow) : make sure charge is available for body force (Deepak)
 * [Morse with Repulsion](/changelog.md#morse-with-repulsion) : Add two repulsive options to Morse, Electrostatic repulsion and Yukawa repulsion (Rob)
 * [Friction](/changelog.md#friction) : Add the option for Coulombic (spring-like) and Viscous damping friction forces in aniso sims (Rob, Anushka, Paniz)
@@ -191,8 +191,18 @@ Track bond formation and breaking (Nabi, Deepak, and Rob)
 		* [x] PotentialPairDPDThermo.h : **charge**
 
 ## Walls
-Wall options: flat or converging diverging (Josh)
-- **walls**: Add walls in the Y direction that are either flat or sinusoidal in shape, including correct bounce-back conditions for solvents interacting with the wall. Add the ability for opposite sinusoidal walls to be aligned (in phase) or offset by a phase shift and for the "sides" to have flat walls.
+Add wall options (Josh, Rob) *to be added* converging diverging (Josh)
+- **walls**: add 10 flat-wall options ("+x", "-x", "+x-x", "+y", "-y", "+y-y", "+z", "-z", "+z-z", "none")
+- **sine-walls**: *to be added* Add walls in the Y direction that are either flat or sinusoidal in shape, including correct bounce-back conditions for solvents interacting with the wall. Add the ability for opposite sinusoidal walls to be aligned (in phase) or offset by a phase shift and for the "sides" to have flat walls.
+* [x] `hoomd/`
+	* [x] `md/`
+		* [x] `methods/`
+			* [x] methods.py **wall_axes param, default 'none'**
+		* [ ] TwoStepConstantVolume.cc : **walls**
+		* [ ] TwoStepConstantVolume.h **walls**
+
+*to be added*
+- **sine-walls**: Add walls in the Y direction that are either flat or sinusoidal in shape, including correct bounce-back conditions for solvents interacting with the wall. Add the ability for opposite sinusoidal walls to be aligned (in phase) or offset by a phase shift and for the "sides" to have flat walls.
 * [ ] `hoomd/`
 	* [ ] `md/`
 		* [ ] `methods/`

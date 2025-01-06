@@ -38,6 +38,14 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
         //uchar3 per_ = box.getPeriodic();
         Scalar shear_rate = this->m_SR; 
         //~
+
+        //~ get the sim box dimensions for wall assignments [RHEOINF]
+        const BoxDim& Gbox = m_pdata->getGlobalBox();
+        Scalar L_X = Gbox.getL().x;
+        Scalar L_Y = Gbox.getL().y;
+        Scalar L_Z = Gbox.getL().z;
+        //~
+
         for (unsigned int group_idx = 0; group_idx < group_size; group_idx++)
             {
             unsigned int j = m_group->getMemberIndex(group_idx);
@@ -89,6 +97,112 @@ void hoomd::md::TwoStepConstantVolume::integrateStepOne(uint64_t timestep)
                else
                    h_pos.data[j].z += Scalar(2.0) * Dist_to_wall;
                }*/
+            //~
+
+            //~ add wall bounceback options (+x, -x, +x-x, +y, -y, +y-y, +z, -z, +z-z) [RHEOINF]
+            if (m_wall != "none")
+                {
+                if (m_wall == "+x")
+                    {
+                //~ if particles would exit the +X wall, bounce them back instead
+                if (h_pos.data[j].x>(L_X/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_plusx = h_pos.data[j].x-L_X/2.0;
+                    h_pos.data[j].x = h_pos.data[j].x / h_pos.data[j].x * (L_X/2.0 - dist_to_wall_plusx);
+                    h_vel.data[j].x = -h_vel.data[j].x;
+                    }
+                }
+            if (m_wall == "-x")
+                {
+                //~ if particles would exit the -X wall, bounce them back instead
+                if (h_pos.data[j].x<(-L_X/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_minusx = abs(h_pos.data[j].x)-L_X/2.0;
+                    h_pos.data[j].x = h_pos.data[j].x / abs(h_pos.data[j].x) * (L_X/2.0 - dist_to_wall_minusx);
+                    h_vel.data[j].x = -h_vel.data[j].x;
+                    }
+                }
+            if (m_wall == "+x-x")
+                {
+                //~ if particles would exit either X wall, bounce them back instead
+                if ( (abs(h_pos.data[j].x)>(L_X/2.0)) ) //~ && (h_pos.data[j].w ==0) ) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_x = abs(h_pos.data[j].x)-L_X/2.0;
+                    h_pos.data[j].x = h_pos.data[j].x / abs(h_pos.data[j].x) * (L_X/2.0 - dist_to_wall_x);
+                    h_vel.data[j].x = -h_vel.data[j].x;
+                    }
+                }
+            if (m_wall == "+y")
+                {
+                //~ if particles would exit the +Y wall, bounce them back instead
+                if (h_pos.data[j].y>(L_Y/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_plusy = h_pos.data[j].z-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / h_pos.data[j].y * (L_Y/2.0 - dist_to_wall_plusy);
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    }
+                }
+            if (m_wall == "-y")
+                {
+                //~ if particles would exit the -Y wall, bounce them back instead
+                if (h_pos.data[j].y<(-L_Y/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_minusy = abs(h_pos.data[j].y)-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / abs(h_pos.data[j].y) * (L_Y/2.0 - dist_to_wall_minusy);
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    }
+                }
+            if (m_wall == "+y-y")
+                {
+                //~ if particles would exit either Y wall, bounce them back instead
+                if ( (abs(h_pos.data[j].y)>(L_Y/2.0)) ) //~ && (h_pos.data[j].w ==0) ) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_y = abs(h_pos.data[j].y)-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / abs(h_pos.data[j].y) * (L_Y/2.0 - dist_to_wall_y);
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    }
+                }
+            if (m_wall == "+z")
+                {
+                //~ if particles would exit the +Z wall, bounce them back instead
+                if (h_pos.data[j].z>(L_Z/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                     if (h_pos.data[j].y<(-L_Y/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_minusy = abs(h_pos.data[j].y)-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / abs(h_pos.data[j].y) * (L_Y/2.0 - dist_to_wall_minusy);
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    }
+                }
+            if (m_wall == "+y-y")
+                {
+                //~ if particles would exit either Y wall, bounce them back instead
+                Scalar dist_to_wall_plusz = h_pos.data[j].z-L_Z/2.0;
+                    h_pos.data[j].z = h_pos.data[j].z / h_pos.data[j].z * (L_Z/2.0 - dist_to_wall_plusz);
+                    h_vel.data[j].z = -h_vel.data[j].z;
+                    }
+                }
+            if (m_wall == "-z")
+                {
+                //~ if particles would exit the -Z wall, bounce them back instead
+                if (h_pos.data[j].z<(-L_Z/2.0)) //~ && (h_pos.data[j].w ==0)) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_minusz = abs(h_pos.data[j].z)-L_Z/2.0;
+                    h_pos.data[j].z = h_pos.data[j].z / abs(h_pos.data[j].z) * (L_Z/2.0 - dist_to_wall_minusz);
+                    h_vel.data[j].z = -h_vel.data[j].z;
+                    }
+                }
+            if (m_wall == "+z-z")
+                {
+                //~ if particles would exit either Z wall, bounce them back instead
+                if ( (abs(h_pos.data[j].z)>(L_Z/2.0)) ) //~ && (h_pos.data[j].w ==0) ) //~ all particles, or only solvents
+                    {
+                    Scalar dist_to_wall_z = abs(h_pos.data[j].z)-L_Z/2.0;
+                    h_pos.data[j].z = h_pos.data[j].z / abs(h_pos.data[j].z) * (L_Z/2.0 - dist_to_wall_z);
+                    h_vel.data[j].z = -h_vel.data[j].z;
+                    }
+                }
+            }
             //~
 
             }
@@ -358,10 +472,14 @@ void export_TwoStepConstantVolume(pybind11::module& m)
                      std::shared_ptr<TwoStepConstantVolume>>(m, "TwoStepConstantVolume")
         .def(pybind11::init<std::shared_ptr<SystemDefinition>,
                             std::shared_ptr<ParticleGroup>,
-                            std::shared_ptr<Thermostat>>())
+                            std::shared_ptr<Thermostat>,//>()) //~ add walls [RHEOINF]
+                            std::string>()) //~ add walls [RHEOINF]
         .def("setThermostat", &TwoStepConstantVolume::setThermostat)
         .def_property("maximum_displacement",
                       &TwoStepConstantVolume::getLimit,
-                      &TwoStepConstantVolume::setLimit);
+                      &TwoStepConstantVolume::setLimit) //; //~ add walls [RHEOINF]
+        .def_property("m_wall",
+                      &TwoStepConstantVolume::getWall,
+                      &TwoStepConstantVolume::setWall);
     }
     }; // namespace hoomd::md::detail

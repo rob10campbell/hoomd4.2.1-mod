@@ -95,7 +95,11 @@ class ConstantVolume(Thermostatted):
             control temperature. Setting this to ``None`` samples a constant
             energy (NVE, microcanonical) dynamics. Defaults to ``None``.
 
-    `ConstantVolume` numerically integrates the translational degrees of freedom
+        wall_axes: a string that determines the existence of walls in different
+            directions ("+x", "-x", "+x-x", "+y", "-y", "+y-y", "+z", "-z", "+z-z", "none")
+            ; defaults to "none" for normal boundaries [RHEOINF]
+
+   `ConstantVolume` numerically integrates the translational degrees of freedom
     using Velocity-Verlet and the rotational degrees of freedom with a scheme
     based on `Kamberaj 2005`_.
 
@@ -144,13 +148,14 @@ class ConstantVolume(Thermostatted):
     .. _Kamberaj 2005: http://dx.doi.org/10.1063/1.1906216
     """
 
-    def __init__(self, filter, thermostat=None):
+    def __init__(self, filter, thermostat=None, wall_axes="none"): ##~ add walls [REHOINF]
         super().__init__()
         # store metadata
         param_dict = ParameterDict(filter=ParticleFilter,
                                    thermostat=OnlyTypes(Thermostat,
-                                                        allow_none=True))
-        param_dict.update(dict(filter=filter, thermostat=thermostat))
+                                                        allow_none=True),
+                                   wall_axes=str) ##~ add walls [RHEOINF]
+        param_dict.update(dict(filter=filter, thermostat=thermostat, wall_axes=wall_axes)) ##~ add walls [RHEOINF]
         # set defaults
         self._param_dict.update(param_dict)
 
@@ -168,11 +173,11 @@ class ConstantVolume(Thermostatted):
         self._thermo = thermo_cls(cpp_sys_def, group)
 
         if self.thermostat is None:
-            self._cpp_obj = cls(cpp_sys_def, group, None)
+            self._cpp_obj = cls(cpp_sys_def, group, None, self.wall_axes) ##~ add walls [RHEOINF]
         else:
             self.thermostat._set_thermo(self.filter, self._thermo)
             self.thermostat._attach(self._simulation)
-            self._cpp_obj = cls(cpp_sys_def, group, self.thermostat._cpp_obj)
+            self._cpp_obj = cls(cpp_sys_def, group, self.thermostat._cpp_obj, self.wall_axes) ##~ add walls [RHEOINF]
         super()._attach_hook()
 
 
