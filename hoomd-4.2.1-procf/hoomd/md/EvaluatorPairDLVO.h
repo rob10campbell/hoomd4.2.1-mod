@@ -154,11 +154,15 @@ class EvaluatorPairDLVO
             Scalar rmdsqminv = Scalar(1.0) / rmdsqm;
             Scalar exp_val = fast::exp(-kappa * rmds);
             Scalar forcerep_divr = kappa * radprod * radsuminv * Z * exp_val / r;
-            Scalar fatrterm1 = r * r * r * r + radsubsq * radsubsq - Scalar(2.0) * r * r * radsumsq;
-            Scalar fatrterm1inv = Scalar(1.0) / fatrterm1 * Scalar(1.0) / fatrterm1;
-            Scalar forceatr_divr
-                = -Scalar(32.0) * A / Scalar(3.0) * radprod * radprod * radprod * fatrterm1inv;
-            force_divr = forcerep_divr + forceatr_divr;
+            if (rmds > 0) { //~ vdW goes to infinity at contact, avoid this [RHEOINF]
+                Scalar fatrterm1 = r * r * r * r + radsubsq * radsubsq - Scalar(2.0) * r * r * radsumsq;
+                Scalar fatrterm1inv = Scalar(1.0) / fatrterm1 * Scalar(1.0) / fatrterm1;
+                Scalar forceatr_divr
+                    = -Scalar(32.0) * A / Scalar(3.0) * radprod * radprod * radprod * fatrterm1inv;
+                force_divr = forcerep_divr + forceatr_divr;
+            } else {//~ vdW goes to infinity at contact, avoid this [RHEOINF]
+                force_divr = forcerep_divr; // + forceatr_divr; //~ vdW goes to infinity at contact, avoid this [RHEOINF]
+            }
 
             Scalar engt1 = radprod * rmdsqsinv * A / Scalar(3.0);
             Scalar engt2 = radprod * rmdsqminv * A / Scalar(3.0);
