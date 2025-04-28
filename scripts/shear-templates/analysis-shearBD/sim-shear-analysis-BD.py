@@ -31,11 +31,13 @@ filepath = '../Shear-BD.gsd'
 # filepath to folder where data files will be created
 data_outpath = 'data'
 
+shear_style = 'constant'
+
 ## For the noaffinity calculation
 affine_ref_filepath = "../../3-gelation/Gelation-BD.gsd"
 ## calculate BDtimes for your sim
 frames_per_strain = 50
-if shear_style = 'constant'
+if shear_style == 'constant'
   dt_Integration = 1e-4
   theta = 1.0
   shear_rate = 0.1
