@@ -21,6 +21,7 @@ import numpy as np
 import gsd.hoomd
 import math
 import module
+import os
 
 ##########################
 """ INPUT PARAMETERS """
@@ -200,8 +201,8 @@ def fabric_tensor_py(filename):
 #######
 
 if __name__ == '__main__':
-  extract_properties_py(filename)
-  colloid_vel_profile_py(filename)
-  non_affinity_py(filename,BDtime)
-  fabric_tensor_py(filename)
+  extract_properties_py(filepath)
+  colloid_vel_profile_py(filepath)
+  non_affinity_py(filepath,BDtime)
+  fabric_tensor_py(filepath)
 

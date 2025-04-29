@@ -24,6 +24,7 @@ import numpy as np
 import gsd.hoomd
 import math
 import module
+import os
 
 ##########################
 """ INPUT PARAMETERS """
@@ -34,11 +35,13 @@ filepath = '../Shear-DPD.gsd'
 # filepath to folder where data files will be created
 data_outpath = 'data'
 
+shear_style = 'constant'
+
 ## For the noaffinity calculation
 affine_ref_filepath = "../../3-gelation/Gelation-DPD.gsd"
 ## calculate DPDtimes for your sim
 frames_per_strain = 50
-if shear_style = 'constant'
+if shear_style == 'constant'
   dt_Integration = 1e-4
   theta = 1.0
   shear_rate = 0.1
@@ -244,9 +247,9 @@ def fabric_tensor_py(filename):
 #######
 
 if __name__ == '__main__':
-  extract_properties_py(filename)
-  corrected_temperature_py(filename)
-  solvent_vel_profile_py(filename)
-  non_affinity_py(filename,DPDtime)
-  fabric_tensor_py(filename)
+  extract_properties_py(filepath)
+  corrected_temperature_py(filepath)
+  solvent_vel_profile_py(filepath)
+  non_affinity_py(filepath,DPDtime)
+  fabric_tensor_py(filepath)
 
