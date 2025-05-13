@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #include "TwoStepLangevinBase.h"
 
 #pragma once
@@ -28,7 +30,8 @@ class PYBIND11_EXPORT TwoStepBD : public TwoStepLangevinBase
               std::shared_ptr<ParticleGroup> group,
               std::shared_ptr<Variant> T,
               bool noiseless_t,
-              bool noiseless_r);
+              bool noiseless_r,//); //~ add walls [RHEOINF]
+              std::string wall_axes); //~ add walls [RHEOINF]
 
     virtual ~TwoStepBD();
 
@@ -41,6 +44,7 @@ class PYBIND11_EXPORT TwoStepBD : public TwoStepLangevinBase
     protected:
     bool m_noiseless_t;
     bool m_noiseless_r;
+    std::string m_wall; //~ add walls [RHEOINF]
     };
 
     } // end namespace md

@@ -29,8 +29,9 @@ TwoStepBD::TwoStepBD(std::shared_ptr<SystemDefinition> sysdef,
                      std::shared_ptr<ParticleGroup> group,
                      std::shared_ptr<Variant> T,
                      bool noiseless_t,
-                     bool noiseless_r)
-    : TwoStepLangevinBase(sysdef, group, T), m_noiseless_t(noiseless_t), m_noiseless_r(noiseless_r)
+                     bool noiseless_r,//) //~ add walls [RHEOINF]
+                     std::string wall_axes) //~ add walls [RHEOINF]
+    : TwoStepLangevinBase(sysdef, group, T), m_noiseless_t(noiseless_t), m_noiseless_r(noiseless_r), m_wall(wall_axes) //~ add walls [RHEOINF]
     {
     m_exec_conf->msg->notice(5) << "Constructing TwoStepBD" << endl;
     }
@@ -89,6 +90,11 @@ void TwoStepBD::integrateStepOne(uint64_t timestep)
 
     const BoxDim& box = m_pdata->getBox();
     const BoxDim& box_global = m_pdata->getGlobalBox(); //~ box_dims [RHEOINF]
+    //~ get the sim box dimensions for wall assignments [RHEOINF]
+    Scalar L_X = box_global.getL().x;
+    Scalar L_Y = box_global.getL().y;
+    Scalar L_Z = box_global.getL().z;
+    //~
     uint16_t seed = m_sysdef->getSeed();
     //~ add shear rate [RHEOINF]
     Scalar shear_rate = this->m_SR;
@@ -141,10 +147,139 @@ void TwoStepBD::integrateStepOne(uint64_t timestep)
 
         Scalar vinf = shear_rate * h_pos.data[j].y / box_global.getL().y; //~ add vinf [RHEOINF]
 
+        //~ add wall bounceback options (+x, -x, +x-x, +y, -y, +y-y, +z, -z, +z-z) [RHEOINF]
+
+        //~ initialize bounceback velocity modification placeholders
+        //Scalar x_vel = 0;
+        //Scalar y_vel = 0;
+        //Scalar z_vel = 0;
+
+        if (m_wall != "none")
+            {
+            //std::cout << (m_wall == "+y-y") << std::endl;
+            //~ check for walls
+            if (m_wall == "+x")
+                {
+                //~ if particles would exit the +X wall, bounce them back instead
+                if (h_pos.data[j].x>(L_X/2.0))
+                    {
+                    Scalar dist_to_wall_plusx = h_pos.data[j].x-L_X/2.0;
+                    h_pos.data[j].x = h_pos.data[j].x / h_pos.data[j].x * (L_X/2.0 - dist_to_wall_plusx);
+                    //x_vel += -h_vel.data[j].x;
+                    h_vel.data[j].x = -h_vel.data[j].x;
+                    //std::cout << "+x" << std::endl;
+                    }
+                }
+            if (m_wall == "-x")
+                {
+                //~ if particles would exit the -X wall, bounce them back instead
+                if (h_pos.data[j].x<(-L_X/2.0))
+                    {
+                    Scalar dist_to_wall_minusx = abs(h_pos.data[j].x)-L_X/2.0;
+                    h_pos.data[j].x = h_pos.data[j].x / abs(h_pos.data[j].x) * (L_X/2.0 - dist_to_wall_minusx);
+                    //x_vel += -h_vel.data[j].x;
+                    h_vel.data[j].x = -h_vel.data[j].x;
+                    //std::cout << "-x" << std::endl;
+                    }
+                }
+            if (m_wall == "+x-x")
+                {
+                //~ if particles would exit either X wall, bounce them back instead
+                if ( (abs(h_pos.data[j].x)>(L_X/2.0)) )
+                    {
+                    Scalar dist_to_wall_x = abs(h_pos.data[j].x)-L_X/2.0;
+                    h_pos.data[j].x = h_pos.data[j].x / abs(h_pos.data[j].x) * (L_X/2.0 - dist_to_wall_x);
+                    //x_vel += -h_vel.data[j].x;
+                    h_vel.data[j].x = -h_vel.data[j].x;
+                    //std::cout << "+x-x" << std::endl;
+                    }
+                }
+            if (m_wall == "+y")
+                {
+                //~ if particles would exit the +Y wall, bounce them back instead
+                if (h_pos.data[j].y>(L_Y/2.0))
+                    {
+                    Scalar dist_to_wall_plusy = h_pos.data[j].z-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / h_pos.data[j].y * (L_Y/2.0 - dist_to_wall_plusy);
+                    //y_vel += -h_vel.data[j].y;
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    //std::cout << "+y" << std::endl;
+                    }
+                }
+           if (m_wall == "-y")
+                {
+                //~ if particles would exit the -Y wall, bounce them back instead
+                if (h_pos.data[j].y<(-L_Y/2.0))
+                    {
+                    Scalar dist_to_wall_minusy = abs(h_pos.data[j].y)-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / abs(h_pos.data[j].y) * (L_Y/2.0 - dist_to_wall_minusy);
+                    //y_vel += -h_vel.data[j].y;
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    //std::cout << "-y" << std::endl;
+                    }
+                }
+            if (m_wall == "+y-y")
+                { 
+                //~ if particles would exit either Y wall, bounce them back instead
+                if ( (abs(h_pos.data[j].y)>(L_Y/2.0)) )
+                    {
+                    std::cout << h_vel.data[j].y << std::endl;
+                    Scalar dist_to_wall_y = abs(h_pos.data[j].y)-L_Y/2.0;
+                    h_pos.data[j].y = h_pos.data[j].y / abs(h_pos.data[j].y) * (L_Y/2.0 - dist_to_wall_y);
+                    //y_vel += -h_vel.data[j].y;
+                    h_vel.data[j].y = -h_vel.data[j].y;
+                    //std::cout << "+y-y" << std::endl;
+                    std::cout << h_vel.data[j].y << std::endl;
+                    std::cout << "---" << std::endl;
+                    }
+                }
+            if (m_wall == "+z")
+                {
+                //~ if particles would exit the +Z wall, bounce them back instead
+                if (h_pos.data[j].z>(L_Z/2.0))
+                    {
+                    Scalar dist_to_wall_plusz = h_pos.data[j].z-L_Z/2.0;
+                    h_pos.data[j].z = h_pos.data[j].z / h_pos.data[j].z * (L_Z/2.0 - dist_to_wall_plusz);
+                    //z_vel += -h_vel.data[j].z;
+                    h_vel.data[j].z = -h_vel.data[j].z;
+                    //std::cout << "+z" << std::endl;
+                    }
+                }
+            if (m_wall == "-z")
+                {
+                //~ if particles would exit the -Z wall, bounce them back instead
+                if (h_pos.data[j].z<(-L_Z/2.0))
+                    {
+                    Scalar dist_to_wall_minusz = abs(h_pos.data[j].z)-L_Z/2.0;
+                    h_pos.data[j].z = h_pos.data[j].z / abs(h_pos.data[j].z) * (L_Z/2.0 - dist_to_wall_minusz);
+                    //z_vel += -h_vel.data[j].z;
+                    h_vel.data[j].z = -h_vel.data[j].z;
+                    //std::cout << "-z" << std::endl;
+                    }
+                }
+            if (m_wall == "+z-z")
+                {
+                //~ if particles would exit either Z wall, bounce them back instead
+                if ( (abs(h_pos.data[j].z)>(L_Z/2.0)) ) 
+                    {
+                    Scalar dist_to_wall_z = abs(h_pos.data[j].z)-L_Z/2.0;
+                    h_pos.data[j].z = h_pos.data[j].z / abs(h_pos.data[j].z) * (L_Z/2.0 - dist_to_wall_z);
+                    //z_vel += -h_vel.data[j].z;
+                    h_vel.data[j].z = -h_vel.data[j].z;
+                    //std::cout << "+z-z" << std::endl;
+                    }
+                }
+            }
+        //~
+
         // update position
-        h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma + vinf * m_deltaT; //~ add vinf in flow direction [RHEOINF]
+        h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma + (vinf * m_deltaT); //~ add vinf in flow direction [RHEOINF]
         h_pos.data[j].y += (h_net_force.data[j].y + Fr_y) * m_deltaT / gamma;
         h_pos.data[j].z += (h_net_force.data[j].z + Fr_z) * m_deltaT / gamma;
+        //h_pos.data[j].x += (h_net_force.data[j].x + Fr_x) * m_deltaT / gamma + (vinf * m_deltaT) + (x_vel*m_deltaT); //~ add vinf in flow direction and bounceback for x-walls [RHEOINF]
+        //h_pos.data[j].y += (h_net_force.data[j].y + Fr_y) * m_deltaT / gamma + (y_vel*m_deltaT); //~ add bounceback for y-walls [RHEOINF]
+        //h_pos.data[j].z += (h_net_force.data[j].z + Fr_z) * m_deltaT / gamma + (z_vel*m_deltaT); //~ add bounceback for z-walls [RHEOINF]
+
 
         // particles may have been moved slightly outside the box by the above steps, wrap them back
         // into place
@@ -282,7 +417,8 @@ void export_TwoStepBD(pybind11::module& m)
                             std::shared_ptr<ParticleGroup>,
                             std::shared_ptr<Variant>,
                             bool,
-                            bool>());
+                            bool,//>())//; //~ add walls [RHEOINF]
+                            std::string>()); //~ add walls [RHEOINF]
     }
 
     } // end namespace detail
