@@ -1045,6 +1045,7 @@ Brownian dynamics neglects the acceleration term in the Langevin equation.
             alpha=None,
             default_gamma=1.0,
             default_gamma_r=(1.0, 1.0, 1.0),
+            wall_axes='none' ##~ add walls [RHEOINF]
     ):
 
         # store metadata
@@ -1052,8 +1053,9 @@ Brownian dynamics neglects the acceleration term in the Langevin equation.
             filter=ParticleFilter,
             kT=Variant,
             alpha=OnlyTypes(float, allow_none=True),
+            wall_axes=str ##~ add walls [RHEOINF]
         )
-        param_dict.update(dict(kT=kT, alpha=alpha, filter=filter))
+        param_dict.update(dict(kT=kT, alpha=alpha, filter=filter, wall_axes=wall_axes)) ##~ add walls [RHEOINF]
 
         # set defaults
         self._param_dict.update(param_dict)
@@ -1078,11 +1080,11 @@ Brownian dynamics neglects the acceleration term in the Langevin equation.
         if isinstance(sim.device, hoomd.device.CPU):
             self._cpp_obj = _md.TwoStepBD(sim.state._cpp_sys_def,
                                           sim.state._get_group(self.filter),
-                                          self.kT, False, False)
+                                          self.kT, False, False, self.wall_axes) ##~ add walls [RHEOINF]
         else:
             self._cpp_obj = _md.TwoStepBDGPU(sim.state._cpp_sys_def,
                                              sim.state._get_group(self.filter),
-                                             self.kT, False, False)
+                                             self.kT, False, False, self.wall_axes) ##~ add walls [RHEOINF]
 
         # Attach param_dict and typeparam_dict
         super()._attach_hook()

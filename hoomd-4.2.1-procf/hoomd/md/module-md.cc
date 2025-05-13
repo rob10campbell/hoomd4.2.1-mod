@@ -59,15 +59,20 @@ void export_PotentialPairExpandedMie(pybind11::module& m);
 void export_PotentialPairYukawa(pybind11::module& m);
 void export_PotentialPairEwald(pybind11::module& m);
 void export_PotentialPairMorse(pybind11::module& m);
-//~ add MorseRepulse [RHEOINF]
+//~ add MorseRepulse and MorseBrush [RHEOINF]
 void export_PotentialPairMorseRepulse(pybind11::module& m);
+void export_PotentialPairMorseBrush(pybind11::module& m);
+void export_PotentialPairMorseBrush2(pybind11::module& m);
+void export_PotentialPairMorseBrushPaniz(pybind11::module& m);
+void export_PotentialPairMorseBrushAltElec(pybind11::module& m);
 //~
 void export_PotentialPairMoliere(pybind11::module& m);
 void export_PotentialPairZBL(pybind11::module& m);
 void export_PotentialPairMie(pybind11::module& m);
 void export_PotentialPairReactionField(pybind11::module& m);
 void export_PotentialPairDLVO(pybind11::module& m);
-//~ add XDLVO [RHEOINF]
+//~ add XDLVO and DLVOalt [RHEOINF]
+void export_PotentialPairDLVOalt(pybind11::module& m);
 void export_PotentialPairXDLVO(pybind11::module& m);
 //~
 void export_PotentialPairFourier(pybind11::module& m);
@@ -339,15 +344,20 @@ PYBIND11_MODULE(_md, m)
     export_PotentialPairYukawa(m);
     export_PotentialPairEwald(m);
     export_PotentialPairMorse(m);
-    //~ add MorseRepulase [RHEOINF]
+    //~ add MorseRepulse and MorseBrush [RHEOINF]
     export_PotentialPairMorseRepulse(m);
+    export_PotentialPairMorseBrush(m);
+    export_PotentialPairMorseBrush2(m);
+    export_PotentialPairMorseBrushPaniz(m);
+    export_PotentialPairMorseBrushAltElec(m);
     //~
     export_PotentialPairMoliere(m);
     export_PotentialPairZBL(m);
     export_PotentialPairMie(m);
     export_PotentialPairReactionField(m);
     export_PotentialPairDLVO(m);
-    //~ add XDLVO [RHEOINF]
+    //~ add XDLVO and DLVOalt [RHEOINF]
+    export_PotentialPairDLVOalt(m);
     export_PotentialPairXDLVO(m);
     //~
     export_PotentialPairFourier(m);

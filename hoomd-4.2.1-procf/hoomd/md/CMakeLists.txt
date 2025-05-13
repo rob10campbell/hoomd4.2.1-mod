@@ -95,6 +95,7 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairBuckingham.h
                 EvaluatorPairDipole.h
                 EvaluatorPairDLVO.h
+                EvaluatorPairDLVOalt.h #[RHEOINF]
                 EvaluatorPairDPDThermoLJ.h
                 EvaluatorPairDPDThermoDPD.h
                 EvaluatorPairDPDThermoDPDMorse.h #[RHEOINF]
@@ -113,6 +114,10 @@ set(_md_headers ActiveForceComputeGPU.h
                 EvaluatorPairMorse.h
                 EvaluatorPairMorseFrix.h #[RHEOINF]
                 EvaluatorPairMorseRepulse.h #[RHEOINF]
+                EvaluatorPairMorseBrush.h #[RHEOINF]
+                EvaluatorPairMorseBrush2.h #[RHEOINF]
+                EvaluatorPairMorseBrushPaniz.h #[RHEOINF]
+                EvaluatorPairMorseBrushAltElec.h #[RHEOINF]
                 EvaluatorPairOPP.h
                 EvaluatorPairFourier.h
                 EvaluatorPairReactionField.h
@@ -515,12 +520,17 @@ set(_pair_evaluators Buckingham
                      Ewald
                      Morse
                      MorseRepulse #[RHEOINF]
+                     MorseBrush #[RHEOINF]
+                     MorseBrush2 #[RHEOINF]
+                     MorseBrushPaniz #[RHEOINF]
+                     MorseBrushAltElec #[RHEOINF]
                      ConservativeDPD
                      Moliere
                      ZBL
                      Mie
                      ReactionField
                      DLVO
+                     DLVOalt #[RHEOINF]
                      XDLVO #[RHEOINF]
                      Fourier
                      OPP

@@ -151,7 +151,7 @@ class EvaluatorPairMorse
     DEVICE bool evalForceAndEnergy(Scalar& force_divr, Scalar& pair_eng, bool energy_shift)
         {
         //~ Add radsum from passed diameters [RHEOINF] 
-        Scalar radsum = 0.5 * (diameter_i + diameter_j); 
+        Scalar radsum = 0.5 * (diameter_i + diameter_j) + (2*r0); 
         //~ Scale attraction strength by particle size is scaled_D0 is true
         //~ NOTE: changing the value of a parameter passed from Python is bad form, but it does seem to work...
         if (scaled_D0)

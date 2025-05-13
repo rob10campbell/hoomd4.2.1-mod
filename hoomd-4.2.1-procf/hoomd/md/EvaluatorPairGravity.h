@@ -4,8 +4,8 @@
 // $Id$
 // $URL$
 
-#ifndef __PAIR_EVALUATOR_MORSE_FRIX_H__
-#define __PAIR_EVALUATOR_MORSE_FRIX_H__
+#ifndef __PAIR_EVALUATOR_GRAVITY_H__
+#define __PAIR_EVALUATOR_GRAVITY_H__
 
 #ifndef __HIPCC__
 #include <string>
@@ -18,8 +18,8 @@
 #endif
 #include "hoomd/VectorMath.h"
 #include <iostream>
-/*! \file EvaluatorPairMorseFrix.h
-    \brief Defines the Morse potential with frictional restrictions on rotation
+/*! \file EvaluatorPairGravity.h
+    \brief Defines the gravitational potential in the Y-direction
 */
 
 // need to declare these class methods with __device__ qualifiers when building
@@ -37,19 +37,20 @@ namespace hoomd
     {
 namespace md
     {
-class EvaluatorPairMorseFrix
+class EvaluatorPairGravity
     {
     public:
     struct param_type
         {
-        Scalar D0;
-        Scalar alpha;
+        //Scalar D0;
+        //Scalar alpha;
         //Scalar range; //[AJ 2024]
         //Scalar r0;
-        Scalar kn;
+        //Scalar kn;
         //Scalar eta_n; //[AJ 2024]
-        Scalar eta_t;
-        Scalar mu_t;
+        //Scalar eta_t;
+        //Scalar mu_t;
+        Scalar F_G;
 
 #ifdef ENABLE_HIP
         //! Set CUDA memory hints
@@ -69,7 +70,8 @@ class EvaluatorPairMorseFrix
         HOSTDEVICE void allocate_shared(char*& ptr, unsigned int& available_bytes) const { }
 
         //HOSTDEVICE param_type() : D0(0), alpha(0), r0(0), kn(0), eta_t(0), mu_t(0) { }
-        HOSTDEVICE param_type() : D0(0), alpha(0), kn(0), eta_t(0), mu_t(0) { }
+        //HOSTDEVICE param_type() : D0(0), alpha(0), kn(0), eta_t(0), mu_t(0) { }
+        HOSTDEVICE param_type() : F_G(0) { }
         //HOSTDEVICE param_type() : range(0), kn(0), eta_n(0), eta_t(0), mu_t(0) { }  //[AJ 2024]
         //HOSTDEVICE param_type() : kn(0), eta_t(0), mu_t(0) { }
 
@@ -77,27 +79,29 @@ class EvaluatorPairMorseFrix
 
         param_type(pybind11::dict v, bool managed)
             {
-            D0 = v["D0"].cast<Scalar>();
-            alpha = v["alpha"].cast<Scalar>();
+            F_G = v["F_G"].cast<Scalar>();
+            //D0 = v["D0"].cast<Scalar>();
+            //alpha = v["alpha"].cast<Scalar>();
             //range = v["range"].cast<Scalar>();  //[AJ 2024]
             //r0 = v["r0"].cast<Scalar>();
-            kn = v["kn"].cast<Scalar>();
+            //kn = v["kn"].cast<Scalar>();
             //eta_n = v["eta_n"].cast<Scalar>();  //[AJ 2024]
-            eta_t = v["eta_t"].cast<Scalar>();
-            mu_t = v["mu_t"].cast<Scalar>();
+            //eta_t = v["eta_t"].cast<Scalar>();
+            //mu_t = v["mu_t"].cast<Scalar>();
             }
 
         pybind11::object toPython()
             {
             pybind11::dict v;
-            v["D0"] = D0;
-            v["alpha"] = alpha;
+            v["F_G"] = F_G;
+            //v["D0"] = D0;
+            //v["alpha"] = alpha;
             //v["range"] = range;  //[AJ 2024]
             //v["r0"] = r0;
-            v["kn"] = kn;
+            //v["kn"] = kn;
             //v["eta_n"] = eta_n;  //[AJ 2024]
-            v["eta_t"] = eta_t;
-            v["mu_t"] = mu_t;
+            //v["eta_t"] = eta_t;
+            //v["mu_t"] = mu_t;
             return std::move(v);
             }
 
@@ -155,7 +159,7 @@ class EvaluatorPairMorseFrix
         \param _mu_t 
         \param _params Per type pair parameters of this potential
     */
-    HOSTDEVICE EvaluatorPairMorseFrix(Scalar3& _dr,
+    HOSTDEVICE EvaluatorPairGravity(Scalar3& _dr,
                                      Scalar4& _quat_i,
                                      Scalar4& _quat_j,
                                      Scalar _rcutsq,
@@ -164,7 +168,9 @@ class EvaluatorPairMorseFrix
         : dr(_dr), rcutsq(_rcutsq), tag_i(0), tag_j(0), quat_i(_quat_i), quat_j(_quat_j),
           //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), range(_params.range), kn(_params.kn), eta_n(_params.eta_n), eta_t(_params.eta_t), mu_t(_params.mu_t) // [AJ2024]
           //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), r0(_params.r0), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
-          mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), D0(_params.D0), alpha(_params.alpha), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
+          mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), 
+          F_G(_params.F_G)
+          //D0(_params.D0), alpha(_params.alpha), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
           //mu_i {0, 0, 0}, mu_j {0, 0, 0}, diameter_i(0), diameter_j(0), kn(_params.kn), eta_t(_params.eta_t), mu_t(_params.mu_t)
         {
         }
@@ -309,6 +315,7 @@ class EvaluatorPairMorseFrix
                              Scalar3& torque_i,
                              Scalar3& torque_j)
         {
+        /*
         vec3<Scalar> rvec(dr);
         Scalar rsq = dot(rvec, rvec);
         Scalar r = fast::sqrt(rsq);
@@ -330,7 +337,7 @@ class EvaluatorPairMorseFrix
 
         //Scalar morse_range = range;
         Scalar morse_range = 3/alpha;
-        Scalar frix_cut = morse_range; //0.5*morse_range;
+        Scalar frix_cut = 0.5*morse_range;
         
         Scalar overlap = h_ij - frix_cut;
 
@@ -355,47 +362,21 @@ class EvaluatorPairMorseFrix
             // Scalar overlap = 1.0 - (h_ij / frix_cut); // 0 at h_ij=r_cut, 1 at colloid-colloid contact (prevents force blow up)
             
 
-            /////vec3<Scalar> F_normal = - kn * overlap * rvec / r;  //repulsive since overlap = -ve
+            vec3<Scalar> F_normal = - kn * overlap * rvec / r;  //repulsive since overlap = -ve
             // vec3<Scalar> F_normal = kn * overlap * rvec / r; //suggested: but + = attractive ; j->i
             
             //Scalar eta_n  = Scalar(0); 
             // vec3<Scalar> Fn_damp = eta_n * v_norm;//[AJ2024]
 
-            // try with tanjential stretch instead of damp [Mingyang]
-
-            // find temporary tangential force strength
-            Scalar3 xi = make_double3(v_tan.x, v_tan.y, v_tan.z); // <-- note: for testing purpose "v_tan" is assigned xi
-            Scalar xi_tmp = fast::sqrt(dot(xi, xi));
-            //Scalar ft_tmp = m_kt * xi_tmp;
-            Scalar ft_tmp = (0.5*kn) * xi_tmp;
-            Scalar fn_tmp = fabs(kn * (r - fast::sqrt(rcutsq)) ); 
-
-            Scalar3 ft;
-            //Scalar3 tt;
-            // check Coulomb's law
-            if (ft_tmp <= mu_t * fn_tmp)
-                {
-                //ft = (0.5*kn) * xi;
-                ft = (0.5*kn) * xi;
-                }
-            else
-                {
-                //Scalar3 xi_norm = xi / xi_tmp;
-                Scalar3 xi_norm = xi / xi_tmp;
-                ft = mu_t * fn_tmp * xi_norm;
-                }
-
-            vec3<Scalar> friction_F = vec3<Scalar>(ft.x, ft.y, ft.z);
-
-            /////vec3<Scalar> Ft_damp = -eta_t * v_tan; // <- this is the right one
+            vec3<Scalar> Ft_damp = -eta_t * v_tan;
             // vec3<Scalar> Ft_damp = eta_t * v_tan;
             
-            ////Scalar F_normal_mag = fast::sqrt(dot(F_normal,F_normal));
+            Scalar F_normal_mag = fast::sqrt(dot(F_normal,F_normal));
             //Scalar Ft_normal_mag = mu_t * F_normal_mag;
-            ////Scalar Ft_damp_mag =  fast::sqrt(dot(Ft_damp,Ft_damp));
+            Scalar Ft_damp_mag =  fast::sqrt(dot(Ft_damp,Ft_damp));
 
-            ////vec3<Scalar> t = normalize(v_tan);
-            ////vec3<Scalar> friction_F = - std::min(mu_t*F_normal_mag,Ft_damp_mag) * t;
+            vec3<Scalar> t = normalize(v_tan);
+            vec3<Scalar> friction_F = - std::min(mu_t*F_normal_mag,Ft_damp_mag) * t;
             //vec3<Scalar> friction_F = - Ft_damp_mag * t;
             // vec3<Scalar> friction_F = - mu_t*F_normal_mag * t;
 
@@ -414,13 +395,6 @@ class EvaluatorPairMorseFrix
             //std::cout << "v_tan: " << v_tan.x << "," << v_tan.y << "," << v_tan.z <<  std::endl;
             //std::cout << "norm(v_tan): " << t.x << "," << t.y << "," << t.z <<  std::endl;
             //std::cout << "friction_F: " << friction_F.x << "," << friction_F.y << "," << friction_F.z <<  std::endl;
-            ////t_i -= cross(0.5*(diameter_i+overlap)*rvec/r,friction_F);
-            ////t_j -= cross(0.5*(diameter_j+overlap)*rvec/r,friction_F); 
-            //Scalar r2 = dot(-r, -r);
-            //Scalar r_variant = fast::sqrt(r2);
-            //Scalar3 e = r_variant / r;
-            //tt = make_scalar3(e.y * ft.z - e.z * ft.y, e.z * ft.x - e.x * ft.z, e.x * ft.y - e.y * ft.x);
-            //tt *= 0.5 * r;
             t_i -= cross(0.5*(diameter_i+overlap)*rvec/r,friction_F);
             t_j -= cross(0.5*(diameter_j+overlap)*rvec/r,friction_F); 
                 
@@ -434,10 +408,18 @@ class EvaluatorPairMorseFrix
         //std::cout << "torque_j: " << t_j.x << "," << t_j.y << "," << t_j.z <<  std::endl;
         //std::cout << "----" << std::endl;
 
-         
+            
         force = vec_to_scalar3(f);
         torque_i = vec_to_scalar3(t_i);
         torque_j = vec_to_scalar3(t_j);
+        */
+
+        vec3<Scalar> f_g;
+        f_g.y = -F_G
+
+        force = vec_to_scalar3(f_g)
+        h = yposition 
+        pair_eng += F_G*h //mgh 
 
         return true;
         }
@@ -458,7 +440,7 @@ class EvaluatorPairMorseFrix
      */
     static std::string getName()
         {
-        return "morsefrix";
+        return "gravity";
         }
 
     std::string getShapeSpec() const
@@ -495,4 +477,4 @@ class EvaluatorPairMorseFrix
     } // end namespace md
     } // end namespace hoomd
 
-#endif // __PAIR_EVALUATOR_MORSE_FRIX_H__
+#endif // __PAIR_EVALUATOR_MORSE_GRAVITY_H__

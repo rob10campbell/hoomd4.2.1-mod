@@ -117,6 +117,11 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
     //! Set the shape parameters for a single type through Python
     virtual void setShapePython(std::string typ, const pybind11::object shape_param);
 
+    ///~ load the multi-body StretchMap [RHEOINF]
+    void saveStretchMap(const std::map<std::pair<unsigned int, unsigned int>, Scalar3>& stretch_map, const std::string& filename);
+    void loadStretchMap(std::map<std::pair<unsigned int, unsigned int>, Scalar3>& stretch_map, const std::string& filename);
+    ///~
+
     std::vector<std::string> getTypeShapeMapping(
         const std::vector<param_type, hoomd::detail::managed_allocator<param_type>>& params,
         const std::vector<shape_type, hoomd::detail::managed_allocator<shape_type>>& shape_params)
@@ -177,7 +182,7 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
             }
         }
 
-    /// Get the mod eused for the energy shifting
+    /// Get the mode used for the energy shifting
     std::string getShiftMode()
         {
         switch (m_shift_mode)
@@ -200,11 +205,16 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
         m_attached = false;
         }
 
+    //~ get stretch map [RHEOINF]
+    std::map<std::pair<unsigned int, unsigned int>, Scalar3> stretch_map;
+    std::map<std::pair<unsigned int, unsigned int>, Scalar3> stretch_map_temp;
+    //~
+
 #ifdef ENABLE_MPI
     //! Get ghost particle fields requested by this pair potential
     virtual CommFlags getRequestedCommFlags(uint64_t timestep);
 
-    void updateGhostsIfNeeded(uint64_t timestep); //~ update some params every timestep regardless of buffer [RHEOINF]
+    //void updateGhostsIfNeeded(uint64_t timestep); //~ update some params every timestep regardless of buffer [RHEOINF]
 #endif
 
     //! Returns true because we compute the torque
@@ -247,14 +257,66 @@ template<class aniso_evaluator> class AnisoPotentialPair : public ForceCompute
     std::shared_ptr<GlobalArray<Scalar>> m_r_cut_nlist;
 
 //~ update some params every timestep regardless of buffer [RHEOINF]
+/*
 #ifdef ENABLE_MPI
    /// The system's communicator.
    std::shared_ptr<Communicator> m_comm;
 #endif
+*/
 //~
 
     //! Actually compute the forces
     virtual void computeForces(uint64_t timestep);
+
+    //~ To save and load the stretch map [RHEOINF] 
+    void saveStretchMap(const std::map<unsigned int, Scalar3>& stretch_map, const std::string& filename) 
+        {
+        std::ofstream outFile(filename, std::ios::out | std::ios::binary);
+        if (!outFile) 
+            {
+            std::cerr << "Error opening file for writing: " << filename << std::endl;
+            return;
+            }
+
+        for (const auto& entry : stretch_map) 
+            {
+            // Write the key (unsigned int)
+            outFile.write(reinterpret_cast<const char*>(&entry.first), sizeof(unsigned int));
+
+            // Write the value (Scalar3)
+            outFile.write(reinterpret_cast<const char*>(&entry.second), sizeof(Scalar3));
+            }
+
+        outFile.close();
+        }
+
+    void loadStretchMap(std::map<unsigned int, Scalar3>& stretch_map, const std::string& filename) 
+        {
+        std::ifstream inFile(filename, std::ios::in | std::ios::binary);
+        if (!inFile) 
+            {
+            std::cerr << "Error opening file for reading: " << filename << std::endl;
+            return;
+             }
+
+        while (inFile.peek() != EOF) 
+            {
+            unsigned int key;
+            Scalar3 value;
+
+            // Read the key (unsigned int)
+            inFile.read(reinterpret_cast<char*>(&key), sizeof(unsigned int));
+
+            // Read the value (Scalar3)
+            inFile.read(reinterpret_cast<char*>(&value), sizeof(Scalar3));
+
+            // Insert into the map
+            }
+
+        inFile.close();
+        }
+    //~
+
     };
 
 /*! \param sysdef System to compute forces on
@@ -335,6 +397,7 @@ AnisoPotentialPair<aniso_evaluator>::AnisoPotentialPair(std::shared_ptr<SystemDe
 #endif
 
 //~ update some params every timestep regardless of neighborlist buffer [RHEOINF]
+/*
 #ifdef ENABLE_MPI
     if (m_sysdef->isDomainDecomposed())
         {
@@ -343,6 +406,7 @@ AnisoPotentialPair<aniso_evaluator>::AnisoPotentialPair(std::shared_ptr<SystemDe
         m_comm = comm_weak.lock();
         }
 #endif
+*/
 //~
     }
 
@@ -506,7 +570,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     m_nlist->compute(timestep);
 
     //~ update some params every timestep regardless of neighborlist buffer [RHEOINF]
-    m_nlist->setStorageMode(NeighborList::full);
+    //m_nlist->setStorageMode(NeighborList::full);
     //~
 
     // depending on the neighborlist settings, we can take advantage of newton's third law
@@ -556,9 +620,11 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     ArrayHandle<Scalar> h_virial(m_virial, access_location::host, access_mode::overwrite);
 
     //~ update some params every timestep (regardless of neighborlist buffer) [RHEOINF]
+    /*
     #ifdef ENABLE_MPI
         updateGhostsIfNeeded(timestep);
     #endif
+    */
     //~
 
     const BoxDim box = m_pdata->getBox();
@@ -571,6 +637,96 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
 
         PDataFlags flags = this->m_pdata->getFlags();
         bool compute_virial = flags[pdata_flag::pressure_tensor];
+
+
+        //~ update the tangential stretch map [RHEOINF]
+        std::set<std::pair<unsigned int, unsigned int>> contact_pairs;
+        for (int i = 0; i < (int)m_pdata->getN(); i++)
+            {
+            Scalar3 pi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+            Scalar di = h_diameter.data[i];
+            unsigned int idx = h_tag.data[i];
+            unsigned int typei = __scalar_as_int(h_pos.data[i].w);
+
+            // loop over all of the neighbors of this particle
+            //const size_t myHead = h_head_list.data[i];
+            const unsigned int size = (unsigned int)h_n_neigh.data[i];
+            for (unsigned int j = 0; j < size; j++)
+                {
+                Scalar3 pj = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+                Scalar dj = h_diameter.data[j];
+                unsigned int jdx = h_tag.data[j];
+                unsigned int typej = __scalar_as_int(h_pos.data[j].w);
+                Scalar3 dist = pj - pi;
+                dist = box.minImage(dist);
+                Scalar r2 = dot(dist, dist);
+
+                // get parameters for this type pair
+                unsigned int typpair_idx = m_typpair_idx(typei, typej);
+                //const param_type& param = m_params[typpair_idx];
+                Scalar rcutsq = h_rcutsq.data[typpair_idx];
+
+                Scalar cut_off = std::sqrt(rcutsq) - (0.5*(di+dj));
+                Scalar rcut2 = cut_off * cut_off;            
+                if (r2 < rcut2 && idx < jdx)
+                    {
+                    contact_pairs.emplace(idx, jdx);
+                    }
+
+                }
+            }
+
+        // update list and calculate tangential stretch
+        for (auto it = stretch_map.begin(); it != stretch_map.end();)
+            {
+            if (contact_pairs.find(it->first) == contact_pairs.end())
+                {
+                it = stretch_map.erase(it);
+                }
+            else
+                {
+                ++it;
+                }
+            } // for auto
+
+        for (const auto& pair : contact_pairs)
+            {
+            unsigned int i = pair.first;
+            unsigned int j = pair.second;
+
+            // position of the pair particles
+            Scalar3 posi = make_scalar3(h_pos.data[i].x, h_pos.data[i].y, h_pos.data[i].z);
+            Scalar3 posj = make_scalar3(h_pos.data[j].x, h_pos.data[j].y, h_pos.data[j].z);
+            // translational velocity of the pair
+            Scalar3 ui = make_scalar3(h_vel.data[i].x, h_vel.data[i].y, h_vel.data[i].z);
+            Scalar3 uj = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
+            // rotational velocity of the pair
+            Scalar3 oi = make_scalar3(h_angmom.data[i].x, h_angmom.data[i].y, h_angmom.data[i].z);
+            Scalar3 oj = make_scalar3(h_angmom.data[j].x, h_angmom.data[j].y, h_angmom.data[j].z);
+
+            //Scalar3 dist = posj - posi;
+            Scalar3 dist = posi - posj;
+            dist = box.minImage(dist);
+
+            Scalar r2 = dot(dist, dist);
+            Scalar r = fast::sqrt(r2);
+            Scalar3 e = dist / r;
+
+            //Scalar3 uij = uj - ui;
+            Scalar3 uij = ui - uj;
+            Scalar uij_dot_e = dot(uij, e);
+
+            Scalar3 oi_cross_e = make_scalar3(oi.y * e.z - oi.z * e.y, oi.z * e.x - oi.x * e.z, oi.x * e.y - oi.y * e.x);
+            Scalar3 oj_cross_e = make_scalar3(oj.y * e.z - oj.z * e.y, oj.z * e.x - oj.x * e.z, oj.x * e.y - oj.y * e.x);
+
+            Scalar3 ut_rel = uij - uij_dot_e * e - 0.5 * r * (oi_cross_e + oj_cross_e);
+            Scalar3 d_stretch = ut_rel * m_deltaT;
+
+            stretch_map.try_emplace(pair, make_scalar3(0.0, 0.0, 0.0));
+            stretch_map[pair] += d_stretch;
+            }
+        //~
+
 
         // for each particle
         for (int i = 0; i < (int)m_pdata->getN(); i++)
@@ -585,7 +741,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
             quat<Scalar> p(h_angmom.data[i]);
             quat<Scalar> q(h_orientation.data[i]);
             vec3<Scalar> I(h_inertia.data[i]);
-            vec3<Scalar> omega_i = (Scalar(1. / 2.) * conj(q) * p).v / I;
+            //vec3<Scalar> omega_i = (Scalar(1. / 2.) * conj(q) * p).v / I;
             //std::cout << typei << "," << vi.x << "," << vi.y << "," << vi.z << std::endl;
             //~
 
@@ -654,14 +810,30 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
 
                 //~ angular momentum / quaternion updates [RHEOINF]
                 vec3<Scalar> dx_vec(dx);
-                vec3<Scalar> n_normal = normalize(dx_vec);
+                //vec3<Scalar> n_normal = normalize(dx_vec);
                 Scalar3 vj = make_scalar3(h_vel.data[j].x, h_vel.data[j].y, h_vel.data[j].z);
                 vec3<Scalar> vij(vi-vj);
                 quat<Scalar> p(h_angmom.data[j]);
                 quat<Scalar> q(h_orientation.data[j]);
                 vec3<Scalar> I(h_inertia.data[j]);
-                vec3<Scalar> omega_j = (Scalar(1. / 2.) * conj(q) * p).v / I;
-                vec3<Scalar> Vt = vij - dot(vij,n_normal) * n_normal - Scalar(0.5) * cross((di*omega_i+dj*omega_j),n_normal);
+                //vec3<Scalar> omega_j = (Scalar(1. / 2.) * conj(q) * p).v / I;
+                //vec3<Scalar> Vt = vij - dot(vij,n_normal) * n_normal - Scalar(0.5) * cross((di*omega_i+dj*omega_j),n_normal);
+                unsigned int tagi = h_tag.data[i];
+                unsigned int tagj = h_tag.data[j];
+                unsigned int i_min = std::min(tagi, tagj);
+                unsigned int j_max = std::max(tagi, tagj);
+                std::pair<unsigned int, unsigned int> key(i_min, j_max);
+                //Scalar3 xi = stretch_map[key];
+                //std::cerr << "Accessing stretch_map for key: (" << key.first << ", " << key.second << ")\n"; 
+                auto it = stretch_map.find(key);
+                Scalar3 xi = make_scalar3(0.0, 0.0, 0.0); // default value
+                if (it != stretch_map.end())
+                    xi = it->second;
+                //else
+                //    {
+                //    std::cerr << "[Warning] Key (" << key.first << ", " << key.second << ") not found in stretch_map!\n";
+                //    }
+                vec3<Scalar> Vt = vec3<Scalar>(xi.x, xi.y, xi.z);  // <-- for testing purposes Vt is assigned xi value
                 //~
 
                 // get parameters for this type pair
@@ -702,7 +874,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
                 if (aniso_evaluator::needsVel())
                     eval.setVel(Vt);
                 //~
-
+                //std::cout << "xi: " << Vt.x << "," << Vt.y << "," << Vt.z << std::endl;
                 bool evaluated = eval.evaluate(force, pair_eng, energy_shift, torque_i, torque_j);
 
                 if (evaluated)
@@ -775,6 +947,7 @@ void AnisoPotentialPair<aniso_evaluator>::computeForces(uint64_t timestep)
     }
 
 //~ update some parameters every timestep (regardless of neighborlist buffer) [RHEOINF]
+/*
 #ifdef ENABLE_MPI
 template<class aniso_evaluator>
 void AnisoPotentialPair<aniso_evaluator>::updateGhostsIfNeeded(uint64_t timestep)
@@ -799,6 +972,7 @@ void AnisoPotentialPair<aniso_evaluator>::updateGhostsIfNeeded(uint64_t timestep
     m_comm->setFlags(old_flags);
     }
 #endif
+*/
 //~
 
 #ifdef ENABLE_MPI

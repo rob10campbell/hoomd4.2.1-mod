@@ -242,7 +242,7 @@ class EvaluatorPairXDLVO //~ change name to XDLVO
             //Scalar rcutinv = fast::rsqrt(rcutsq);
             //Scalar rcut = Scalar(1.0) / rcutinv;
             //if (r < rcut && kappa_e != 0)
-            if (kappa_e != 0)
+            /*if (kappa_e != 0)
                 {
                 Scalar radprod = (Scalar(0.5)*diameter_i) * (Scalar(0.5)*diameter_j); 
                 Scalar rmds = r - radsum;
@@ -251,10 +251,10 @@ class EvaluatorPairXDLVO //~ change name to XDLVO
                 Scalar exp_val_e = fast::exp(-kappa_e * rmds);
 
                 Scalar forcerep_divr = kappa_e * radprod * radsuminv * Z * exp_val_e / r;
-                force_divr += forcerep_divr;
-                pair_eng += r * forcerep_divr / kappa_e;
+                force_divr -= forcerep_divr;
+                pair_eng -= r * forcerep_divr / kappa_e;
                 }
-
+             */
 
 
             // add ionic osmotic potential for salt effects (Donnan potential)
@@ -263,8 +263,8 @@ class EvaluatorPairXDLVO //~ change name to XDLVO
             if (r >= d_hydroshell && r <= 2*D_ij)
                 {
                 Scalar forceosm_divr = -Scalar(0.25) * M_PI * kT * rho_e * (4*pow(D_ij,2) - pow(r,2)) / r;
-                force_divr += forceosm_divr;
-                pair_eng += -Scalar(4/3) * M_PI * kT * pow(D_ij,3) * rho_e * ( 1 - ((3*r)/(4*D_ij)) + (pow(r,3)/(16*pow(D_ij,3))) );
+                force_divr -= forceosm_divr;
+                pair_eng -= -Scalar(4/3) * M_PI * kT * pow(D_ij,3) * rho_e * ( 1 - ((3*r)/(4*D_ij)) + (pow(r,3)/(16*pow(D_ij,3))) );
                 }
 
 
@@ -401,8 +401,10 @@ class EvaluatorPairXDLVO //~ change name to XDLVO
 
               Scalar force_ionj_divr = -(Uej_plus - Uej_minus) / (2*deltaR_force);
 
-              force_divr += (force_ioni_divr - force_ionj_divr);
-              pair_eng -= (totali_eng + totalj_eng);
+              //force_divr -= (force_ioni_divr - force_ionj_divr); //~ force are in opposite directions
+              force_divr -= (force_ioni_divr + force_ionj_divr); //~ but combined effect is attraction in the same direction?
+              //orce_divr -= force_ioni_divr; //~ if not using third_law, this will loop through each particle once
+              pair_eng += (totali_eng + totalj_eng);
               }
             
             //} // close second dist check

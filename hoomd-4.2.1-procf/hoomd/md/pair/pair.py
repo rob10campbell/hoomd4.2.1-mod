@@ -2242,3 +2242,160 @@ class DPDXDLVO(Pair):
         self._bond_calc = value
 ##~
 
+##~ add MorseBrush [RHEOINF]
+class MorseBrush(Pair):
+    r"""Morse pair force with modifications for a polymer brush coating as observed in experiments by Calvin Zhuang and Ali Mohraz at UC Irvine.
+
+    Args:
+        nlist (hoomd.md.nlist.NeighborList): Neighbor list.
+        default_r_cut (float): Default cutoff radius :math:`[\mathrm{length}]`.
+        default_r_on (float): Default turn-on radius :math:`[\mathrm{length}]`.
+        mode (str): Energy shifting/smoothing mode.
+
+    `MorseBrush` computes the Morse pair force on every particle in the simulation
+    state:
+
+    .. math::
+        U(r) = D_0 \left[ \exp \left(-2\alpha\left(
+            r-r_0\right)\right) -2\exp \left(-\alpha\left(r-r_0\right)
+            \right) \right]
+
+    it includes a brush length hb in the particle size, and allows for the addition of a shift in the soft-repulsion
+    alpha->soft_shift*alpha for (r-r_0)<0 ; this mimics a decrease in density or stiffness of the polymer brush coating 
+
+    Example::
+
+        nl = nlist.Cell()
+        morse = pair.MorseBrush(default_r_cut=3.0, nlist=nl)
+        morse.params[('A', 'A')] = dict(D0=12.0, alpha=20, hb=0.009, soft_shift=0.45, scaled_D0=False)
+        morse.r_cut[('A', 'B')] = 3.0
+
+    .. py:attribute:: params
+
+        The potential parameters. The dictionary has the following keys:
+
+        * ``D0`` (`float`, **required**) - depth of the potential at its
+          minimum :math:`D_0` :math:`[\mathrm{energy}]`
+        * ``alpha`` (`float`, **required**) - the width of the potential well
+          :math:`\alpha` :math:`[\mathrm{length}^{-1}]`
+        * ``hb`` (`float`, **required**) - polymer brush length
+          :math:`hb` :math:`[\mathrm{length}]`
+        * ``soft_shift`` (`float`, **required**) - the amount of shift to to alpha that softens Morse repulsion without changing Morse attraction
+          :math:`softshift` :math:`[none]`
+        * ``scaled_D0`` (`bool`, **required**) - option to scale the magnitude of the contact force by particle size for bimodal depletion interations 
+
+        Type: `TypeParameter` [`tuple` [``particle_type``, ``particle_type``],
+        `dict`]
+
+    .. py:attribute:: mode
+
+        Energy shifting/smoothing mode: ``"none"``, ``"shift"``, or ``"xplor"``.
+
+        Type: `str`
+    """
+
+    _cpp_class_name = "PotentialPairMorseBrush"
+
+    def __init__(self, nlist, default_r_cut=None, scaled_D0=None, f_contact=None, default_r_on=0., mode='none'): 
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float, 
+                              alpha=float, 
+                              hb=float,
+                              soft_shift=float,
+                              scaled_D0=bool, 
+                              len_keys=2))
+        self._add_typeparam(params)
+
+##~
+
+##~
+class MorseBrush2(Pair):
+
+    _cpp_class_name = "PotentialPairMorseBrush2"
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float,
+                              alpha=float,
+                              hb=float,
+                              soft_shift=float,
+                              Z=float,
+                              kappa_e=float,
+                              f_contact=float,
+                              scaled_D0=bool,
+                              len_keys=2))
+        self._add_typeparam(params)
+##~
+
+##~
+class MorseBrushPaniz(Pair):
+
+    _cpp_class_name = "PotentialPairMorseBrushPaniz"
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float,
+                              alpha=float,
+                              hb=float,
+                              soft_shift=float,
+                              scaled_D0=bool,
+                              kappa=float,
+                              Z=float,
+                              A=float,
+                              a1=float,
+                              a2=float,
+                              len_keys=2))
+        self._add_typeparam(params)
+##~
+
+##~
+class DLVOalt(Pair):
+    _cpp_class_name = "PotentialPairDLVOalt"
+    _accepted_modes = ("none", "shift")
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+        if mode == 'xplor':
+            raise ValueError("xplor is not a valid mode for the DLVOalt potential")
+
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(
+                cs_mM=float,
+                hb_nm=float,
+                Zeta_mV=float,
+                a1=float,
+                a2=float,
+                len_keys=2,
+            ))
+        self._add_typeparam(params)
+##~
+
+##~
+class MorseBrushAltElec(Pair):
+
+    _cpp_class_name = "PotentialPairMorseBrushAltElec"
+
+    def __init__(self, nlist, default_r_cut=None, default_r_on=0., mode='none'):
+        super().__init__(nlist, default_r_cut, default_r_on, mode)
+        params = TypeParameter(
+            'params', 'particle_types',
+            TypeParameterDict(D0=float,
+                              alpha=float,
+                              hb=float,
+                              soft_shift=float,
+                              scaled_D0=bool,
+                              cs_mM=float,
+                              hb_nm=float,
+                              Zeta_mV=float,
+                              a1=float,
+                              a2=float,
+                              len_keys=2))
+        self._add_typeparam(params)
+##~

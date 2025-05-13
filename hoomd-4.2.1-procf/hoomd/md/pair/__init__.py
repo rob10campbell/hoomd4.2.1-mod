@@ -145,6 +145,10 @@ from .pair import (
     Ewald,
     Morse,
     MorseRepulse, #[RHEOINF]
+    MorseBrush, #[RHEOINF]
+    MorseBrush2, #[RHEOINF]
+    MorseBrushPaniz, #[RHEOINF]
+    MorseBrushAltElec, #[RHEOINF]
     DPD,
     DPDConservative,
     DPDLJ,
@@ -157,6 +161,7 @@ from .pair import (
     ExpandedMie,
     ReactionField,
     DLVO,
+    DLVOalt, #[RHEOINF]
     XDLVO, #[RHEOINF]
     Buckingham,
     LJ1208,
