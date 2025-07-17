@@ -1,6 +1,8 @@
 // Copyright (c) 2009-2023 The Regents of the University of Michigan.
 // Part of HOOMD-blue, released under the BSD 3-Clause License.
 
+// ########## Modified by Rheoinformatic //~ [RHEOINF] ##########
+
 #ifndef HOOMD_TWOSTEPCONSTANTVOLUME_H
 #define HOOMD_TWOSTEPCONSTANTVOLUME_H
 
@@ -29,7 +31,7 @@ class PYBIND11_EXPORT TwoStepConstantVolume : public IntegrationMethodTwoStep
     TwoStepConstantVolume(std::shared_ptr<SystemDefinition> sysdef,
                           std::shared_ptr<ParticleGroup> group,
                           std::shared_ptr<Thermostat> thermostat)
-        : IntegrationMethodTwoStep(sysdef, group), m_thermostat(thermostat)
+        : IntegrationMethodTwoStep(sysdef, group), m_thermostat(thermostat), m_use_walls(false), m_wall("") //~ add walls [RHEOINF]
         {
         }
 
@@ -60,6 +62,83 @@ class PYBIND11_EXPORT TwoStepConstantVolume : public IntegrationMethodTwoStep
         {
         m_thermostat = thermostat;
         }
+
+    //~ add walls [RHEOINF]
+    /** Set the wall option
+
+        @param wall_axes One of 3 wall axes options for bounceback: +x-x, +y-y, +z-z
+ 
+    */
+    /* // IF wall_axes IS REQUIRED
+     * void setWall(const std::string& wall_axes)
+        {
+        static const std::set<std::string> valid_axes = {"+x-x", "+y-y", "+z-z"};
+	if (wall_axes.empty())
+	    {
+            m_use_walls = false;
+    	    }
+	else if (valid_axes.find(wall_axes) == valid_axes.end())
+            {
+            throw std::invalid_argument("Invalid wall_axes option: " + wall_axes);
+            m_use_walls = false;
+            }
+	else
+	    {
+            m_wall = wall_axes;
+            m_use_walls = true;
+    	    }
+        }
+
+    /// Get the wall option
+    std::string getWall() const
+        {
+        if (m_use_walls)
+            {
+            return m_wall;
+            }
+        else
+            {
+            return "";
+            }
+        }
+    */
+    void setWall(const pybind11::object wall_axes)
+    {
+        static const std::set<std::string> valid_axes = {"+x-x", "+y-y", "+z-z"};
+
+        if (wall_axes.is_none())
+        {
+            m_use_walls = false;
+        }
+        else
+        {
+            std::string wall_str = pybind11::cast<std::string>(wall_axes);
+            if (valid_axes.find(wall_str) == valid_axes.end())
+            {
+                throw std::invalid_argument("Invalid wall_axes option: " + wall_str);
+                m_use_walls = false;
+            }
+            else
+            {
+                m_wall = wall_str;
+                m_use_walls = true;
+            }
+        }
+    }
+
+    std::string getWall() const
+    {
+        if (m_use_walls)
+        {
+            return m_wall;
+        }
+        else
+        {
+            return "";
+        }
+    }
+    //~
+
 
     /** Set the distance limit applied to particles.
 
@@ -103,6 +182,13 @@ class PYBIND11_EXPORT TwoStepConstantVolume : public IntegrationMethodTwoStep
 
     /// The thermostat to apply (may be null).
     std::shared_ptr<Thermostat> m_thermostat;
+
+    //~ [RHEOINF]
+    /// flag to enable walls in the y-direction 
+    bool m_use_walls;
+    /// the axes where walls are applied
+    std::string m_wall;
+    //~
 
     /// The distance limit to apply (may be null).
     std::shared_ptr<Variant> m_limit;
